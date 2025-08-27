@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prepress Impact</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Page Header dengan rounded corners dan gap seperti template lain */
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            margin: -1rem -15px 2rem -15px;
+            border-radius: 0 0 20px 20px;
+        }
+        
+        /* Form section styling seperti filter section di template lain */
+        .form-section {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+        
+        .form-control-clean, .form-select-clean {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+        .form-control-clean:focus, .form-select-clean:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .info-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .btn-clean {
+            border: none;
+            border-radius: 25px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-primary-clean {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary-clean:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        
+        .btn-outline-clean {
+            border: 2px solid #667eea;
+            color: #667eea;
+            background: transparent;
+        }
+        .btn-outline-clean:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        /* Section dividers */
+        .section-divider {
+            border-left: 4px solid #667eea;
+            padding-left: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 1rem;
+        }
+        
+        /* Toast notifications - styling like mounting data adjustment */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        
+        .toast {
+            min-width: 300px;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .toast-success {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+            color: white;
+        }
+        
+        .toast-error {
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+            color: white;
+        }
+        
+        .toast-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .toast-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+            color: white;
+        }
+        
+        /* Form validation states - tanpa icon checklist */
+        .form-control-clean.is-valid, .form-select-clean.is-valid {
+            border-color: #56ab2f;
+            /* Hapus background-image untuk menghilangkan icon checklist */
+            background-image: none;
+        }
+        
+        .form-control-clean.is-invalid, .form-select-clean.is-invalid {
+            border-color: #ff6b6b;
+            /* Hapus background-image untuk menghilangkan icon X */
+            background-image: none;
+        }
+        
+        /* Loading state */
+        .btn-loading {
+            position: relative;
+            pointer-events: none;
+        }
+        
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            margin: auto;
+            border: 2px solid transparent;
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="d-flex" id="wrapper">
+        {% include '_sidebar.html' %}
+        <div id="page-content-wrapper">
+            
+            <div class="container-fluid">
+                <!-- Page Header yang persis sama dengan data_adjustment.html -->
+                <div class="page-header">
+                    <div class="container-fluid">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 class="mb-1 text-white">Form Request Plate Adjustment</h2>
+                                <p class="mb-0 opacity-75">Kelola permintaan penyesuaian plate dengan mudah dan efisien</p>
+                            </div>
+                            <div class="text-end">
+                                <a href="/data-adjustment" class="btn btn-light">
+                                    <i class="fas fa-list me-1"></i> Lihat Data Adjustment
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            <div class="container py-4">
+        <div class="col-md-12 col-xl-10 mx-auto">
+            <!-- Alert Section -->
+            <div id="alertContainer" class="mb-3" style="display: none;">
+                <div class="alert" role="alert">
+                    <span id="alertMessage"></span>
+                </div>
+            </div>
+            
+            <!-- Main Form Section -->
+            <div class="form-section">
+                <form id="plateAdjustmentForm" autocomplete="off">
+                    <!-- Basic Information Section -->
+                    <div class="section-divider">
+                        <h5 class="section-title"><i class="fas fa-info-circle me-2"></i>Informasi Dasar</h5>
+                    </div>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="info-label">Tanggal</label>
+                            <input type="date" name="tanggal" class="form-control form-control-clean" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="info-label">Mesin Cetak</label>
+                            <select class="form-select form-select-clean" name="mesin_cetak" required>
+                                <option value="">Pilih Mesin Cetak</option>
+                                <option value="SM2">SM2</option>
+                                <option value="SM3">SM3</option>
+                                <option value="SM4">SM4</option>
+                                <option value="SM5">SM5</option>
+                                <option value="SM6">SM6</option>
+                                <option value="VLF">VLF</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="info-label">PIC Cetak</label>
+                            <input type="text" name="pic" class="form-control form-control-clean text-muted" value="{{ current_user.name }}" readonly tabindex="-1" style="background-color: #f8f9fa; opacity: 1; cursor: not-allowed;">
+                        </div>
+                    </div>
+
+                    <!-- Work Order Information Section - DIHAPUS -->
+                    
+                    <!-- Product Information Section -->
+                    <div class="section-divider">
+                        <h5 class="section-title"><i class="fas fa-box me-2"></i>Informasi Produk</h5>
+                    </div>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <label class="info-label">No. WO</label>
+                            <input type="text" name="wo_number" class="form-control form-control-clean" placeholder="Contoh: WO-2024-001" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="info-label">No. MC</label>
+                            <input type="text" name="mc_number" class="form-control form-control-clean" placeholder="Contoh: MC-001" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="info-label">Run Length</label>
+                            <input type="number" name="run_length" class="form-control form-control-clean" placeholder="Masukkan angka" min="0">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="info-label">Jumlah Plate</label>
+                            <input type="number" name="jumlah_plate" class="form-control form-control-clean" placeholder="0" min="1" required>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-7">
+                            <label class="info-label">Nama Item</label>
+                            <input type="text" name="item_name" class="form-control form-control-clean" placeholder="Masukkan nama produk/item" required>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="info-label">Jenis Adjustment</label>
+                            <select name="remarks" class="form-select form-select-clean" required>
+                                <option value="">Pilih Jenis</option>
+                                <option value="ADJUSTMENT FA PROOF">Adjustment FA Proof</option>
+                                <option value="ADJUSTMENT FA PRODUKSI">Adjustment FA Produksi</option>
+                                <option value="ADJUSTMENT CURVE PROOF">Adjustment Curve Proof</option>
+                                <option value="ADJUSTMENT CURVE PRODUKSI">Adjustment Curve Produksi</option>                                
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Additional Notes Section -->
+                    <div class="section-divider">
+                        <h5 class="section-title"><i class="fas fa-sticky-note me-2"></i>Catatan</h5>
+                    </div>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-12">
+                            <label class="info-label">Note / Keterangan</label>
+                            <textarea name="note" class="form-control form-control-clean" rows="4" placeholder="Tambahkan catatan atau keterangan warna"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-end gap-3 pt-3 border-top">
+                        <button type="button" class="btn btn-outline-clean px-4" onclick="resetForm()">
+                            <i class="fas fa-undo me-2"></i>Reset Form
+                        </button>
+                        <button type="submit" class="btn btn-primary-clean px-4">
+                            <i class="fas fa-paper-plane me-2"></i>Submit Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+            </div> <!-- Tutup container-fluid -->
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+    <script src="{{ url_for('static', filename='js/kpi_ctp_handler.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/request_plate_adjustment.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
+    
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+</body>
+</html>

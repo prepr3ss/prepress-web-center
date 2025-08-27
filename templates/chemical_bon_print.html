@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Prepress Impact</title>
+    <style>
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 0;
+            }
+
+            body {
+                margin: 0;
+                padding: 0;
+                font-family: Arial, sans-serif;
+                font-size: 5pt;
+                color: #000;
+            }
+            
+            .bon-container {
+                width: 100%;
+                max-width: 210mm;
+                box-sizing: border-box;
+                padding: 2mm 15mm 15mm 15mm; 
+                position: relative;
+                background: #fff;
+            }
+
+            /* Garis putus-putus untuk panduan potong */
+            .bon-container:first-of-type {
+                border-bottom: 1px dashed #000;
+                padding-bottom: 20px; /* Jarak agar bon tidak terlalu mepet */
+                margin-bottom: 5px; /* Jarak antar bon */
+            }
+
+            .bon-header {
+                text-align: center;
+                margin: 0;
+            }
+
+            .bon-header img {
+                margin: 0;
+                padding: 0;
+                height: 80px;
+            }
+            
+            .bon-footer {
+                position: absolute;
+                bottom: 5mm;
+                left: 0;
+                width: 100%;
+                text-align: right;
+                font-weight: bold;
+                font-size: 8pt;
+                background: none;
+                z-index: 10;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+        
+        .bon-title {
+            font-size: 7pt;
+            font-weight: bold;
+            margin-bottom: 5px;
+            margin-top: 5px;
+        }
+
+        .bon-number {
+            font-size: 10pt;
+        }
+
+        .bon-info-table {
+            width: 100%;
+            margin-bottom: 15px;
+            border-collapse: collapse;
+        }
+        .bon-info-table td {
+            padding: 2px 6px;
+            vertical-align: top;
+        }
+        .bon-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 5px;
+        }
+        .bon-table th, .bon-table td {
+            border: 1px solid #000;
+            padding: 6px 8px;
+            text-align: center;
+        }
+        .bon-table th {
+            background: #f0f0f0;
+        }
+        .bon-sign {
+            width: 100%;
+            margin-top: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .bon-sign-col {
+            width: 32%;
+            text-align: center;
+        }
+        .bon-sign-col .label {
+            margin-bottom: 20px;
+            display: block;
+        }
+        .bon-sign-col .name {
+            border-top: 1px solid #000;
+            display: inline-block;
+            min-width: 100px;
+            margin-top: 5px;
+        }
+        .bon-note {
+            font-size: 5pt;
+            margin-top: 5px;
+        }
+        .dok-no {
+            margin-top: 10px;
+        }
+    </style>
+    <script>
+        window.onload = function() {
+            window.print();
+        };
+    </script>
+</head>
+<body>
+    {% set footers = ['Lembar ke-1: User', 'Lembar ke-2: Warehouse'] %}
+    {% set month_romawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'] %}
+    {% set now = namespace(month=bon.tanggal.month if bon.tanggal else 1, year=bon.tanggal.year if bon.tanggal else 2025) %}
+    {% set bon_number_full = bon.bon_number %}
+    {% set tanggal_indo = bon.tanggal.strftime('%d-%m-%Y') if bon.tanggal else '-' %}
+    {% for copy in range(2) %}
+    <div class="bon-container">
+        <div class="bon-header">
+            <img src="{{ url_for('static', filename='img/LogoTbk.png') }}" alt="Logo">
+            <div class="bon-title">BON PERMINTAAN BARANG</div>
+        </div>
+        <table class="bon-info-table">
+            <tr>
+                <td style="width: 5%;"><b>Tanggal</b></td>
+                <td style="width: 70%;">: {{ tanggal_indo }}</td>
+                <td style="width: 8%;"><b>No. BON</b></td>
+                <td style="width: 35%;">: {{ bon_number_full }}</td>
+            </tr>
+            <tr>
+                <td style="width: 5%;"><b>Bagian</b></td>
+                <td style="width: 70%;">: PREPRESS OFFSET</td>
+                <td style="width: 8%;"><b>No. Request</b></td>
+                <td style="width: 35%;">: {{ bon.request_number }}</td>
+            </tr>
+        </table>
+        <table class="bon-table">
+            <thead>
+                <tr>
+                    <th style="width: 5%; height: 100%;">No</th>
+                    <th style="width: 15%; height: 100%;">Item Code</th>
+                    <th style="width: 40%; height: 100%;">Description</th>
+                    <th style="width: 5%; height: 100%;">UoM</th>
+                    <th style="width: 5%; height: 100%;">Jumlah Diminta</th>
+                    <th style="width: 5%; height: 100%;">Jumlah Diserahkan</th>
+                    <th style="width: 25%; height: 100%;">Keterangan</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set grouped = {} %}
+                {% for item in items %}
+                    {% set code = item.item_code %}
+                    {% if code in grouped %}
+                        {% set _ = grouped[code].update({'jumlah': grouped[code].jumlah + item.jumlah}) %}
+                    {% else %}
+                        {% set _ = grouped.update({code: {'item_code': item.item_code, 'item_name': item.item_name, 'jumlah': item.jumlah, 'keterangan': item.keterangan}}) %}
+                    {% endif %}
+                {% endfor %}
+                {% for g in grouped.values() %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ g.item_code }}</td>
+                    <td>{{ g.item_name }}</td>
+                    <td>GLN</td>
+                    <td>{{ g.jumlah }}</td>
+                    <td>{{ g.jumlah }}</td>
+                    <td>{{ g.keterangan }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div>
+            <b>Remarks:</b> PEMAKAIAN CHEMICAL {{ bon.brand }} TANGGAL {{ tanggal_indo }}
+            {% if bon.bon_periode %}
+            (PERIODE {{ bon.bon_periode }})
+            {% endif %}
+        </div>
+        <div class="bon-sign">
+            <div class="bon-sign-col">
+                <span class="label">Diserahkan</span>
+                <span class="name">WAREHOUSE</span>
+            </div>
+            <div class="bon-sign-col">
+                <span class="label">Mengetahui</span>
+                <span class="name">SPV PREPRESS</span>
+            </div>
+            <div class="bon-sign-col">
+                <span class="label">Diterima</span>
+                <span class="name">{{ bon.created_by_name or '-' }}</span>
+            </div>
+        </div>
+        <div class="bon-note">
+            <table style="width: 100%;">
+                <tbody>
+                    <tr>
+                        <td style="width: 1%;"><b>Note:</b></td>
+                        <td style="width: 99%;">* Material yang diambil dan tidak dapat digunakan / dipakai segera di kembalikan ke warehouse</td>
+                    </tr>
+                    <tr>
+                        <td style="width: 1%;"></td>
+                        <td style="width: 99%;">* Diluar PIC tidak diperbolehkan untuk mengambil barang</td>
+                    </tr>
+                    <tr>
+                        <td style="width: 1%;"></td>
+                        <td style="width: 99%;">* Lembar satu untuk arsip lembar kedua ( copy ) untuk PIC</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="dok-no">
+            <table style="width: 100%;">
+                <tbody>
+                    <tr>
+                        <td style="width: 100%; font-size: 4pt; font-weight: bold;">Dok. No. : FORM-LOG-001 REV.1</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="text-align: right; font-weight: bold; font-size: 4pt;">{{ footers[copy] }}</div>
+    </div>
+    {% endfor %}
+</body>
+</html>

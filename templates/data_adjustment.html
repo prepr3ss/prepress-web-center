@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prepress Impact</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Page Header dengan gradient seperti template lain */
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            margin: -1rem -15px 2rem -15px;
+            border-radius: 0 0 20px 20px;
+        }
+        
+        /* Filter section styling */
+        .filter-section {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+        
+        .form-control-clean {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+        .form-control-clean:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .info-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+        
+        .btn-clean {
+            border: none;
+            border-radius: 25px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-export-csv {
+            background: linear-gradient(135deg, #06b406 0%, #008000 100%);
+            color: white;
+        }
+        
+        .btn-primary-clean {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary-clean:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        
+        /* Table enhancements */
+        .table-responsive {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .adjustment-table {
+            margin-bottom: 0;
+        }
+        
+        .adjustment-table thead th {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: none;
+            font-weight: 600;
+            color: #495057;
+            padding: 1rem 0.75rem;
+        }
+        
+        /* Optional: Basic centering for initial dashboard content */
+        #main-content-area {
+            text-align: center;
+            padding-top: 50px;
+        }
+        #main-content-area h1 {
+            color: var(--header-text-color);
+            margin-bottom: 20px;
+        }
+        #main-content-area .lead {
+            color: var(--medium-text); /* Menggunakan variabel abu-abu sedang */
+            font-size: 1.25rem;
+        }
+
+        /* Override Bootstrap default untuk navbar terang agar warna teks sesuai palet */
+        .navbar-light .navbar-nav .nav-link {
+            color: var(--dark-text); /* Teks navbar menjadi gelap */
+        }
+        .navbar-light .navbar-nav .nav-link:hover,
+        .navbar-light .navbar-nav .nav-link:focus {
+            color: var(--primary-darker); /* Warna hover/focus lebih gelap */
+        }
+        .navbar-light .navbar-nav .nav-link.active {
+            color: var(--primary-color); /* Link aktif navbar menjadi biru primer */
+        }
+        /* Ikon toggler biasanya sudah terlihat di background terang, tapi bisa disesuaikan jika perlu */
+        /* .navbar-light .navbar-toggler-icon {
+            filter: invert(0.2);
+        } */
+
+        /* Toast styling dengan tema CTP orange */
+        .toast {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .toast-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px 12px 0 0;
+        }
+        
+        .toast-header .btn-close {
+            filter: invert(1);
+        }
+
+    </style>
+</head>
+<body>
+    <div class="d-flex" id="wrapper">
+        {% include '_sidebar.html' %}
+        <div id="page-content-wrapper">
+            <div class="container-fluid">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div class="container-fluid">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 class="mb-1 text-white">Data Adjustment Plate</h2>
+                                <p class="mb-0 opacity-75">Monitoring semua request adjustment plate</p>
+                            </div>
+                            <div class="text-end">
+                                <a href="/request-plate-adjustment" class="btn btn-light">
+                                    <i class="fas fa-plus-circle me-1"></i> Request Plate Adjustment
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Filter Section -->
+                <div class="filter-section">
+                    <div class="row align-items-end">
+                        <div class="col-md-2 mb-2 mb-md-0">
+                            <label for="filterStatus" class="form-label info-label">Filter Status</label>
+                            <select class="form-control form-control-clean" id="filterStatus">
+                                <option value="">Semua Status</option>
+                                <option value="menunggu_adjustment">Menunggu Adjustment</option>
+                                <option value="proses_adjustment">Proses Adjustment</option>
+                                <option value="proses_plate">Proses Plate</option>
+                                <option value="selesai">Selesai</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2 mb-md-0">
+                            <label for="filterMesin" class="form-label info-label">Filter Mesin</label>
+                            <select class="form-control form-control-clean" id="filterMesin">
+                                <option value="">Semua Mesin</option>
+                                <option value="SM2">SM2</option>
+                                <option value="SM3">SM3</option>
+                                <option value="SM4">SM4</option>
+                                <option value="SM5">SM5</option>
+                                <option value="SM6">SM6</option>
+                                <option value="VLF">VLF</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2 mb-md-0">
+                            <label for="filterRemarks" class="form-label info-label">Filter Remarks</label>
+                            <select class="form-control form-control-clean" id="filterRemarks">
+                                <option value="">Semua Remarks</option>
+                                <option value="ADJUSTMENT FA PROOF">ADJUSTMENT FA PROOF</option>
+                                <option value="ADJUSTMENT FA PRODUKSI">ADJUSTMENT FA PRODUKSI</option>
+                                <option value="ADJUSTMENT CURVE PROOF">ADJUSTMENT CURVE PROOF</option>
+                                <option value="ADJUSTMENT CURVE PRODUKSI">ADJUSTMENT CURVE PRODUKSI</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-2 mb-md-0">
+                            <label for="searchInput" class="form-label info-label">Pencarian</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control form-control-clean" id="searchInput" placeholder="Cari apapun...">
+                                <button class="btn btn-outline-secondary" type="button" id="clearSearch">Clear</button>
+                            </div>
+                        </div>
+                        <div class="col-md-2 mb-2 mb-md-0">
+                            <label class="form-label">&nbsp;</label>
+                            <button class="btn btn-export-csv w-100" onclick="showExportModal()" type="button">
+                                <i class="fas fa-file-export me-2"></i>Export CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="dataMessage" class="alert d-none" role="alert"></div>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover table-sm align-middle adjustment-table" id="adjustmentDataTable">
+                        <thead>
+                            <tr>
+                                <th data-column="id">ID <i class="fas fa-sort float-end"></i></th>
+                                <th data-column="tanggal">Tanggal <i class="fas fa-sort float-end"></i></th>
+                                <th data-column="machine_off_at">Mesin Off <i class="fas fa-sort float-end"></i></th>
+                                <th data-column="status">Status <i class="fas fa-sort float-end"></i></th>                                                                
+                                <th data-column="mesin_cetak">Mesin Cetak <i class="fas fa-sort float-end"></i></th>
+                                <th data-column="mc_number">No. MC <i class="fas fa-sort float-end"></i></th>
+                                <th data-column="item_name">Nama Item <i class="fas fa-sort float-end"></i></th>
+                                <th data-column="note">Catatan <i class="fas fa-sort float-end"></i></th>
+                                <th data-column="remarks">Remarks <i class="fas fa-sort float-end"></i></th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adjustmentTableBody">
+                        </tbody>
+                    </table>
+                </div>
+                <nav>
+                    <div class="row py-2"></div>
+                    <ul class="pagination justify-content-center" id="paginationNav"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="liveToast" class="toast border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-body bg-success text-white rounded">
+                <span class="message-text"></span>
+                <button type="button" class="btn-close btn-close-white float-end" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+        <!-- Modal Export Data -->
+    <div class="modal fade" id="exportModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-file-export me-2"></i>Export Data Adjustment Press
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="exportForm">
+                        <div class="mb-3">
+                            <label for="exportDateFrom" class="form-label">Tanggal Dari</label>
+                            <input type="date" class="form-control form-control-clean" id="exportDateFrom" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="exportDateTo" class="form-label">Tanggal Sampai</label>
+                            <input type="date" class="form-control form-control-clean" id="exportDateTo" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="exportMachine" class="form-label">Mesin</label>
+                            <select class="form-control form-control-clean" id="exportMachine">
+                                <option value="">Semua Mesin</option>
+                                <option value="SM2">SM2</option>
+                                <option value="SM3">SM3</option>
+                                <option value="SM4">SM4</option>
+                                <option value="SM5">SM5</option>
+                                <option value="SM6">SM6</option>
+                                <option value="VLF">VLF</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Batal
+                    </button>
+                    <button type="button" class="btn btn-export-csv" id="confirmExport">
+                        <i class="fas fa-file-export me-2"></i>Export
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    // Show Export Modal
+        function showExportModal() {
+    // Set default date range (current month)
+        const today = new Date();
+        const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            
+        document.getElementById('exportDateFrom').value = firstDayOfMonth.toISOString().split('T')[0];
+        document.getElementById('exportDateTo').value = today.toISOString().split('T')[0];
+            
+    // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('exportModal'));
+        modal.show();
+    }
+
+    // Handle Export
+        document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('confirmExport').addEventListener('click', function() {
+            const dateFrom = document.getElementById('exportDateFrom').value;
+            const dateTo = document.getElementById('exportDateTo').value;
+            const mesin_cetak = document.getElementById('exportMachine').value;
+
+            if (!dateFrom || !dateTo) {
+                showToast('Harap isi rentang tanggal', 'error');
+                return;
+            }
+    
+    // Toast notification function
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('liveToast');
+            const messageText = toast.querySelector('.message-text');
+            const toastBody = toast.querySelector('.toast-body');
+            
+            messageText.textContent = message;
+            
+    // Reset classes
+            toastBody.className = 'toast-body rounded';
+            
+    // Apply type-specific styling
+            switch(type) {
+                case 'success':
+                    toastBody.classList.add('bg-success', 'text-white');
+                    break;
+                case 'warning':
+                    toastBody.classList.add('bg-warning', 'text-dark');
+                    break;
+                case 'error':
+                    toastBody.classList.add('bg-danger', 'text-white');
+                    break;
+                default:
+                    toastBody.classList.add('bg-info', 'text-white');
+            }
+            
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+        }
+    
+    // Build query parameters
+        let queryParams = [];
+            queryParams.push(`date_from=${encodeURIComponent(dateFrom)}`);
+            queryParams.push(`date_to=${encodeURIComponent(dateTo)}`);
+            if (mesin_cetak) queryParams.push(`mesin_cetak=${encodeURIComponent(mesin_cetak)}`);
+
+                const queryString = queryParams.length > 0 ? '?' + queryParams.join('&') : '';
+
+    // Redirect to export endpoint
+        window.open(`/export-adjustment-press${queryString}`, '_blank');
+                
+    // Close modal
+        bootstrap.Modal.getInstance(document.getElementById('exportModal')).hide();
+                
+    // Show success notification
+        showToast('Export CSV berhasil dimulai, file akan segera didownload', 'success');
+        });
+    });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+    <script src="{{ url_for('static', filename='js/badge_system.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/data_adjustment.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
+    
+</body>
+</html>

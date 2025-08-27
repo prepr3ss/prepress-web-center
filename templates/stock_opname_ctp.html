@@ -1,0 +1,1080 @@
+                            <!-- Semua tombol modal-footer hanya di dalam <div class='modal-footer'> di modal, bukan di header atau luar modal -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prepress Impact</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Page Header dengan gradient orange seperti template CTP lainnya */
+        .page-header {
+            background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+            color: white;
+            padding: 2rem 0;
+            margin: -1rem -15px 2rem -15px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 20px rgba(255, 149, 0, 0.2);
+        }
+
+        /* Scrollbar styling dengan tema orange */
+        .table-responsive::-webkit-scrollbar {
+            height: 8px;
+        }
+        
+        .table-responsive::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+            border-radius: 4px;
+        }
+        
+        .table-responsive::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #ff6b00 0%, #ff4500 100%);
+        }
+
+        /* Input group styling */
+        .input-group .form-control {
+            border-right: none;
+        }
+        
+        .input-group .btn-outline-secondary {
+            border-left: none;
+            border-color: #e9ecef;
+            background: #f8f9fa;
+        }
+        
+        .input-group .btn-outline-secondary:hover {
+            background: #e9ecef;
+            border-color: #dee2e6;
+        }
+
+        .form-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+        
+        /* Filter section styling */
+        .filter-section {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+        
+        /* Table styling */
+        .table-responsive {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .stock-table {
+            margin-bottom: 0;
+        }
+        
+        .stock-table thead th {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: none;
+            font-weight: 600;
+            color: #495057;
+            padding: 1rem 0.75rem;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .stock-table tbody td {
+            vertical-align: middle;
+        }
+        
+        /* Form controls styling */
+        .form-select, .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-select:focus, .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .btn-export-csv {
+            background: linear-gradient(135deg, #06b406 0%, #008000 100%);
+            color: white;
+        }
+
+        .form-control-clean {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+        .form-control-clean:focus {
+            border-color: #ff9500;
+            box-shadow: 0 0 0 0.2rem rgba(255, 149, 0, 0.25);
+        }
+
+        /* Toast styling */
+        .toast {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .toast-body {
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        /* Loading Spinner */
+        .spinner-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .spinner-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Pagination styling dengan tema CTP orange */
+        .pagination .page-link {
+            border: 2px solid #e9ecef;
+            color: #6c757d;
+            border-radius: 8px;
+            margin: 0 2px;
+            padding: 0.5rem 0.75rem;
+            transition: all 0.3s ease;
+        }
+        
+        .pagination .page-link:hover {
+            border-color: #ff9500;
+            color: #ff9500;
+            background-color: rgba(255, 149, 0, 0.1);
+        }
+        
+        .pagination .page-item.active .page-link {
+            background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+            border-color: #ff9500;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="d-flex" id="wrapper">
+        {% include '_sidebar.html' %}
+        <div id="page-content-wrapper">
+            <div class="container-fluid">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div class="container-fluid">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 class="mb-1 text-white">Stock Opname CTP</h2>
+                                <p class="mb-0 opacity-75">Data penggunaan plate CTP berdasarkan jenis dan ukuran</p>
+                            </div>
+                            <div class="text-end">
+                                <button onclick="showExportModal()" class="btn btn-success me-2">
+                                    <i class="fas fa-file-excel me-1"></i> Export Data
+                                </button>
+                                <button onclick="showPrintModal()" class="btn btn-light">
+                                    <i class="fas fa-plus-circle me-1"></i> Bon Konsinyasi Plate
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Filter Controls -->
+                <div class="filter-section">
+                    <div class="row align-items-end g-3">
+                        <div class="col-md-2">
+                            <label for="filterYear" class="form-label">Filter Tahun</label>
+                            <select class="form-control form-control-clean" id="filterYear">
+                                <option value="">Pilih Tahun</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="filterMonth" class="form-label">Filter Bulan</label>
+                            <select class="form-control form-control-clean" id="filterMonth">
+                                <option value="">Semua Bulan</option>
+                                <option value="1">Januari</option>
+                                <option value="2">Februari</option>
+                                <option value="3">Maret</option>
+                                <option value="4">April</option>
+                                <option value="5">Mei</option>
+                                <option value="6">Juni</option>
+                                <option value="7">Juli</option>
+                                <option value="8">Agustus</option>
+                                <option value="9">September</option>
+                                <option value="10">Oktober</option>
+                                <option value="11">November</option>
+                                <option value="12">Desember</option>
+                            </select>
+                        </div>                        
+                        <div class="col-md-2">
+                            <label for="filterPlateType" class="form-label">Filter Jenis Plate</label>
+                            <select class="form-control form-control-clean" id="filterPlateType">
+                                <option value="">Semua Jenis Plate</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="searchInput" class="form-label">Pencarian</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control form-control-clean" id="searchInput" placeholder="Cari apapun...">
+                                <button class="btn btn-outline-secondary" type="button" id="clearSearch">Clear</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Table -->
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle stock-table" id="stockOpnameTable">
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>Tanggal</th>
+                                <th>No WO</th>
+                                <th>Mesin CTP</th>
+                                <th>Mesin Cetak</th>
+                                <th>Nama Item</th>
+                                <th>Qty OK</th>
+                                <th>Qty NG</th>
+                                <th>Total</th>
+                                <th>Keterangan Not Good</th>
+                                <th>Catatan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stockOpnameTableBody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <nav class="mt-3">
+                    <ul class="pagination justify-content-center" id="pagination"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="liveToast" class="toast border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-body rounded">
+                <span class="message-text"></span>
+                <button type="button" class="btn-close float-end" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Export Data -->
+    <div class="modal fade" id="exportModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-file-export me-2"></i>Export Stock Opname
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="exportForm">
+                        <div class="mb-3">
+                            <label for="exportDateFrom" class="form-label">Tanggal Dari</label>
+                            <input type="date" class="form-control form-control-clean" id="exportDateFrom" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="exportDateTo" class="form-label">Tanggal Sampai</label>
+                            <input type="date" class="form-control form-control-clean" id="exportDateTo" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="exportPlateType" class="form-label">Jenis Plate</label>
+                            <select class="form-select" id="exportPlateType">
+                                <option value="">Semua Jenis Plate</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Batal
+                    </button>
+                    <button type="button" class="btn btn-success" id="confirmExport">
+                        <i class="fas fa-file-excel me-2"></i>Export
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- Print Bon Manual Plate -->
+ <div class="modal fade" id="printModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus-circle me-2"></i>Bon Konsinyasi Plate
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="printForm">
+                    <!-- Menggunakan Flexbox untuk menyelaraskan item di satu baris, dan g-3 untuk gap antar kolom -->
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-6">
+                            <label for="printDate" class="form-label">Tanggal</label>
+                            <input type="date" class="form-control form-control-clean" id="printDate" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="printPlateType" class="form-label">Jenis Plate</label>
+                            <!-- Menggunakan input-group untuk menggabungkan select dan button -->
+                            <div class="input-group">
+                                <select class="form-select" id="printPlateType" required>
+                                    <option value="">Pilih Jenis Plate</option>
+                                    <option value="FUJI">FUJI</option>
+                                    <option value="SAPHIRA">SAPHIRA</option>
+                                </select>
+                                <button type="button" class="btn btn-primary" id="getPlateData">
+                                    <i class="fas fa-search"></i> <!-- Hanya ikon search -->
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="plateDataSection" style="display: none;">
+                        <div class="table-responsive mt-3 mb-3">
+                            <table class="table table-bordered" id="plateDataTable">
+                                <thead>
+                                    <tr>
+                                        <th>Item Code</th>
+                                        <th>Item Name</th>
+                                        <th style="width: 100px;">Jumlah</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="remarksSection" style="margin: 10px 0 20px 0; display: none;">
+                        <b>Remarks:</b> <span id="remarksText"></span>
+                    </div>
+                    <div id="bonWebSection" style="display: none;">
+                        <div class="d-flex justify-content-end mb-3">
+                            <button type="button" class="btn btn-warning" id="createBonAutoBtn" style="display:none;">
+                                <i class="fas fa-external-link-alt me-2"></i>Buat Bon Web
+                            </button>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3" id="requestNumberContainer">
+                                    <label for="requestNumber" class="form-label">No. Request Bon</label>
+                                    <div class="input-group" id="requestInputGroup">
+                                        <input type="text" class="form-control form-control-clean" id="requestNumber" required="">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3" id="bonPeriodContainer">
+                                    <label for="bonPeriod" class="form-label">Periode Bon</label>
+                                    <div class="input-group" id="bonPeriodInputGroup"> 
+                                        <input type="text" class="form-control form-control-clean" id="bonPeriod" placeholder="Contoh: AGUSTUS 2025" required="">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center mb-3">
+                            <button style="width: 60%;" class="btn btn-success" type="button" id="saveBonRequest" title="Simpan">
+                                <i class="fas fa-save" id="saveIcon"></i> Simpan
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" id="cancelFooterBtn" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Batal
+                </button>
+                <button type="button" class="btn btn-export-csv" id="confirmPrint" style="display: none;">
+                    <i class="fas fa-print me-2"></i><span id="printBtnText">Print</span>
+                </button>
+                <button type="button" class="btn btn-success" id="doneBtn" style="display:none;">
+                    <i class="fas fa-check me-2"></i>Selesai
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+    
+    <!-- Print Template (Hidden) -->
+    <div id="printTemplate" style="display: none;">
+        <style type="text/css" media="print">
+            @page {
+                size: A4;
+                margin: 1cm;
+            }
+            .print-header {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+            .print-header img {
+                max-width: 200px;
+                height: auto;
+            }
+            .print-title {
+                font-size: 18px;
+                font-weight: bold;
+                margin: 10px 0;
+            }
+            .print-info {
+                margin-bottom: 20px;
+            }
+            .print-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 20px;
+            }
+            .print-table th, .print-table td {
+                border: 1px solid black;
+                padding: 8px;
+                text-align: left;
+            }
+            .print-table th {
+                background-color: #f0f0f0;
+            }
+            .print-footer {
+                margin-top: 30px;
+            }
+            .signatures {
+                display: flex;
+                justify-content: space-between;
+                margin-top: 50px;
+            }
+            .signature-box {
+                text-align: center;
+                width: 200px;
+            }
+            .signature-line {
+                border-top: 1px solid black;
+                margin-top: 50px;
+            }
+            .page-break {
+                page-break-after: always;
+            }
+            @media screen {
+                #printTemplate {
+                    display: none;
+                }
+            }
+        </style>
+    </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// --- GLOBAL VARIABLES & UTILITY FUNCTIONS ---
+let globalRequestNumber = null;
+let requestSaved = false;
+let printDone = false;
+let globalBonPeriod = null;
+
+
+// Toast notification function
+function showToast(message, type = 'info') {
+    const toast = document.getElementById('liveToast');
+    const messageText = toast.querySelector('.message-text');
+    const toastBody = toast.querySelector('.toast-body');
+
+    messageText.textContent = message;
+    toastBody.className = 'toast-body rounded';
+
+    switch (type) {
+        case 'success':
+            toastBody.classList.add('bg-success', 'text-white');
+            break;
+        case 'warning':
+            toastBody.classList.add('bg-warning', 'text-dark');
+            break;
+        case 'error':
+            toastBody.classList.add('bg-danger', 'text-white');
+            break;
+        default:
+            toastBody.classList.add('bg-info', 'text-white');
+    }
+
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+}
+
+// Format date to Indonesian
+function formatDateIndo(date) {
+    if (!date) return '-';
+    const months = [
+        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    const d = new Date(date);
+    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+// Debounce function
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// --- INITIALIZATION ---
+document.addEventListener('DOMContentLoaded', function() {
+    loadFilterOptions();
+
+    // Add event listeners for filters
+    document.getElementById('filterPlateType').addEventListener('change', () => loadTableData());
+    document.getElementById('filterYear').addEventListener('change', () => loadTableData());
+    document.getElementById('filterMonth').addEventListener('change', () => loadTableData());
+    document.getElementById('searchInput').addEventListener('input', debounce(() => loadTableData(), 500));
+    document.getElementById('clearSearch').addEventListener('click', function() {
+        document.getElementById('searchInput').value = '';
+        loadTableData();
+    });
+
+    // Event listeners for modals and buttons
+    document.getElementById('confirmExport').addEventListener('click', handleExport);
+    document.getElementById('getPlateData').addEventListener('click', getAndDisplayPrintData);
+    document.getElementById('saveBonRequest').addEventListener('click', saveBonRequest);
+    document.getElementById('confirmPrint').addEventListener('click', handlePrint);
+    document.getElementById('doneBtn').addEventListener('click', closeAndResetPrintModal);
+    document.getElementById('printModal').addEventListener('hidden.bs.modal', closeAndResetPrintModal);
+
+    //AutoBon
+    // Tambahkan event listener untuk tombol Bon Web Otomatis
+    document.getElementById('createBonAutoBtn').addEventListener('click', function() {
+        const url = 'http://172.27.169.1/material_management/create_material_cons_request/add';
+        window.open(url, '_blank');
+        showToast('Anda akan diarahkan ke halaman Bon Web.', 'info');
+    });
+
+    // Initial data load
+    setTimeout(() => loadTableData(), 100);
+});
+
+// --- MAIN FUNCTIONS ---
+
+// Load filter options from server
+function loadFilterOptions() {
+    fetch('/get-plate-types')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(response => {
+            console.log('Plate types response:', response); // Debugging
+            const select = document.getElementById('filterPlateType');
+            const exportSelect = document.getElementById('exportPlateType');
+
+            // Reset selects
+            select.innerHTML = '<option value="">Semua Jenis Plate</option>';
+            if (exportSelect) {
+                exportSelect.innerHTML = '<option value="">Semua Jenis Plate</option>';
+            }
+
+            // Arahkan plateTypes ke array yang benar atau default ke array kosong
+            let plateTypes = [];
+            if (Array.isArray(response)) {
+                plateTypes = response;
+            } else if (response.data && Array.isArray(response.data)) {
+                plateTypes = response.data;
+            } else if (response.success && Array.isArray(response.plate_types)) {
+                plateTypes = response.plate_types;
+            }
+
+            // Lakukan iterasi HANYA JIKA plateTypes adalah array
+            if (Array.isArray(plateTypes)) {
+                plateTypes.forEach(type => {
+                    const optionHtml = `<option value="${type}">${type}</option>`;
+                    select.innerHTML += optionHtml;
+                    if (exportSelect) {
+                        exportSelect.innerHTML += optionHtml;
+                    }
+                });
+            } else {
+                console.error('Final plateTypes is not an array:', plateTypes);
+                throw new Error('Invalid data format received from server.');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading plate types:', error);
+            showToast('Gagal memuat jenis plate: ' + error.message, 'error');
+        });
+
+    const yearSelect = document.getElementById('filterYear');
+    const currentYear = new Date().getFullYear();
+    yearSelect.innerHTML = '<option value="">Semua Tahun</option>';
+    for (let year = currentYear; year >= currentYear - 5; year--) {
+        yearSelect.innerHTML += `<option value="${year}">${year}</option>`;
+    }
+
+    const monthSelect = document.getElementById('filterMonth');
+    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    monthSelect.innerHTML = '<option value="">Semua Bulan</option>';
+    months.forEach((month, index) => {
+        monthSelect.innerHTML += `<option value="${index + 1}">${month}</option>`;
+    });
+}
+
+// Load data for the main table
+function loadTableData(customParams) {
+    const plateType = document.getElementById('filterPlateType').value;
+    const year = document.getElementById('filterYear').value;
+    const month = document.getElementById('filterMonth').value;
+    const search = document.getElementById('searchInput').value;
+
+    let params = customParams || new URLSearchParams();
+    if (plateType) params.set('plate_type', plateType);
+    if (year) params.set('year', year);
+    if (month) params.set('month', month);
+    if (search) params.set('search', search);
+    // Pastikan parameter 'page' selalu ada, set default ke '1' jika belum ada
+    if (!params.has('page')) params.append('page', '1');
+
+    fetch(`/get-stock-opname-data?${params.toString()}`)
+        .then(response => response.json())
+        .then(response => {
+            const tbody = document.getElementById('stockOpnameTableBody');
+            tbody.innerHTML = '';
+
+            if (!response.success || !response.data || response.data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="11" class="text-center">Tidak ada data</td></tr>';
+                document.getElementById('pagination').innerHTML = '';
+                return;
+            }
+
+            // Pastikan objek pagination ada sebelum mengakses propertinya
+            const pagination = response.pagination || {}; 
+            // Gunakan nama properti yang sesuai dengan respons backend Anda: 'total' dan 'per_page'
+            const totalItems = pagination.total || 0; // total: total keseluruhan item
+            const itemsPerPage = pagination.per_page || 30; // per_page: item per halaman (default 30 dari backend)
+            const currentPage = pagination.page || 1; // page: halaman saat ini
+
+            if (response.pagination) {
+                updatePagination(response.pagination);
+            }
+
+            response.data.forEach((item, index) => {
+                // Hitung nomor urut terbalik:
+                // Total Keseluruhan Data - ( (Halaman Saat Ini - 1) * Jumlah Data Per Halaman ) - Indeks Data di Halaman Saat Ini
+                const reversedIndex = totalItems - ((currentPage - 1) * itemsPerPage) - index;
+                
+                const row = document.createElement('tr');
+                const total = (parseInt(item.num_plate_good) || 0) + (parseInt(item.num_plate_not_good) || 0);
+                row.innerHTML = `
+                    <td>${reversedIndex}</td>
+                    <td>${formatDateIndo(item.log_date)}</td>
+                    <td>${item.wo_number || '-'}</td>
+                    <td>${item.ctp_machine || '-'}</td>
+                    <td>${item.print_machine || '-'}</td>
+                    <td>${item.item_name || '-'}</td>
+                    <td class="text-end">${item.num_plate_good || 0}</td>
+                    <td class="text-end">${item.num_plate_not_good || 0}</td>
+                    <td class="text-end">${total}</td>
+                    <td>${item.not_good_reason || '-'}</td>
+                    <td>${item.note || '-'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading data:', error);
+            showToast('Gagal memuat data stock opname', 'error');
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Error: Gagal memuat data</td></tr>';
+        })
+        .finally(() => {
+            const spinner = document.getElementById('loadingSpinner');
+            if (spinner) spinner.remove();
+        });
+}
+
+// Update pagination links
+function updatePagination(pagination) {
+    const paginationElement = document.getElementById('pagination');
+    paginationElement.innerHTML = '';
+    if (pagination.pages <= 1) return;
+
+    const createButton = (page, text, disabled) => {
+        const li = document.createElement('li');
+        li.className = `page-item ${disabled ? 'disabled' : ''} ${page === pagination.page ? 'active' : ''}`;
+        li.innerHTML = `<button class="page-link" onclick="changePage(${page})" ${disabled ? 'disabled' : ''}>${text}</button>`;
+        return li;
+    };
+
+    paginationElement.appendChild(createButton(pagination.page - 1, '<i class="fas fa-chevron-left"></i>', pagination.page === 1));
+
+    let startPage = Math.max(1, pagination.page - 2);
+    let endPage = Math.min(pagination.pages, pagination.page + 2);
+
+    if (startPage > 1) {
+        paginationElement.appendChild(createButton(1, '1', false));
+        if (startPage > 2) {
+            const ellipsis = document.createElement('li');
+            ellipsis.className = 'page-item disabled';
+            ellipsis.innerHTML = '<span class="page-link">...</span>';
+            paginationElement.appendChild(ellipsis);
+        }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        paginationElement.appendChild(createButton(i, i, false));
+    }
+
+    if (endPage < pagination.pages) {
+        if (endPage < pagination.pages - 1) {
+            const ellipsis = document.createElement('li');
+            ellipsis.className = 'page-item disabled';
+            ellipsis.innerHTML = '<span class="page-link">...</span>';
+            paginationElement.appendChild(ellipsis);
+        }
+        paginationElement.appendChild(createButton(pagination.pages, pagination.pages, false));
+    }
+
+    paginationElement.appendChild(createButton(pagination.page + 1, '<i class="fas fa-chevron-right"></i>', pagination.page === pagination.pages));
+}
+
+// Change page for the main table
+function changePage(page) {
+    const params = new URLSearchParams(window.location.search);
+    params.set('page', page);
+    loadTableData(params);
+}
+
+// Show Export modal
+function showExportModal() {
+    const today = new Date();
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    document.getElementById('exportDateFrom').value = firstDayOfMonth.toISOString().split('T')[0];
+    document.getElementById('exportDateTo').value = today.toISOString().split('T')[0];
+    const modal = new bootstrap.Modal(document.getElementById('exportModal'));
+    modal.show();
+}
+
+// Handle data export
+function handleExport() {
+    const dateFrom = document.getElementById('exportDateFrom').value;
+    const dateTo = document.getElementById('exportDateTo').value;
+    const jenis_plate = document.getElementById('exportPlateType').value;
+
+    if (!dateFrom || !dateTo) {
+        showToast('Harap isi rentang tanggal', 'error');
+        return;
+    }
+
+    let queryParams = [];
+    queryParams.push(`date_from=${encodeURIComponent(dateFrom)}`);
+    queryParams.push(`date_to=${encodeURIComponent(dateTo)}`);
+    if (jenis_plate) queryParams.push(`jenis_plate=${encodeURIComponent(jenis_plate)}`);
+    const queryString = queryParams.length > 0 ? '?' + queryParams.join('&') : '';
+
+    window.open(`/export-stock-opname${queryString}`, '_blank');
+    bootstrap.Modal.getInstance(document.getElementById('exportModal')).hide();
+    showToast('Export CSV berhasil dimulai, file akan segera didownload', 'success');
+}
+
+// Show Print modal and set default date
+function showPrintModal() {
+    document.getElementById('printDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('plateDataSection').style.display = 'none';
+    document.getElementById('bonWebSection').style.display = 'none';
+    document.getElementById('confirmPrint').style.display = 'none';
+    document.getElementById('doneBtn').style.display = 'none';
+    document.getElementById('cancelFooterBtn').style.display = '';
+
+    const modal = new bootstrap.Modal(document.getElementById('printModal'));
+    modal.show();
+}
+
+// Get and display plate usage and bon web status
+function getAndDisplayPrintData() {
+    const date = document.getElementById('printDate').value;
+    const plateType = document.getElementById('printPlateType').value;
+
+    if (!date || !plateType) {
+        showToast('Harap isi tanggal dan jenis plate', 'error');
+        return;
+    }
+
+    // Reset UI sections and remarks
+    document.getElementById('bonWebSection').style.display = 'none';
+    document.getElementById('plateDataSection').style.display = 'none';
+    document.getElementById('remarksSection').style.display = 'none'; 
+    const bonWebInfo = document.querySelector('#bonWebSection .alert');
+    if (bonWebInfo) bonWebInfo.remove();
+    
+    // --- Solusi: Reset Tampilan Tombol Footer di sini ---
+    document.getElementById('confirmPrint').style.display = 'none';
+    document.getElementById('doneBtn').style.display = 'none';
+    document.getElementById('saveBonRequest').style.display = 'none';
+    // -----------------------------------------------------
+
+    fetch(`/get-all-plate-data?date=${date}&plate_type=${plateType}`)
+        .then(response => {
+            if (!response.ok) throw new Error('Terjadi kesalahan pada server. Cek log server.');
+            return response.json();
+        })
+        .then(data => {
+            if (!data.success) {
+                showToast(data.message, 'error');
+                return;
+            }
+
+            const tbody = document.getElementById('plateDataTable').querySelector('tbody');
+            tbody.innerHTML = '';
+            const bonWebSection = document.getElementById('bonWebSection');
+            const plateDataSection = document.getElementById('plateDataSection');
+            const requestNumberInput = document.getElementById('requestNumber');
+            const bonPeriodInput = document.getElementById('bonPeriod'); // Dapatkan elemen Periode Bon
+            const saveBtn = document.getElementById('saveBonRequest');
+            const confirmPrintBtn = document.getElementById('confirmPrint');
+            const inputGroup = document.getElementById('requestInputGroup');
+            const requestNumberContainer = document.getElementById('requestNumberContainer'); 
+            const bonPeriodContainer = document.getElementById('bonPeriodContainer'); // Dapatkan container Periode Bon
+            const createBonAutoBtn = document.getElementById('createBonAutoBtn');
+            const remarksSection = document.getElementById('remarksSection');
+            
+            const existingCheck = inputGroup.querySelector('.input-group-text');
+            if (existingCheck) existingCheck.remove();
+
+            createBonAutoBtn.style.display = 'none';
+            
+            if (data.plate_usage && data.plate_usage.length > 0) {
+                plateDataSection.style.display = 'block';
+                data.plate_usage.forEach(item => {
+                    const row = tbody.insertRow();
+                    row.insertCell(0).textContent = item.item_code;
+                    row.insertCell(1).textContent = item.item_name;
+                    row.insertCell(2).textContent = item.jumlah;
+                });
+                
+                // --- Perbarui teks remarks dengan periode bon
+                const remarksText = document.getElementById('remarksText');
+                remarksText.textContent = `PEMAKAIAN PLATE ${plateType} TANGGAL ${date}${data.bon_web.bon_periode ? ` (PERIODE ${data.bon_web.bon_periode})` : ''}`;
+                remarksSection.style.display = 'block';
+
+                bonWebSection.style.display = 'block';
+                
+                if (data.bon_web.exists) {
+                    // Bon web sudah ada. Sembunyikan field input dan tampilkan info.
+                    requestNumberContainer.style.display = 'none';
+                    bonPeriodContainer.style.display = 'none'; // Sembunyikan juga periode bon
+
+                    const info = document.createElement('div');
+                    info.className = 'alert alert-warning mb-3';
+                    info.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>Data ini sudah di-Bon Web sebelumnya.<br><strong>No. Request:</strong> ${data.bon_web.request_number}`;
+                    bonWebSection.insertBefore(info, bonWebSection.firstChild);
+
+                    globalRequestNumber = data.bon_web.request_number;
+                    globalBonNumber = data.bon_web.bon_number; // Pastikan ini juga diset dari backend jika ada
+                    globalBonPeriod = data.bon_web.bon_periode; // Set periode bon dari backend
+
+                    confirmPrintBtn.style.display = 'inline-block';
+                    showToast('Nomor request bon web ditemukan.', 'success');
+                } else {
+                    // Bon web belum ada. Tampilkan field input agar bisa diisi.
+                    requestNumberContainer.style.display = 'block';
+                    bonPeriodContainer.style.display = 'block'; // Tampilkan periode bon
+                    requestNumberInput.value = '';
+                    bonPeriodInput.value = ''; // Kosongkan nilai periode bon
+                    requestNumberInput.readOnly = false;
+                    bonPeriodInput.readOnly = false; // Pastikan bisa diisi
+                    saveBtn.style.display = 'inline-block';
+                    confirmPrintBtn.style.display = 'none';
+                    
+                    createBonAutoBtn.style.display = 'inline-block';
+                    
+                    showToast('Silakan melakukan bon web.', 'info');
+                }
+            } else {
+                plateDataSection.style.display = 'none';
+                bonWebSection.style.display = 'none';
+                remarksSection.style.display = 'none';
+                document.getElementById('confirmPrint').style.display = 'none';
+                document.getElementById('saveBonRequest').style.display = 'none';
+                document.getElementById('createBonAutoBtn').style.display = 'none'; // Tambahan
+                // Pastikan juga kontainer field input nomor request dan periode bon tersembunyi
+                document.getElementById('requestNumberContainer').style.display = 'none';
+                document.getElementById('bonPeriodContainer').style.display = 'none';
+                showToast('Tidak ada data ditemukan.', 'warning');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Gagal memuat data: ' + error.message, 'error');
+            document.getElementById('plateDataSection').style.display = 'none';
+            document.getElementById('bonWebSection').style.display = 'none';
+            document.getElementById('remarksSection').style.display = 'none';
+            document.getElementById('confirmPrint').style.display = 'none';
+            document.getElementById('saveBonRequest').style.display = 'none';
+            document.getElementById('createBonAutoBtn').style.display = 'none'; // Tambahan
+            document.getElementById('requestNumberContainer').style.display = 'none';
+            document.getElementById('bonPeriodContainer').style.display = 'none';
+        });
+}
+
+// Handle saving the bon request number
+function saveBonRequest() {
+    const requestNumber = document.getElementById('requestNumber').value.trim();
+    const bonPeriod = document.getElementById('bonPeriod').value.trim();
+
+    if (!requestNumber || !bonPeriod) {
+        showToast('Harap isi Nomor Request Bon dan Periode Bon', 'error');
+        return;
+    }
+    const date = document.getElementById('printDate').value;
+    const plateType = document.getElementById('printPlateType').value;
+
+    const saveBtn = document.getElementById('saveBonRequest');
+    const saveIcon = saveBtn.querySelector('i');
+    saveBtn.disabled = true;
+    saveIcon.classList.replace('fa-save', 'fa-spinner');
+    saveIcon.classList.add('fa-spin');
+
+    fetch('/save-bon-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            date: date,
+            plate_type: plateType,
+            request_number: requestNumber,
+            bon_periode: bonPeriod
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(errorData => {
+                throw new Error(errorData.message || 'Terjadi kesalahan saat menyimpan data.');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            showToast('Nomor request berhasil disimpan', 'success');
+            requestSaved = true;
+            
+            globalRequestNumber = requestNumber;
+            globalBonNumber = data.bon_number;
+            globalBonPeriod = bonPeriod;
+            
+            document.getElementById('requestNumber').readOnly = true;
+            document.getElementById('bonPeriod').readOnly = true;
+            document.getElementById('saveBonRequest').style.display = 'none';
+            document.getElementById('confirmPrint').style.display = 'inline-block';
+            
+            // Dapatkan kedua input-group
+            const requestInputGroup = document.getElementById('requestInputGroup');
+            const bonPeriodInputGroup = document.getElementById('bonPeriodInputGroup');
+            
+            // Buat ikon centang
+            const checkIcon = document.createElement('span');
+            checkIcon.className = 'input-group-text bg-white border-0';
+            checkIcon.innerHTML = '<i class="fas fa-check" style="color:#28a745;font-size:1.2em;"></i>';
+
+            // Tambahkan ikon ke kedua input-group
+            requestInputGroup.appendChild(checkIcon.cloneNode(true));
+            bonPeriodInputGroup.appendChild(checkIcon.cloneNode(true));
+
+        } else {
+            showToast(data.message || 'Gagal menyimpan nomor request', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast(error.message || 'Terjadi kesalahan saat menyimpan data', 'error');
+    })
+    .finally(() => {
+        saveBtn.disabled = false;
+        saveIcon.classList.remove('fa-spin');
+        saveIcon.classList.replace('fa-spinner', 'fa-save');
+    });
+}
+
+// Handle print action
+function handlePrint() {
+    const date = document.getElementById('printDate').value;
+    const plateType = document.getElementById('printPlateType').value;
+
+    // Gunakan variabel global, yang sekarang sudah diperbarui
+    if (globalRequestNumber) {
+        // Menggunakan satu rute dengan semua parameter, ini adalah pendekatan terbaik
+        window.open(`/print-bon?date=${date}&plate_type=${plateType}&request_number=${globalRequestNumber}`, '_blank');
+    } else {
+        showToast('Nomor request bon tidak valid. Silakan isi dan simpan terlebih dahulu.', 'error');
+    }
+}
+
+// Reset and close the print modal
+function closeAndResetPrintModal() {
+    requestSaved = false;
+    printDone = false;
+    
+    document.getElementById('bonWebSection').style.display = 'none';
+    document.getElementById('plateDataSection').style.display = 'none';
+    document.getElementById('remarksSection').style.display = 'none';
+    
+    document.getElementById('remarksText').textContent = '';
+    
+    document.getElementById('printForm').reset();
+    document.getElementById('requestNumber').readOnly = false;
+    document.getElementById('bonPeriod').readOnly = false;
+    document.getElementById('confirmPrint').style.display = 'none';
+    document.getElementById('saveBonRequest').style.display = 'inline-block';
+    
+    document.getElementById('requestNumberContainer').style.display = 'block';
+    document.getElementById('bonPeriodContainer').style.display = 'block';
+    
+    // Hapus checklist pada kedua input-group
+    const requestInputGroup = document.getElementById('requestInputGroup');
+    const bonPeriodInputGroup = document.getElementById('bonPeriodInputGroup');
+
+    const existingCheckRequest = requestInputGroup.querySelector('.input-group-text');
+    if (existingCheckRequest) existingCheckRequest.remove();
+    
+    const existingCheckPeriod = bonPeriodInputGroup.querySelector('.input-group-text');
+    if (existingCheckPeriod) existingCheckPeriod.remove();
+    
+    const bonWebInfo = document.querySelector('#bonWebSection .alert');
+    if (bonWebInfo) bonWebInfo.remove();
+}
+</script>
+<script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!-- Contoh Penggunaan Unified Badge System -->
+
+<!-- 1. Badge dengan data-status (otomatis) -->
+<span class="badge status-badge fs-6" data-status="menunggu_adjustment">
+    Menunggu Adjustment
+</span>
+
+<!-- 2. Badge dengan label otomatis -->
+<span class="badge status-badge" data-status="proses_ctp" data-auto-label="true">
+    <!-- Text akan diupdate otomatis oleh sistem -->
+</span>
+
+<!-- 3. Badge dengan JavaScript -->
+<script>
+// Membuat badge secara programmatic
+const badge = window.BadgeSystem.createBadge('selesai', 'md');
+document.body.appendChild(badge);
+
+// Mendapatkan class badge untuk status
+const badgeClass = window.BadgeSystem.getBadgeClass('proses_plate');
+console.log(badgeClass); // 'badge-aktif'
+
+// Mendapatkan warna bootstrap untuk compatibility
+const color = window.BadgeSystem.getBadgeColor('antar_plate');
+console.log(color); // 'info'
+</script>
+
+<!-- Status yang didukung:
+- menunggu_adjustment → badge-menunggu (orange gradient)
+- proses_adjustment → badge-proses (purple gradient)  
+- proses_ctp → badge-aktif (blue gradient)
+- proses_plate → badge-aktif (blue gradient)
+- selesai_plate → badge-aktif (blue gradient)
+- antar_plate → badge-antar (purple gradient)
+- selesai → badge-selesai (green gradient)
+-->

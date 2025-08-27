@@ -1,0 +1,1107 @@
+/* static/css/style.css */
+
+/* --- Variabel Warna Kustom (Nuansa Ringan, Modern, Bersih) --- */
+:root {
+    /* Warna Primer: #0d6efd (Biru terang standar Bootstrap) */
+    --primary-color: #0d6efd;
+    --primary-darker: #0b5ed7; /* Sedikit lebih gelap untuk hover/active */
+
+    /* Warna Sekunder / Netral (Ringan dan Bersih) */
+    --light-bg: #ffffff; /* Latar belakang putih bersih */
+    --lighter-bg: #f8f9fa; /* Abu-abu sangat terang untuk area konten/strip tabel */
+    --light-border: #dee2e6; /* Abu-abu terang untuk border/pemisah */
+    --dark-text: #343a40; /* Teks gelap standar */
+    --medium-text: #6c757d; /* Teks abu-abu sedang untuk sekunder */
+
+    /* Sidebar - Sekarang Terang! */
+    --sidebar-bg: var(--light-bg); /* Latar belakang sidebar putih */
+    --sidebar-text: var(--dark-text); /* Teks sidebar gelap */
+    --sidebar-hover-bg: var(--lighter-bg); /* Hover di sidebar abu-abu sangat terang */
+    --sidebar-active-bg: var(--primary-color); /* Item aktif sidebar biru primer */
+    --sidebar-active-text: var(--light-bg); /* Teks item aktif putih */
+
+    /* Konten Umum */
+    --content-bg: var(--lighter-bg); /* Latar belakang area konten abu-abu sangat terang */
+    --header-text-color: var(--dark-text); /* Teks header halaman gelap */
+
+    /* Tabel */
+    --table-header-bg: var(--primary-color); /* Header tabel biru primer */
+    --table-header-text: var(--light-bg); /* Teks header tabel putih */
+    --table-striped-odd-bg: var(--lighter-bg); /* Baris ganjil abu-abu sangat terang */
+    --table-striped-even-bg: var(--light-bg); /* Baris genap putih */
+    --table-hover-bg: rgba(13, 110, 253, 0.1); /* Biru sangat muda transparan saat hover */
+    --table-border-color: var(--light-border); /* Border tabel abu-abu terang */
+
+    /* Warna Kontekstual (Standar Bootstrap) */
+    --success-color: #198754; /* Hijau */
+    --danger-color: #dc3545; /* Merah */
+    --warning-color: #ffc107; /* Kuning/Oranye */
+    --info-color: #0dcaf0; /* Cyan/Biru Info (agak berbeda dari primer) */
+}
+
+/* Unified Badge Status System - Global CSS */
+.status-badge {
+    padding: 0.4rem 1rem;
+    border-radius: 25px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+}
+
+/* Status-specific badge colors - Simplified Workflow */
+.badge-menunggu {
+    background: linear-gradient(135deg, #ff9a56 0%, #ff6b35 100%) !important;
+    color: white !important;
+}
+
+.badge-proses {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+}
+
+.badge-menunggu-plate {
+    background: linear-gradient(135deg, #ff9a56 0%, #ff6b35 100%) !important;
+    color: white !important;
+}
+
+.badge-proses-plate {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+}
+
+.badge-antar {
+    background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%) !important;
+    color: white !important;
+}
+
+.badge-selesai {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+    color: white !important;
+}
+
+/* Badge hover effects */
+.status-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Badge size variants */
+.status-badge.fs-7 {
+    font-size: 0.65rem !important;
+    padding: 0.3rem 0.8rem;
+}
+
+.status-badge.fs-5 {
+    font-size: 0.85rem !important;
+    padding: 0.5rem 1.3rem;
+}
+
+/* Enhanced Sidebar Header */
+.sidebar-heading {
+    background: linear-gradient(135deg, var(--lighter-bg) 0%, var(--light-bg) 100%);
+    border-bottom: 2px solid var(--light-border);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.sidebar-heading .fw-bold {
+    font-size: 1.1rem;
+    letter-spacing: 0.5px;
+}
+
+.header-plate-good {
+        background-color: var(--success-color);
+}
+   
+.header-plate-not-good {
+        background-color: var(--danger-color);
+}
+
+
+/* --- Layout Base (untuk Wrapper, Sidebar, dan Page Content) --- */
+body {
+    overflow-x: hidden;
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+#wrapper {
+    display: flex;
+    width: 100%;
+    position: relative;
+    overflow-x: hidden;
+}
+
+#sidebar-wrapper {
+    min-height: 100vh;
+    max-height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin-left: -16rem;
+    transition: margin .25s ease-out;
+    width: 16rem;
+    min-width: 16rem;
+    max-width: 16rem;
+    flex-shrink: 0;
+    background-color: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+    border-right: 1px solid var(--light-border);
+    scroll-behavior: smooth;
+    display: flex;
+    flex-direction: column;
+}
+
+#sidebar-wrapper .sidebar-heading {
+    padding: 0.875rem 1.25rem;
+    font-size: 1.3rem;
+    font-weight: bold;
+    border-bottom: 1px solid var(--light-border); /* Border bawah lebih terang */
+    color: var(--dark-text); /* Teks heading gelap */
+}
+
+#sidebar-wrapper .list-group {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+/* Mencegah body scroll saat sidebar overflow */
+body.sidebar-scrolling {
+    overflow: hidden;
+}
+
+#sidebar-wrapper .list-group-item {
+    background-color: var(--sidebar-bg); /* Menggunakan variabel baru */
+    color: var(--sidebar-text); /* Menggunakan variabel baru */
+    border: none;
+    padding: 0.75rem 1.25rem;
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+#sidebar-wrapper .list-group-item:hover {
+    background-color: var(--sidebar-hover-bg); /* Menggunakan variabel baru */
+    color: var(--sidebar-text); /* Teks tetap gelap saat hover */
+}
+
+#sidebar-wrapper .list-group-item.active {
+    background-color: var(--sidebar-active-bg); /* Menggunakan variabel baru */
+    color: var(--sidebar-active-text); /* Menggunakan variabel baru */
+    font-weight: bold;
+    border-left: 5px solid var(--primary-darker); /* Indikator aktif biru primer */
+    padding-left: calc(1.25rem - 5px);
+}
+
+/* Pastikan ini ada di file CSS Anda */
+.ctp-submenu-parent .fa-chevron-right {
+    transition: transform 0.3s ease-in-out; /* Untuk animasi rotasi yang mulus */
+}
+
+.ctp-submenu-parent.collapsed .fa-chevron-right {
+    transform: rotate(0deg); /* Panah ke kanan saat collapsed (default) */
+}
+
+.ctp-submenu-parent:not(.collapsed) .fa-chevron-right {
+    transform: rotate(90deg); /* Panah ke bawah saat TIDAK collapsed (dibuka) */
+}
+
+/* Pastikan ini ada di file CSS Anda */
+.press-submenu-parent .fa-chevron-right {
+    transition: transform 0.3s ease-in-out; /* Untuk animasi rotasi yang mulus */
+}
+
+.press-submenu-parent.collapsed .fa-chevron-right {
+    transform: rotate(0deg); /* Panah ke kanan saat collapsed (default) */
+}
+
+.press-submenu-parent:not(.collapsed) .fa-chevron-right {
+    transform: rotate(90deg); /* Panah ke bawah saat TIDAK collapsed (dibuka) */
+}
+
+/* Pastikan ini ada di file CSS Anda */
+.mounting-submenu-parent .fa-chevron-right {
+    transition: transform 0.3s ease-in-out; /* Untuk animasi rotasi yang mulus */
+}
+
+.mounting-submenu-parent.collapsed .fa-chevron-right {
+    transform: rotate(0deg); /* Panah ke kanan saat collapsed (default) */
+}
+
+.mounting-submenu-parent:not(.collapsed) .fa-chevron-right {
+    transform: rotate(90deg); /* Panah ke bawah saat TIDAK collapsed (dibuka) */
+}
+
+/* Pastikan ini ada di file CSS Anda */
+.admin-submenu-parent .fa-chevron-right {
+    transition: transform 0.3s ease-in-out; /* Untuk animasi rotasi yang mulus */
+}
+
+.admin-submenu-parent.collapsed .fa-chevron-right {
+    transform: rotate(0deg); /* Panah ke kanan saat collapsed (default) */
+}
+
+.admin-submenu-parent:not(.collapsed) .fa-chevron-right {
+    transform: rotate(90deg); /* Panah ke bawah saat TIDAK collapsed (dibuka) */
+}
+
+/* Pastikan ini ada di file CSS Anda */
+.settings-submenu-parent .fa-chevron-right {
+    transition: transform 0.3s ease-in-out; /* Untuk animasi rotasi yang mulus */
+}
+
+.settings-submenu-parent.collapsed .fa-chevron-right {
+    transform: rotate(0deg); /* Panah ke kanan saat collapsed (default) */
+}
+
+.settings-submenu-parent:not(.collapsed) .fa-chevron-right {
+    transform: rotate(90deg); /* Panah ke bawah saat TIDAK collapsed (dibuka) */
+}
+
+/* Smooth transition untuk collapse/expand submenu */
+.collapse {
+    transition: height 0.35s ease;
+}
+
+.collapsing {
+    transition: height 0.35s ease;
+}
+
+#page-content-wrapper {
+    min-width: 100%;
+    width: 100%;
+    flex-grow: 1;
+    padding: 0;
+    background-color: var(--content-bg);
+    transition: all .25s ease-out;
+}
+
+/* Removed toggle functionality - sidebar is now always visible
+#wrapper.toggled #sidebar-wrapper {
+    margin-left: 0;
+}
+
+#wrapper.toggled #page-content-wrapper {
+    min-width: calc(100% - 16rem);
+}
+*/
+
+@media (min-width: 768px) {
+    #sidebar-wrapper {
+        margin-left: 0;
+    }
+
+    #page-content-wrapper {
+        min-width: calc(100% - 16rem);
+        width: calc(100% - 16rem);
+    }
+
+    /* Removed mobile toggle functionality - sidebar always visible
+    #wrapper.toggled #sidebar-wrapper {
+        margin-left: -16rem;
+    }
+
+    #wrapper.toggled #page-content-wrapper {
+        min-width: 100%;
+        width: 100%;
+    }
+    */
+}
+
+#page-content-wrapper .container-fluid {
+    padding: 1.5rem;
+}
+
+/* --- General Content Styling --- */
+h2 {
+    color: var(--header-text-color);
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+}
+
+/* --- Styling Tabel --- */
+.table-responsive {
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.05); /* Bayangan lebih ringan */
+    border: 1px solid var(--table-border-color); /* Tambah border pada wrapper */
+}
+
+#adjustmentDataTable {
+    table-layout: auto !important;
+    width: auto !important;
+}
+#adjustmentDataTable th,
+#adjustmentDataTable td {
+    white-space: nowrap;
+    font-size: 0.95rem;
+    vertical-align: middle;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#bonDataTable {
+    table-layout: auto !important;
+    width: auto !important;
+}
+#bonDataTable th,
+#bonDataTable td {
+    white-space: nowrap;
+    font-size: 0.95rem;
+    vertical-align: middle;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#usersTable {
+    table-layout: auto !important;
+    width: auto !important;
+}
+#usersTable th,
+#usersTable td {
+    white-space: nowrap;
+    font-size: 0.95rem;
+    vertical-align: middle;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#divisionsTable {
+    table-layout: auto !important;
+    width: auto !important;
+}
+#divisionsTable th,
+#divisionsTable td {
+    white-space: nowrap;
+    font-size: 0.95rem;
+    vertical-align: middle;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#stockOpnameTable {
+    table-layout: auto !important;
+    width: auto !important;
+}
+#stockOpnameTable th,
+#stockOpnameTable td {
+    white-space: nowrap;
+    font-size: 0.95rem;
+    vertical-align: middle;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#chemicalItemsTable {
+    table-layout: auto !important;
+    width: auto !important;
+}
+#chemicalItemsTable th,
+#chemicalItemsTable td {
+    white-space: nowrap;
+    font-size: 0.95rem;
+    vertical-align: middle;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#chemicalDataTable {
+    table-layout: auto !important;
+    width: auto !important;
+}
+#chemicalDataTable th,
+#chemicalDataTable td {
+    white-space: nowrap;
+    font-size: 0.95rem;
+    vertical-align: middle;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#kartuStockPlateFujiTable {
+    table-layout: auto !important;
+    width: auto !important;
+}
+#kartuStockPlateFujiTable th,
+#kartuStockPlateFujiTable td {
+    white-space: nowrap;
+    font-size: 0.95rem;
+    vertical-align: middle;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#kartuStockChemicalFujiTable {
+    table-layout: auto !important;
+    width: auto !important;
+}
+#kartuStockChemicalFujiTable th,
+#kartuStockChemicalFujiTable td {
+    white-space: nowrap;
+    font-size: 0.95rem;
+    vertical-align: middle;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#kartuStockPlateSaphiraTable {
+    table-layout: auto !important;
+    width: auto !important;
+}
+#kartuStockPlateSaphiraTable th,
+#kartuStockPlateSaphiraTable td {
+    white-space: nowrap;
+    font-size: 0.95rem;
+    vertical-align: middle;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#kartuStockChemicalSaphiraTable {
+    table-layout: auto !important;
+    width: auto !important;
+}
+#kartuStockChemicalSaphiraTable th,
+#kartuStockChemicalSaphiraTable td {
+    white-space: nowrap;
+    font-size: 0.95rem;
+    vertical-align: middle;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+}
+
+#fujiPlateTable {
+    table-layout: auto !important;
+    width: auto !important;
+}
+#fujiPlateTable th,
+#fujiPlateTable td {
+    white-space: nowrap;
+    font-size: 0.95rem;
+    vertical-align: middle;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+}
+
+#saphiraPlateTable {
+    table-layout: auto !important;
+    width: auto !important;
+}
+#saphiraPlateTable th,
+#saphiraPlateTable td {
+    white-space: nowrap;
+    font-size: 0.95rem;
+    vertical-align: middle;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+}
+
+#fujiChemicalTable {
+    table-layout: auto !important;
+    width: auto !important;
+}
+#fujiChemicalTable th,
+#fujiChemicalTable td {
+    white-space: nowrap;
+    font-size: 0.95rem;
+    vertical-align: middle;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+}
+
+#saphiraChemicalTable {
+    table-layout: auto !important;
+    width: auto !important;
+}
+#saphiraChemicalTable th,
+#saphiraChemicalTable td {
+    white-space: nowrap;
+    font-size: 0.95rem;
+    vertical-align: middle;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+}
+
+#fujiPlateIncomingTable {
+    table-layout: auto !important;
+    width: auto !important;
+}
+#fujiPlateIncomingTable th,
+#fujiPlateIncomingTable td {
+    white-space: nowrap;
+    font-size: 0.95rem;
+    vertical-align: middle;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+}
+
+#saphiraPlateIncomingTable {
+    table-layout: auto !important;
+    width: auto !important;
+}
+#saphiraPlateIncomingTable th,
+#saphiraPlateIncomingTable td {
+    white-space: nowrap;
+    font-size: 0.95rem;
+    vertical-align: middle;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+}
+
+#fujiChemicalIncomingTable {
+    table-layout: auto !important;
+    width: auto !important;
+}
+#fujiChemicalIncomingTable th,
+#fujiChemicalIncomingTable td {
+    white-space: nowrap;
+    font-size: 0.95rem;
+    vertical-align: middle;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+}
+
+#saphiraChemicalIncomingTable {
+    table-layout: auto !important;
+    width: auto !important;
+}
+#saphiraChemicalIncomingTable th,
+#saphiraChemicalIncomingTable td {
+    white-space: nowrap;
+    font-size: 0.95rem;
+    vertical-align: middle;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+}
+
+/* Tambahkan di bagian mana saja, misalnya di bawah bagian "Styling Tabel" */
+
+/* Memastikan elemen induk tabel tidak mencegah scrolling */
+#page-content-wrapper {
+    overflow-x: hidden; /* Biarkan ini, karena body juga hidden. Ini untuk mencegah scroll horizontal ganda pada wrapper utama. */
+}
+
+.container-fluid {
+    /* Atur padding agar tidak "memakan" ruang scroll bar */
+    padding-right: 1.5rem; /* Pastikan ada ruang untuk scroll bar vertikal jika ada */
+    padding-left: 1.5rem;
+}
+
+/* Pastikan div.table-responsive itu sendiri yang bertanggung jawab untuk scroll */
+.table-responsive {
+    overflow-x: auto !important; /* Paksa agar overflow-x menjadi auto */
+    overflow-y: hidden; /* Hanya scroll horizontal */
+    /* Opsional: Jika ingin scroll bar muncul walaupun tabel belum melebihi lebar */
+    /* padding-bottom: 1px; agar scroll bar muncul tanpa mengganggu tata letak */
+}
+
+/* Memastikan tabel memiliki lebar yang cukup untuk memicu scroll */
+#kpiDataTable {
+    min-width: 100%; /* Pertahankan ini untuk pengujian, sesuaikan jika sudah berhasil */
+    width: max-content; /* Ini akan membuat tabel selebar kontennya */
+    /* Atau bisa juga: width: 100%; jika ingin tabel mengisi lebar container-nya,
+       tetapi min-width akan memaksa scroll jika melebihi */
+}
+
+#adjustmentDataTable {
+    min-width: 100%; /* Pertahankan ini untuk pengujian, sesuaikan jika sudah berhasil */
+    width: max-content; /* Ini akan membuat tabel selebar kontennya */
+    /* Atau bisa juga: width: 100%; jika ingin tabel mengisi lebar container-nya,
+       tetapi min-width akan memaksa scroll jika melebihi */
+}
+
+#bonDataTable {
+    min-width: 100%; /* Pertahankan ini untuk pengujian, sesuaikan jika sudah berhasil */
+    width: max-content; /* Ini akan membuat tabel selebar kontennya */
+    /* Atau bisa juga: width: 100%; jika ingin tabel mengisi lebar container-nya,
+       tetapi min-width akan memaksa scroll jika melebihi */
+}
+
+#usersTable {
+    min-width: 100%; /* Pertahankan ini untuk pengujian, sesuaikan jika sudah berhasil */
+    width: max-content; /* Ini akan membuat tabel selebar kontennya */
+    /* Atau bisa juga: width: 100%; jika ingin tabel mengisi lebar container-nya,
+       tetapi min-width akan memaksa scroll jika melebihi */
+}
+
+#divisionsTable {
+    min-width: 100%; /* Pertahankan ini untuk pengujian, sesuaikan jika sudah berhasil */
+    width: max-content; /* Ini akan membuat tabel selebar kontennya */
+    /* Atau bisa juga: width: 100%; jika ingin tabel mengisi lebar container-nya,
+       tetapi min-width akan memaksa scroll jika melebihi */
+}
+
+#stockOpnameTable {
+    min-width: 100%; /* Pertahankan ini untuk pengujian, sesuaikan jika sudah berhasil */
+    width: max-content; /* Ini akan membuat tabel selebar kontennya */
+    /* Atau bisa juga: width: 100%; jika ingin tabel mengisi lebar container-nya,
+       tetapi min-width akan memaksa scroll jika melebihi */
+}
+
+#plateDataTable {
+    min-width: 100%; /* Pertahankan ini untuk pengujian, sesuaikan jika sudah berhasil */
+    width: max-content; /* Ini akan membuat tabel selebar kontennya */
+    /* Atau bisa juga: width: 100%; jika ingin tabel mengisi lebar container-nya,
+       tetapi min-width akan memaksa scroll jika melebihi */
+}
+
+#chemicalItemsTable {
+    min-width: 100%; /* Pertahankan ini untuk pengujian, sesuaikan jika sudah berhasil */
+    width: max-content; /* Ini akan membuat tabel selebar kontennya */
+    /* Atau bisa juga: width: 100%; jika ingin tabel mengisi lebar container-nya,
+       tetapi min-width akan memaksa scroll jika melebihi */
+}
+
+#chemicalDataTable {
+    min-width: 100%; /* Pertahankan ini untuk pengujian, sesuaikan jika sudah berhasil */
+    width: max-content; /* Ini akan membuat tabel selebar kontennya */
+    /* Atau bisa juga: width: 100%; jika ingin tabel mengisi lebar container-nya,
+       tetapi min-width akan memaksa scroll jika melebihi */
+}
+
+#kartuStockPlateFujiTable {
+    min-width: 100%; /* Pertahankan ini untuk pengujian, sesuaikan jika sudah berhasil */
+    width: max-content; /* Ini akan membuat tabel selebar kontennya */
+    /* Atau bisa juga: width: 100%; jika ingin tabel mengisi lebar container-nya,
+       tetapi min-width akan memaksa scroll jika melebihi */
+}
+
+#kartuStockChemicalFujiTable {
+    min-width: 100%; /* Pertahankan ini untuk pengujian, sesuaikan jika sudah berhasil */
+    width: max-content; /* Ini akan membuat tabel selebar kontennya */
+    /* Atau bisa juga: width: 100%; jika ingin tabel mengisi lebar container-nya,
+       tetapi min-width akan memaksa scroll jika melebihi */
+}
+
+#kartuStockPlateSaphiraTable {
+    min-width: 100%; /* Pertahankan ini untuk pengujian, sesuaikan jika sudah berhasil */
+    width: max-content; /* Ini akan membuat tabel selebar kontennya */
+    /* Atau bisa juga: width: 100%; jika ingin tabel mengisi lebar container-nya,
+       tetapi min-width akan memaksa scroll jika melebihi */
+}
+
+#kartuStockChemicalSaphiraTable {
+    min-width: 100%; /* Pertahankan ini untuk pengujian, sesuaikan jika sudah berhasil */
+    width: max-content; /* Ini akan membuat tabel selebar kontennya */
+    /* Atau bisa juga: width: 100%; jika ingin tabel mengisi lebar container-nya,
+       tetapi min-width akan memaksa scroll jika melebihi */
+}
+
+#fujiPlateTable {
+    min-width: 100%; /* Pertahankan ini untuk pengujian, sesuaikan jika sudah berhasil */
+    width: max-content; /* Ini akan membuat tabel selebar kontennya */
+    /* Atau bisa juga: width: 100%; jika ingin tabel mengisi lebar container-nya,
+       tetapi min-width akan memaksa scroll jika melebihi */
+}
+
+#saphiraPlateTable {
+    min-width: 100%; /* Pertahankan ini untuk pengujian, sesuaikan jika sudah berhasil */
+    width: max-content; /* Ini akan membuat tabel selebar kontennya */
+    /* Atau bisa juga: width: 100%; jika ingin tabel mengisi lebar container-nya,
+       tetapi min-width akan memaksa scroll jika melebihi */
+}
+
+#fujiChemicalTable {
+    min-width: 100%; /* Pertahankan ini untuk pengujian, sesuaikan jika sudah berhasil */
+    width: max-content; /* Ini akan membuat tabel selebar kontennya */
+    /* Atau bisa juga: width: 100%; jika ingin tabel mengisi lebar container-nya,
+       tetapi min-width akan memaksa scroll jika melebihi */
+}
+
+#saphiraChemicalTable {
+    min-width: 100%; /* Pertahankan ini untuk pengujian, sesuaikan jika sudah berhasil */
+    width: max-content; /* Ini akan membuat tabel selebar kontennya */
+    /* Atau bisa juga: width: 100%; jika ingin tabel mengisi lebar container-nya,
+       tetapi min-width akan memaksa scroll jika melebihi */
+}
+
+#fujiPlateIncomingTable {
+    min-width: 100%; /* Pertahankan ini untuk pengujian, sesuaikan jika sudah berhasil */
+    width: max-content; /* Ini akan membuat tabel selebar kontennya */
+    /* Atau bisa juga: width: 100%; jika ingin tabel mengisi lebar container-nya,
+       tetapi min-width akan memaksa scroll jika melebihi */
+}
+
+#saphiraPlateIncomingTable {
+    min-width: 100%; /* Pertahankan ini untuk pengujian, sesuaikan jika sudah berhasil */
+    width: max-content; /* Ini akan membuat tabel selebar kontennya */
+    /* Atau bisa juga: width: 100%; jika ingin tabel mengisi lebar container-nya,
+       tetapi min-width akan memaksa scroll jika melebihi */
+}
+
+#fujiChemicalIncomingTable {
+    min-width: 100%; /* Pertahankan ini untuk pengujian, sesuaikan jika sudah berhasil */
+    width: max-content; /* Ini akan membuat tabel selebar kontennya */
+    /* Atau bisa juga: width: 100%; jika ingin tabel mengisi lebar container-nya,
+       tetapi min-width akan memaksa scroll jika melebihi */
+}
+
+#saphiraChemicalIncomingTable {
+    min-width: 100%; /* Pertahankan ini untuk pengujian, sesuaikan jika sudah berhasil */
+    width: max-content; /* Ini akan membuat tabel selebar kontennya */
+    /* Atau bisa juga: width: 100%; jika ingin tabel mengisi lebar container-nya,
+       tetapi min-width akan memaksa scroll jika melebihi */
+}
+
+/* Ini untuk memastikan header sticky tetap di atas saat scroll horizontal */
+.table-responsive thead th {
+    position: sticky;
+    top: 0;
+    /* Tambahkan left jika ingin kolom pertama juga sticky (agak kompleks) */
+    /* left: 0; */
+    background-color: var(--table-header-bg); /* Penting agar tidak transparan */
+    z-index: 2; /* Pastikan lebih tinggi dari tbody */
+}
+
+/* Jika Anda menambahkan left: 0 pada thead th, Anda mungkin perlu: */
+/* .table-responsive tbody td:first-child {
+    position: sticky;
+    left: 0;
+    background-color: var(--table-striped-odd-bg); /* Atau even-bg tergantung baris */
+    /* z-index: 1; */
+/* } */
+
+.table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    min-width: 2600px;
+    border: none; /* Hapus border default tabel Bootstrap karena sudah ada di wrapper */
+}
+
+.table-responsive table {
+    font-size: 0.85em;
+}
+
+.table-responsive th, .table-responsive td {
+    white-space: nowrap;
+    padding: 0.75rem;
+    text-align: left;
+    vertical-align: middle;
+    border: 1px solid var(--table-border-color); /* Border antar sel */
+}
+
+.table-responsive thead th {
+    background-color: var(--table-header-bg); /* Biru primer untuk header */
+    color: var(--table-header-text);
+    border-bottom: 0;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+/* Memberikan rounded corner pada header tabel teratas */
+.table-responsive thead th:first-child {
+    border-top-left-radius: 0.5rem;
+}
+.table-responsive thead th:last-child {
+    border-top-right-radius: 0.5rem;
+}
+
+.table-responsive tbody tr:nth-of-type(odd) {
+    background-color: var(--table-striped-odd-bg); /* Abu-abu sangat terang */
+}
+
+.table-responsive tbody tr:nth-of-type(even) {
+    background-color: var(--table-striped-even-bg); /* Putih */
+}
+
+.table-responsive tbody tr:hover {
+    background-color: var(--table-hover-bg); /* Biru muda transparan */
+}
+
+
+/* --- Form Specific Styling --- */
+.form-section {
+    border: 1px solid var(--light-border); /* Border form pakai abu-abu terang */
+    padding: 20px;
+    margin-bottom: 25px;
+    border-radius: 0.75rem;
+    background-color: var(--light-bg); /* Latar belakang form putih */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05); /* Bayangan lebih ringan */
+}
+
+.form-section legend {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--primary-color); /* Legend form pakai biru primer */
+    padding: 0 10px;
+    width: auto;
+    border-bottom: none;
+    margin-left: -10px;
+    background-color: var(--light-bg); /* Latar belakang legend putih */
+    position: relative;
+    top: -10px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 0.9em;
+    font-weight: 500;
+    color: var(--dark-text); /* Label pakai teks gelap */
+}
+
+.form-section .form-control,
+.form-section .form-select {
+    width: 100%;
+    border-radius: 0.375rem;
+    border-color: var(--light-border); /* Border input pakai abu-abu terang */
+}
+
+.form-section .form-control:focus,
+.form-section .form-select:focus {
+    border-color: var(--primary-color); /* Fokus input pakai biru primer */
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); /* Shadow fokus juga biru */
+}
+
+.form-section .form-control.form-control-sm {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.85rem;
+}
+
+.form-section.form-raster .col-md-4 {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding-left: var(--bs-gutter-x, 0.75rem);
+    padding-right: var(--bs-gutter-x, 0.75rem);
+    margin-bottom: 0.75rem;
+}
+
+.form-section.form-raster .form-label {
+    font-size: 0.85em;
+    margin-bottom: 0.15rem;
+    white-space: nowrap;
+}
+
+.form-section.form-raster .row.g-3 {
+    margin-bottom: 0.75rem !important;
+}
+
+.modal-dialog {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+.modal-body {
+    overflow-y: auto;
+    max-height: 70vh;
+}
+.modal-footer .btn {
+    min-width: 100px;
+}
+
+/* Base Button Styling (berlaku untuk semua .btn) */
+.btn {
+    border-radius: 0.375rem; /* Sudut sedikit melengkung */
+    font-weight: 600; /* Sedikit lebih tebal dari default */
+    padding: 0.5rem 1rem; /* Padding yang nyaman */
+    transition: all 0.2s ease-in-out; /* Transisi halus untuk hover/focus */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08); /* Bayangan lembut */
+    border: 1px solid transparent; /* Border default transparan */
+    cursor: pointer; /* Menunjukkan bahwa itu bisa diklik */
+}
+
+.btn:focus,
+.btn.focus {
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); /* Shadow fokus standar Bootstrap primary */
+}
+
+/* Primary Button */
+.btn-primary {
+    background-color: var(--primary-color);
+    color: var(--light-bg); /* Teks putih */
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-darker); /* Gunakan primary-darker saat hover */
+    border-color: var(--primary-darker);
+    transform: translateY(-1px); /* Efek sedikit naik saat hover */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Bayangan sedikit lebih kuat saat hover */
+}
+
+.btn-primary:active,
+.btn-primary.active {
+    background-color: var(--primary-darker); /* Tetap gelap saat aktif */
+    border-color: var(--primary-darker);
+    transform: translateY(0); /* Kembali ke posisi semula */
+    box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125); /* Efek "tertekan" */
+}
+
+/* Secondary Button (untuk aksi sekunder atau netral) */
+.btn-secondary {
+    background-color: var(--light-border); /* Warna abu-abu border Anda */
+    color: var(--dark-text); /* Teks gelap */
+    border-color: var(--light-border);
+}
+
+.btn-secondary:hover {
+    background-color: var(--medium-text); /* Agak lebih gelap dari medium-text */
+    color: var(--light-bg); /* Teks putih saat hover */
+    border-color: var(--medium-text);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-secondary:active,
+.btn-secondary.active {
+    background-color: var(--medium-text);
+    border-color: var(--medium-text);
+    transform: translateY(0);
+    box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+}
+
+/* Success Button */
+.btn-success {
+    background-color: var(--success-color);
+    color: var(--light-bg);
+    border-color: var(--success-color);
+}
+
+.btn-success:hover {
+    background-color: darken(var(--success-color), 10%); /* Perlu fungsi SASS/LESS atau nilai hardcode */
+    /* Untuk SASS/LESS: background-color: darken(var(--success-color), 10%); */
+    /* Untuk CSS murni, bisa dihitung atau pakai warna sedikit lebih gelap manual */
+    background-color: #146c43; /* Contoh warna lebih gelap */
+    border-color: #146c43;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Danger Button */
+.btn-danger {
+    background-color: var(--danger-color);
+    color: var(--light-bg);
+    border-color: var(--danger-color);
+}
+
+.btn-danger:hover {
+    background-color: #bb2d3b; /* Contoh warna lebih gelap */
+    border-color: #bb2d3b;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Outline Buttons (background transparan, border berwarna) */
+.btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    background-color: transparent;
+}
+
+.btn-outline-primary:hover {
+    color: var(--light-bg);
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Outline Secondary */
+.btn-outline-secondary {
+    color: var(--medium-text);
+    border-color: var(--light-border);
+    background-color: transparent;
+}
+
+.btn-outline-secondary:hover {
+    color: var(--dark-text);
+    background-color: var(--lighter-bg);
+    border-color: var(--lighter-bg);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Example: Small and Large Buttons */
+.btn-sm {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 0.3rem;
+}
+
+.btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.25rem;
+    border-radius: 0.5rem;
+}
+
+/* Penjajaran tombol submit */
+.modal-body .d-flex.justify-content-end {
+    padding-right: var(--bs-gutter-x, 0.75rem);
+    margin-top: 1rem;
+}
+
+/* Styling untuk alert messages (success, danger, info, warning) */
+.alert {
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+}
+
+.alert-success {
+    color: #0f5132;
+    background-color: #d1e7dd;
+    border-color: #badbcc;
+}
+.alert-danger {
+    color: #842029;
+    background-color: #f8d7da;
+    border-color: #f5c2c7;
+}
+.alert-warning {
+    color: #664d03;
+    background-color: #fff3cd;
+    border-color: #ffecb5;
+}
+.alert-info {
+    color: #055160;
+    background-color: #cff4fc;
+    border-color: #b6effb;
+}
+
+/* Responsive adjustment for input width in small screens */
+@media (max-width: 575.98px) {
+    .form-section .col-md-4,
+    .form-section .col-12 {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    .form-section legend {
+        font-size: 1em;
+        padding: 0 5px;
+        margin-left: -5px;
+    }
+    .modal-dialog {
+        max-width: 98% !important;
+    }
+}

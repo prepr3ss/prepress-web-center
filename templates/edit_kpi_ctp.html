@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prepress Impact</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* CTP Theme - Orange gradient seperti kpictp.html */
+        .page-header {
+            background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+            color: white;
+            padding: 2rem 0;
+            margin: -1rem -15px 2rem -15px;
+            border-radius: 0 0 20px 20px;
+        }
+        
+        /* Form section styling seperti CTP input form */
+        .form-section {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+        
+        .form-control-clean, .form-select-clean {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+        .form-control-clean:focus, .form-select-clean:focus {
+            border-color: #ff9500;
+            box-shadow: 0 0 0 0.2rem rgba(255, 149, 0, 0.25);
+        }
+        
+        .info-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .btn-clean {
+            border: none;
+            border-radius: 25px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-ctp-clean {
+            background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+            color: white;
+        }
+        .btn-ctp-clean:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 149, 0, 0.4);
+            color: white;
+        }
+        
+        .btn-outline-clean {
+            border: 2px solid #ff9500;
+            color: #ff9500;
+            background: transparent;
+        }
+        .btn-outline-clean:hover {
+            background: #ff9500;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 149, 0, 0.3);
+        }
+        
+        /* Section dividers dengan CTP orange accent */
+        .section-divider {
+            border-left: 4px solid #ff9500;
+            padding-left: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 1rem;
+        }
+        
+        /* Color headers untuk CMYK + Spot Colors */
+        .color-header {
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: 0.5px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .color-cyan { background: linear-gradient(135deg, #00bfff 0%, #0099dd 100%); color: white; }
+        .color-magenta { background: linear-gradient(135deg, #ff00a6 0%, #dd0088 100%); color: white; }
+        .color-yellow { background: linear-gradient(135deg, #ffe600 0%, #ffcc00 100%); color: #333; }
+        .color-black { background: linear-gradient(135deg, #333 0%, #111 100%); color: white; }
+        .color-spot1 { background: linear-gradient(135deg, #ff6f00 0%, #e55100 100%); color: white; }
+        .color-spot2 { background: linear-gradient(135deg, #0059ff 0%, #0041cc 100%); color: white; }
+        .color-spot3 { background: linear-gradient(135deg, #892eff 0%, #6a1bcc 100%); color: white; }
+        .color-spot4 { background: linear-gradient(135deg, #8dff1c 0%, #76e016 100%); color: #333; }
+        
+        .color-header {
+            width: 100%;
+            margin-bottom: 12px;
+            text-align: center;
+            padding: 8px 4px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .form-label-small {
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-bottom: 4px;
+            color: #666;
+        }
+        
+        .btn-ctp {
+            background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 12px 24px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);
+        }
+        
+        .btn-ctp:hover {
+            background: linear-gradient(135deg, #ff6b00 0%, #ff4500 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(255, 149, 0, 0.4);
+            color: white;
+        }
+        
+        .btn-secondary-ctp {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 12px 24px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+        }
+        
+        .btn-secondary-ctp:hover {
+            background: linear-gradient(135deg, #495057 0%, #343a40 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(108, 117, 125, 0.4);
+            color: white;
+        }
+        
+        /* Form validation states - tanpa icon checklist */
+        .form-control-clean.is-valid, .form-select-clean.is-valid {
+            border-color: #56ab2f;
+            background-image: none;
+        }
+        
+        .form-control-clean.is-invalid, .form-select-clean.is-invalid {
+            border-color: #ff6b6b;
+            background-image: none;
+        }
+        
+        /* Toast enhancements */
+        .toast {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .toast-success {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+            color: white;
+        }
+        
+        .toast-error {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white;
+        }
+        
+        .toast-info {
+            background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+            color: white;
+        }
+        
+        /* Loading state */
+        .btn-loading {
+            position: relative;
+            pointer-events: none;
+        }
+        
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            margin: auto;
+            border: 2px solid transparent;
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="d-flex" id="wrapper">
+        {% include '_sidebar.html' %}
+        <div id="page-content-wrapper">
+            
+            <div class="container-fluid">
+                <!-- Page Header dengan CTP theme -->
+                <div class="page-header">
+                    <div class="container-fluid">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 class="mb-1 text-white">Form Edit Data Log Produksi CTP</h2>
+                                <p class="mb-0 opacity-75">Edit dan perbarui data produksi CTP dengan mudah</p>
+                            </div>
+                            <div class="text-end">
+                                <a href="/tabel-kpi-ctp" class="btn btn-light">
+                                    <i class="fas fa-table me-1"></i> Lihat Tabel KPI
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            <div class="container-fluid py-4">
+        <div class="col-12 mx-auto" style="max-width: 1400px;">
+            <!-- Alert Section -->
+            <div id="alertContainer" class="mb-3" style="display: none;">
+                <div class="alert" role="alert">
+                    <span id="alertMessage"></span>
+                </div>
+            </div>
+            
+            <!-- Main Form Section -->
+            <div class="form-section">
+                <form id="editKpiForm" autocomplete="off">
+                    <input type="hidden" id="dataId" name="data_id">
+                    
+                    <!-- Informasi CTP Section -->
+                    <div class="section-divider">
+                        <h5 class="section-title"><i class="fas fa-info-circle me-2"></i>Informasi CTP</h5>
+                    </div>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-2">
+                            <label class="info-label">Tanggal</label>
+                            <input type="date" class="form-control form-control-clean" name="log_date" id="log_date" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="info-label">Jam Mulai</label>
+                            <input type="time" class="form-control form-control-clean" name="start_time" id="start_time" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="info-label">Jam Selesai</label>
+                            <input type="time" class="form-control form-control-clean" name="finish_time" id="finish_time" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="info-label">Grup CTP</label>
+                            <select class="form-select form-select-clean" name="ctp_group" id="ctp_group" required>
+                                <option value="">Pilih Grup CTP</option>
+                                <option value="A">Grup A</option>
+                                <option value="B">Grup B</option>
+                                <option value="C">Grup C</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="info-label">Shift CTP</label>
+                            <select class="form-select form-select-clean" name="ctp_shift" id="ctp_shift" required>
+                                <option value="">Pilih Shift CTP</option>
+                                <option value="Shift 1">Shift 1</option>
+                                <option value="Shift 2">Shift 2</option>
+                                <option value="Shift 3">Shift 3</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="info-label">PIC CTP</label>
+                            <input type="text" class="form-control form-control-clean text-muted" name="ctp_pic" id="ctp_pic" placeholder="e.g GILANG" required>
+                        </div>
+                    </div>
+                    
+                    <!-- Spesifikasi CTP Section -->
+                    <div class="section-divider">
+                        <h5 class="section-title"><i class="fas fa-cogs me-2"></i>Spesifikasi CTP</h5>
+                    </div>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="info-label">Mesin CTP</label>
+                            <select class="form-select form-select-clean" name="ctp_machine" id="ctp_machine" required>
+                                <option value="">Pilih Mesin CTP</option>
+                                <option value="CTP 1">CTP 1</option>
+                                <option value="CTP 2">CTP 2</option>
+                                <option value="CTP 3">CTP 3</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="info-label">Suhu Prosesor (°C)</label>
+                            <input type="number" class="form-control form-control-clean" name="processor_temperature" id="processor_temperature" placeholder="e.g 28">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="info-label">Dwell Time (s)</label>
+                            <input type="number" class="form-control form-control-clean" name="dwell_time" id="dwell_time" placeholder="e.g 20">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="info-label">Raster / Rulling</label>
+                            <select class="form-select form-select-clean" name="raster" id="raster" required>
+                                <option value="">Pilih Raster</option>
+                                <option value="AM">AM</option>
+                                <option value="FM">FM</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="info-label">Jenis Plate / Material</label>
+                            <select class="form-select form-select-clean" name="plate_type_material" id="plate_type_material" required>
+                                <option value="">Pilih Jenis Plate</option>
+                                <option value="FUJI 1030">FUJI 1030</option>
+                                <option value="FUJI 1030 UV">FUJI 1030 UV</option>
+                                <option value="FUJI 1055">FUJI 1055</option>
+                                <option value="FUJI 1055 UV">FUJI 1055 UV</option>
+                                <option value="FUJI 1055 LHPL">FUJI 1055 LHPL</option>
+                                <option value="FUJI 1630">FUJI 1630</option>
+                                <option value="SAPHIRA 1030">SAPHIRA 1030</option>
+                                <option value="SAPHIRA 1055">SAPHIRA 1055</option>
+                                <option value="SAPHIRA 1055 PN">SAPHIRA 1055 PN</option>
+                                <option value="SAPHIRA 1630">SAPHIRA 1630</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="info-label">Jumlah Plate Good</label>
+                            <input type="number" class="form-control form-control-clean" name="num_plate_good" id="num_plate_good">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="info-label">Jumlah Plate Not Good</label>
+                            <input type="number" class="form-control form-control-clean" name="num_plate_not_good" id="num_plate_not_good">
+                        </div>
+                        <div class="col-md-4 d-none" id="notGoodReasonGroup">
+                            <label class="info-label">Alasan Not Good</label>
+                            <select class="form-select form-select-clean" id="not_good_reason" name="not_good_reason">
+                                <option value="">Pilih Alasan</option>
+                                <option value="Plate Rontok / Botak">Plate Rontok / Botak</option>
+                                <option value="Plate Baret">Plate Baret</option>
+                                <option value="Plate Penyok">Plate Penyok</option>
+                                <option value="Plate Kotor">Plate Kotor</option>
+                                <option value="Plate bergaris">Plate bergaris</option>
+                                <option value="Plate tidak sesuai DP">Plate tidak sesuai DP</option>
+                                <option value="Nilai tidak sesuai">Nilai tidak sesuai</option>
+                                <option value="Laser Jump">Laser Jump</option>
+                                <option value="Tidak masuk millar">Tidak masuk millar</option>
+                                <option value="Error mesin Punch">Error mesin Punch</option>
+                                <option value="Plate Jump">Plate Jump</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Informasi Produk Section -->
+                    <div class="section-divider">
+                        <h5 class="section-title"><i class="fas fa-box me-2"></i>Informasi Produk</h5>
+                    </div>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-2">
+                            <label class="info-label">Mesin Cetak</label>
+                            <select class="form-select form-select-clean" id="print_machine" name="print_machine" required>
+                                <option value="">Pilih Mesin Cetak</option>
+                                <option value="SM2">SM2</option>
+                                <option value="SM3">SM3</option>
+                                <option value="SM4">SM4</option>
+                                <option value="SM5">SM5</option>
+                                <option value="SM6">SM6</option>
+                                <option value="VLF">VLF</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="info-label">Remarks Job</label>
+                            <select class="form-select form-select-clean" id="remarks_job" name="remarks_job" required>
+                                <option value="">Pilih Remarks Job</option>
+                                <option value="JOB PROOF">JOB PROOF</option>
+                                <option value="JOB PRODUKSI">JOB PRODUKSI</option>
+                                <option value="BON PROOF">BON PROOF</option>
+                                <option value="BON PRODUKSI">BON PRODUKSI</option>
+                                <option value="ADJUSTMENT FA PROOF">ADJUSTMENT FA PROOF</option>
+                                <option value="ADJUSTMENT FA PRODUKSI">ADJUSTMENT FA PRODUKSI</option>
+                                <option value="ADJUSTMENT CURVE PROOF">ADJUSTMENT CURVE PROOF</option>
+                                <option value="ADJUSTMENT CURVE PRODUKSI">ADJUSTMENT CURVE PRODUKSI</option>
+                                <option value="PLATE ULANG">PLATE ULANG</option>
+                                <option value="TEST PRINT">TEST PRINT</option>
+                                <option value="PEMBUATAN LINEAR BARU">PEMBUATAN LINEAR BARU</option>
+                                <option value="Other">Lainnya</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="info-label">No. WO</label>
+                            <input type="text" class="form-control form-control-clean" id="wo_number" name="wo_number" placeholder="">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="info-label">No. MC</label>
+                            <input type="text" class="form-control form-control-clean" id="mc_number" name="mc_number" placeholder="" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="info-label">Run Length Sheet</label>
+                            <input type="number" class="form-control form-control-clean" id="run_length_sheet" name="run_length_sheet" min="0" placeholder="">
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="info-label">Nama Item</label>
+                            <input type="text" class="form-control form-control-clean" id="item_name" name="item_name" placeholder="e.g: 516586200 LIGHT2 MA" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="info-label">Note</label>
+                            <textarea class="form-control form-control-clean" id="note" name="note" rows="3" placeholder="Tambahkan catatan jika ada"></textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- Nilai Raster Section -->
+                    <div class="section-divider">
+                        <h5 class="section-title"><i class="fas fa-palette me-2"></i>Nilai Raster</h5>
+                    </div>
+                    
+                    <div class="row py-3 g-4 mb-4">
+                        <!-- CYAN Block -->
+                        <div class="col-lg-3 col-md-6 d-flex flex-column align-items-center mb-4">
+                            <div class="color-header color-cyan">
+                                CYAN
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-4">
+                                    <label for="cyan_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="cyan_25_percent" name="cyan_25_percent" style="min-height: 45px;">
+                                </div>
+                                <div class="col-4">
+                                    <label for="cyan_50_percent" class="form-label-small">50%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="cyan_50_percent" name="cyan_50_percent" style="min-height: 45px;">
+                                </div>
+                                <div class="col-4">
+                                    <label for="cyan_75_percent" class="form-label-small">75%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="cyan_75_percent" name="cyan_75_percent" style="min-height: 45px;">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- MAGENTA Block -->
+                        <div class="col-lg-3 col-md-6 d-flex flex-column align-items-center mb-4">
+                            <div class="color-header color-magenta">
+                                MAGENTA
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-4">
+                                    <label for="magenta_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="magenta_25_percent" name="magenta_25_percent" style="min-height: 45px;">
+                                </div>
+                                <div class="col-4">
+                                    <label for="magenta_50_percent" class="form-label-small">50%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="magenta_50_percent" name="magenta_50_percent" style="min-height: 45px;">
+                                </div>
+                                <div class="col-4">
+                                    <label for="magenta_75_percent" class="form-label-small">75%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="magenta_75_percent" name="magenta_75_percent" style="min-height: 45px;">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- YELLOW Block -->
+                        <div class="col-lg-3 col-md-6 d-flex flex-column align-items-center mb-4">
+                            <div class="color-header color-yellow">
+                                YELLOW
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-4">
+                                    <label for="yellow_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="yellow_25_percent" name="yellow_25_percent" style="min-height: 45px;">
+                                </div>
+                                <div class="col-4">
+                                    <label for="yellow_50_percent" class="form-label-small">50%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="yellow_50_percent" name="yellow_50_percent" style="min-height: 45px;">
+                                </div>
+                                <div class="col-4">
+                                    <label for="yellow_75_percent" class="form-label-small">75%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="yellow_75_percent" name="yellow_75_percent" style="min-height: 45px;">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- BLACK Block -->
+                        <div class="col-lg-3 col-md-6 d-flex flex-column align-items-center mb-4">
+                            <div class="color-header color-black">
+                                BLACK
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-4">
+                                    <label for="black_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="black_25_percent" name="black_25_percent" style="min-height: 45px;">
+                                </div>
+                                <div class="col-4">
+                                    <label for="black_50_percent" class="form-label-small">50%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="black_50_percent" name="black_50_percent" style="min-height: 45px;">
+                                </div>
+                                <div class="col-4">
+                                    <label for="black_75_percent" class="form-label-small">75%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="black_75_percent" name="black_75_percent" style="min-height: 45px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row py-3 g-4 mb-4">
+                        <!-- SPOT COLOR 1 -->
+                        <div class="col-lg-3 col-md-6 d-flex flex-column align-items-center mb-4">
+                            <div class="color-header color-spot1">
+                                SPOT COLOR 1
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-4">
+                                    <label for="x_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="x_25_percent" name="x_25_percent" style="min-height: 45px;">
+                                </div>
+                                <div class="col-4">
+                                    <label for="x_50_percent" class="form-label-small">50%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="x_50_percent" name="x_50_percent" style="min-height: 45px;">
+                                </div>                                  
+                                <div class="col-4">
+                                    <label for="x_75_percent" class="form-label-small">75%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="x_75_percent" name="x_75_percent" style="min-height: 45px;">
+                                </div> 
+                            </div>
+                        </div>
+                        <!-- SPOT COLOR 2 -->
+                        <div class="col-lg-3 col-md-6 d-flex flex-column align-items-center mb-4">
+                            <div class="color-header color-spot2">
+                                SPOT COLOR 2
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-4">
+                                    <label for="z_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="z_25_percent" name="z_25_percent" style="min-height: 45px;">
+                                </div>
+                                <div class="col-4">
+                                    <label for="z_50_percent" class="form-label-small">50%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="z_50_percent" name="z_50_percent" style="min-height: 45px;">
+                                </div>                                  
+                                <div class="col-4">
+                                    <label for="z_75_percent" class="form-label-small">75%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="z_75_percent" name="z_75_percent" style="min-height: 45px;">
+                                </div> 
+                            </div> 
+                        </div> 
+                        <!-- SPOT COLOR 3 -->
+                        <div class="col-lg-3 col-md-6 d-flex flex-column align-items-center mb-4">
+                            <div class="color-header color-spot3">
+                                SPOT COLOR 3
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-4">
+                                    <label for="u_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="u_25_percent" name="u_25_percent" style="min-height: 45px;">
+                                </div>
+                                <div class="col-4">
+                                    <label for="u_50_percent" class="form-label-small">50%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="u_50_percent" name="u_50_percent" style="min-height: 45px;">
+                                </div>                                  
+                                <div class="col-4">
+                                    <label for="u_75_percent" class="form-label-small">75%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="u_75_percent" name="u_75_percent" style="min-height: 45px;">
+                                </div> 
+                            </div>
+                        </div>
+                        <!-- SPOT COLOR 4 -->
+                        <div class="col-lg-3 col-md-6 d-flex flex-column align-items-center mb-4">
+                            <div class="color-header color-spot4">
+                                SPOT COLOR 4
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-4">
+                                    <label for="v_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="v_25_percent" name="v_25_percent" style="min-height: 45px;">
+                                </div>
+                                <div class="col-4">
+                                    <label for="v_50_percent" class="form-label-small">50%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="v_50_percent" name="v_50_percent" style="min-height: 45px;">
+                                </div>                                  
+                                <div class="col-4">
+                                    <label for="v_75_percent" class="form-label-small">75%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="v_75_percent" name="v_75_percent" style="min-height: 45px;">
+                                </div> 
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Actions -->
+                    <div class="row">
+                        <div class="col-12 mt-4">
+                            <div class="d-flex justify-content-end align-items-center gap-3">
+                                <button type="button" onclick="window.history.back()" class="btn btn-outline-clean">
+                                    <i class="fas fa-times me-2"></i>Batal
+                                </button>
+                                <button type="submit" class="btn btn-ctp">
+                                    <i class="fas fa-save me-2"></i>Simpan Perubahan
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- Toast Notification -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="liveToast" class="toast border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header bg-gradient text-white border-0" style="background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%) !important;">
+                <i class="fas fa-bell me-2"></i>
+                <strong class="me-auto" id="toastHeader">Notifikasi</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toastBody">
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+    <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
+    <script>
+        // --- Fungsi Debounce (ditempatkan di awal file, di luar DOMContentLoaded) ---
+        function debounce(func, delay) {
+            let timeout;
+            return function(...args) {
+                const context = this;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), delay);
+            };
+        }
+
+        // --- Fungsi untuk menampilkan Bootstrap Toast ---
+        function showBootstrapToast(message, header = 'Info', type = 'success') {
+            const toastEl = document.getElementById('liveToast');
+            // Pastikan elemen toast ada
+            if (!toastEl) {
+                console.error("Toast element with ID 'liveToast' not found. Make sure you have the toast HTML structure in your page.");
+                return;
+            }
+            const toastHeader = toastEl.querySelector('.toast-header strong');
+            const toastBody = toastEl.querySelector('.toast-body');
+
+            // Set header dan body pesan toast
+            if (toastHeader) toastHeader.textContent = header;
+            if (toastBody) toastBody.textContent = message;
+
+            // Hapus kelas warna sebelumnya untuk menghindari konflik dan tambahkan yang baru
+            toastEl.classList.remove('text-bg-success', 'text-bg-danger', 'text-bg-info');
+
+            if (type === 'success') {
+                toastEl.classList.add('text-bg-success'); // Warna hijau untuk sukses
+                if (toastHeader) toastHeader.textContent = 'Berhasil!'; // Ubah header untuk pesan sukses
+            } else if (type === 'danger') {
+                toastEl.classList.add('text-bg-danger'); // Warna merah untuk error
+                if (toastHeader) toastHeader.textContent = 'Error!'; // Ubah header untuk pesan error
+            } else {
+                toastEl.classList.add('text-bg-info'); // Warna biru untuk info lainnya
+                if (toastHeader) toastHeader.textContent = 'Informasi'; // Ubah header default
+            }
+
+            // Inisialisasi dan tampilkan toast
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+        }
+
+        // --- DOMContentLoaded Event Listener ---
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sidebar toggle functionality removed - sidebar is now always visible
+
+            // --- Logika untuk menampilkan/menyembunyikan Alasan Tidak Bagus ---
+            const numPlateNotGoodInput = document.getElementById('num_plate_not_good');
+            const notGoodReasonGroup = document.getElementById('notGoodReasonGroup');
+            const notGoodReasonSelect = document.getElementById('not_good_reason');
+
+            function toggleNotGoodReason() {
+                if (numPlateNotGoodInput && notGoodReasonGroup && notGoodReasonSelect) {
+                    if (parseInt(numPlateNotGoodInput.value) > 0) {
+                        notGoodReasonGroup.classList.remove('d-none');
+                        notGoodReasonSelect.setAttribute('required', 'true');
+                    } else {
+                        notGoodReasonGroup.classList.add('d-none');
+                        notGoodReasonSelect.removeAttribute('required');
+                        notGoodReasonSelect.value = ''; // Reset pilihan saat disembunyikan
+                    }
+                }
+            }
+
+            // Panggil saat halaman dimuat
+            // Ini akan memastikan status awal saat form dimuat dengan data
+            // (Will be called after fetchAndPopulateForm fills the data)
+            // numPlateNotGoodInput.addEventListener('input', toggleNotGoodReason); // Moved below to ensure element exists
+
+            // --- JavaScript untuk mengisi form dan mengirim update ---
+            const dataId = window.location.pathname.split('/').pop(); // Mengambil ID dari URL
+            document.getElementById('dataId').value = dataId; // Set hidden input for completeness
+
+            const form = document.getElementById('editKpiForm');
+
+            async function fetchAndPopulateForm() {
+                try {
+                    const response = await fetch(`/api/kpi_ctp/${dataId}`);
+                    if (!response.ok) {
+                        const contentType = response.headers.get("content-type");
+                        if (contentType && contentType.indexOf("text/html") !== -1) {
+                            throw new Error('Endpoint /api/kpi_ctp/id not found or returned HTML, not JSON. Check your Flask route.');
+                        }
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    
+                    // Isi setiap field form dengan data yang diambil
+                    document.getElementById('log_date').value = data.log_date || '';
+                    document.getElementById('start_time').value = data.start_time || '';
+                    document.getElementById('finish_time').value = data.finish_time || '';
+                    document.getElementById('ctp_group').value = data.ctp_group || '';
+                    document.getElementById('ctp_shift').value = data.ctp_shift || '';
+                    document.getElementById('ctp_pic').value = data.ctp_pic || '';
+                    document.getElementById('ctp_machine').value = data.ctp_machine || '';
+                    document.getElementById('processor_temperature').value = data.processor_temperature || '';
+                    document.getElementById('dwell_time').value = data.dwell_time || '';
+                    document.getElementById('raster').value = data.raster || '';
+                    document.getElementById('plate_type_material').value = data.plate_type_material || '';
+                    document.getElementById('num_plate_good').value = data.num_plate_good || '0';
+                    document.getElementById('num_plate_not_good').value = data.num_plate_not_good || '0';
+                    document.getElementById('not_good_reason').value = data.not_good_reason || '';
+                    
+                    document.getElementById('print_machine').value = data.print_machine || '';
+                    document.getElementById('remarks_job').value = data.remarks_job || '';
+                    document.getElementById('wo_number').value = data.wo_number || '';
+                    document.getElementById('mc_number').value = data.mc_number || '';
+                    document.getElementById('run_length_sheet').value = data.run_length_sheet || '';
+                    document.getElementById('item_name').value = data.item_name || '';
+                    document.getElementById('note').value = data.note || '';
+                    
+                    document.getElementById('cyan_25_percent').value = data.cyan_25_percent || '';
+                    document.getElementById('cyan_50_percent').value = data.cyan_50_percent || '';
+                    document.getElementById('cyan_75_percent').value = data.cyan_75_percent || '';
+                    document.getElementById('magenta_25_percent').value = data.magenta_25_percent || '';
+                    document.getElementById('magenta_50_percent').value = data.magenta_50_percent || '';
+                    document.getElementById('magenta_75_percent').value = data.magenta_75_percent || '';
+                    document.getElementById('yellow_25_percent').value = data.yellow_25_percent || '';
+                    document.getElementById('yellow_50_percent').value = data.yellow_50_percent || '';
+                    document.getElementById('yellow_75_percent').value = data.yellow_75_percent || '';
+                    document.getElementById('black_25_percent').value = data.black_25_percent || '';
+                    document.getElementById('black_50_percent').value = data.black_50_percent || '';
+                    document.getElementById('black_75_percent').value = data.black_75_percent || '';
+                    document.getElementById('x_25_percent').value = data.x_25_percent || '';
+                    document.getElementById('x_50_percent').value = data.x_50_percent || '';
+                    document.getElementById('x_75_percent').value = data.x_75_percent || '';
+                    document.getElementById('z_25_percent').value = data.z_25_percent || '';
+                    document.getElementById('z_50_percent').value = data.z_50_percent || '';
+                    document.getElementById('z_75_percent').value = data.z_75_percent || '';
+                    document.getElementById('u_25_percent').value = data.u_25_percent || '';
+                    document.getElementById('u_50_percent').value = data.u_50_percent || '';
+                    document.getElementById('u_75_percent').value = data.u_75_percent || '';
+                    document.getElementById('v_25_percent').value = data.v_25_percent || '';
+                    document.getElementById('v_50_percent').value = data.v_50_percent || '';
+                    document.getElementById('v_75_percent').value = data.v_75_percent || '';
+
+                    // Panggil kembali toggleNotGoodReason setelah data terisi
+                    toggleNotGoodReason(); 
+
+                } catch (error) {
+                    console.error('Error fetching data:', error);
+                    showBootstrapToast(`Gagal mengambil data untuk diedit: ${error.message}`, 'Error!', 'danger');
+                }
+            }
+
+            // Panggil toggleNotGoodReason saat nilai input berubah
+            if (numPlateNotGoodInput) {
+                numPlateNotGoodInput.addEventListener('input', toggleNotGoodReason);
+            }
+
+            form.addEventListener('submit', async function(event) {
+                event.preventDefault(); 
+                
+                const formData = new FormData(form);
+                const jsonData = {};
+                formData.forEach((value, key) => {
+                    jsonData[key] = value;
+                });
+
+                function parseNumberOrNull(value) {
+                    const num = parseFloat(value);
+                    return isNaN(num) ? null : num;
+                }
+                function parseIntOrNull(value) {
+                    const num = parseInt(value, 10);
+                    return isNaN(num) ? null : num;
+                }
+
+                // Konversi nilai numerik
+                jsonData.processor_temperature = parseNumberOrNull(jsonData.processor_temperature);
+                jsonData.dwell_time = parseNumberOrNull(jsonData.dwell_time);
+                jsonData.run_length_sheet = parseIntOrNull(jsonData.run_length_sheet);
+                jsonData.num_plate_good = parseIntOrNull(jsonData.num_plate_good);
+                jsonData.num_plate_not_good = parseIntOrNull(jsonData.num_plate_not_good);
+                
+                jsonData.cyan_25_percent = parseNumberOrNull(jsonData.cyan_25_percent);
+                jsonData.cyan_50_percent = parseNumberOrNull(jsonData.cyan_50_percent);
+                jsonData.cyan_75_percent = parseNumberOrNull(jsonData.cyan_75_percent);
+                jsonData.magenta_25_percent = parseNumberOrNull(jsonData.magenta_25_percent);
+                jsonData.magenta_50_percent = parseNumberOrNull(jsonData.magenta_50_percent);
+                jsonData.magenta_75_percent = parseNumberOrNull(jsonData.magenta_75_percent);
+                jsonData.yellow_25_percent = parseNumberOrNull(jsonData.yellow_25_percent);
+                jsonData.yellow_50_percent = parseNumberOrNull(jsonData.yellow_50_percent);
+                jsonData.yellow_75_percent = parseNumberOrNull(jsonData.yellow_75_percent);
+                jsonData.black_25_percent = parseNumberOrNull(jsonData.black_25_percent);
+                jsonData.black_50_percent = parseNumberOrNull(jsonData.black_50_percent);
+                jsonData.black_75_percent = parseNumberOrNull(jsonData.black_75_percent);
+                jsonData.x_25_percent = parseNumberOrNull(jsonData.x_25_percent);
+                jsonData.x_50_percent = parseNumberOrNull(jsonData.x_50_percent);
+                jsonData.x_75_percent = parseNumberOrNull(jsonData.x_75_percent);
+                jsonData.z_25_percent = parseNumberOrNull(jsonData.z_25_percent);
+                jsonData.z_50_percent = parseNumberOrNull(jsonData.z_50_percent);
+                jsonData.z_75_percent = parseNumberOrNull(jsonData.z_75_percent);
+                jsonData.u_25_percent = parseNumberOrNull(jsonData.u_25_percent);
+                jsonData.u_50_percent = parseNumberOrNull(jsonData.u_50_percent);
+                jsonData.u_75_percent = parseNumberOrNull(jsonData.u_75_percent);
+                jsonData.v_25_percent = parseNumberOrNull(jsonData.v_25_percent);
+                jsonData.v_50_percent = parseNumberOrNull(jsonData.v_50_percent);
+                jsonData.v_75_percent = parseNumberOrNull(jsonData.v_75_percent);
+
+                // Pastikan waktu diatur ke null jika kosong, bukan string kosong
+                jsonData.start_time = jsonData.start_time || null;
+                jsonData.finish_time = jsonData.finish_time || null;
+
+                // Ganti string kosong dengan null untuk field yang tidak wajib (tetap ada)
+                for (const key in jsonData) {
+                    if (jsonData[key] === '') {
+                        jsonData[key] = null;
+                    }
+                }
+
+                try {
+                    const response = await fetch(`/api/kpi_ctp/${dataId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(jsonData),
+                    });
+
+                    const result = await response.json(); // Always try to parse JSON for errors
+
+                    if (response.ok) {
+                        showBootstrapToast(result.message || 'Data berhasil diperbarui!', 'Berhasil!', 'success');
+                        setTimeout(() => {
+                            window.location.href = '/tabel-kpi-ctp'; // Kembali ke tabel setelah berhasil
+                        }, 1500); // Redirect after 1.5 seconds
+                    } else {
+                        showBootstrapToast(result.error || response.statusText, 'Error!', 'danger');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showBootstrapToast('Terjadi kesalahan saat mengirim data atau kesalahan jaringan.', 'Error!', 'danger');
+                }
+            });
+
+            // Panggil fungsi untuk mengisi form saat DOM selesai dimuat
+            fetchAndPopulateForm();
+        });
+    </script>
+</body>
+</html>

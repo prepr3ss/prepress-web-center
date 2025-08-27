@@ -1,0 +1,210 @@
+<style>
+    .sidebar-heading {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 18px 16px 14px 16px;
+        border-bottom: 1px solid #e9ecef;
+        box-shadow: 0 2px 12px 0 rgba(0,0,0,0.03);
+        white-space: nowrap;
+        background: none;
+    }
+    .sidebar-logo {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        background: #fff;
+        box-shadow: 0 2px 8px 0 rgba(0,181,226,0.10);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    .sidebar-title {
+        font-family: 'Segoe UI', 'Arial', sans-serif;
+        font-weight: 700;
+        font-size: 1.05rem;
+        letter-spacing: 1px;
+        color: #212529;
+        text-transform: uppercase;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.1;
+    }
+</style>
+<div class="border-right" id="sidebar-wrapper">
+    <!-- Sidebar Header -->
+    <div class="sidebar-heading">
+        <span class="sidebar-logo">
+            <img src="{{ url_for('static', filename='img/prepress_impact_logo.png') }}" alt="Logo" style="width: 90%; height: 90%; object-fit: contain;">
+        </span>
+        <span class="sidebar-title">PREPRESS IMPACT</span>
+    </div>
+    
+    <!-- User Info Section - Clean design before Dashboard -->
+    {% if current_user.is_authenticated %}
+    <div class="p-3 mb-2" style="margin: 0 12px;">
+        <div class="text-center">
+            <!-- User Profile Icon - Circle -->
+            <div class="d-flex justify-content-center mb-2">
+                <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                     style="width: 50px; height: 50px; background-color: #e7f3ff; border: 2px solid #007bff;">
+                    <i class="fas fa-user text-primary" style="font-size: 1.5rem;"></i>
+                </div>
+            </div>
+            
+            <!-- User Name -->
+            <div class="fw-bold text-dark mb-2" style="font-size: 1rem;">
+                {{ current_user.name }}
+            </div>
+            
+            <!-- Clean Badges -->
+            <div class="d-flex flex-wrap justify-content-center gap-1">
+                <!-- Role Badge -->
+                <span class="badge bg-primary" style="font-size: 0.75rem;">
+                    {{ current_user.role.title() }}
+                </span>
+                
+                <!-- Division Badge -->
+                {% if current_user.division %}
+                <span class="badge bg-secondary" style="font-size: 0.75rem;">
+                    {{ current_user.division.name }}
+                </span>
+                {% endif %}
+                
+                <!-- Group Badge -->
+                {% if current_user.grup %}
+                <span class="badge bg-info" style="font-size: 0.75rem;">
+                    Grup {{ current_user.grup }}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Separator -->
+    <hr style="margin: 0 12px; color: #dee2e6;">
+    {% endif %}
+    
+    <div class="list-group list-group-flush">
+        <a href="/" class="list-group-item list-group-item-action" id="dashboardUtama">
+            <i class="fas fa-chart-line me-2"></i> Dashboard Impact
+        </a>
+
+        <!-- CTP Production Menu - Only show if user can access CTP -->
+        {% if current_user.can_access_ctp() %}
+        <a href="#ctpSubmenu" data-bs-toggle="collapse" aria-expanded="false" 
+           class="list-group-item list-group-item-action ctp-submenu-parent collapsed" 
+           style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center;">
+                <i class="fas fa-print me-2"></i>
+                <span>CTP Production</span> </div>
+            <i class="fas fa-chevron-right"></i> </a>
+        <div class="collapse" id="ctpSubmenu">
+            <a href="/dashboard-ctp" class="list-group-item list-group-item-action ps-5" id="dashboardKpiCtpLink">
+                <i class="fas fa-chart-pie me-2"></i> Dashboard
+            </a>
+            <a href="/tabel-kpi-ctp" class="list-group-item list-group-item-action ps-5" id="inputKpiCtpLink">
+                <i class="fas fa-table me-2"></i>KPI CTP
+            </a>
+            <a href="/ctp-data-adjustment" class="list-group-item list-group-item-action ps-5" id="ctpDataAdjustmentLink">
+                <i class="fas fa-layer-group me-2"></i>Adjustment CTP
+            </a>
+            <a href="/ctp-data-bon" class="list-group-item list-group-item-action ps-5" id="ctpDataBonLink">
+                <i class="fas fa-layer-group me-2"></i>Bon CTP
+            </a>
+            <a href="/stock-opname-ctp" class="list-group-item list-group-item-action ps-5" id="stockOpnameCtpLink">
+                <i class="fas fa-boxes me-2"></i>Stock Opname
+            </a>
+            <a href="/chemical-bon-ctp" class="list-group-item list-group-item-action ps-5" id="chemicalBonCtpLink">
+                <i class="fa-solid fa-flask me-2"></i>Bon Chemical CTP
+            </a>
+            <a href="/kartu-stock-ctp" class="list-group-item list-group-item-action ps-5" id="kartuStockCtpLink">
+                <i class="fa-solid fa-cart-flatbed me-2"></i>Kartu Stock CTP
+            </a>            
+        </div>
+        {% endif %}
+
+        <!-- Press Production Menu - Only show if user can access Press -->
+        {% if current_user.can_access_press() %}
+         <a href="#pressSubmenu" data-bs-toggle="collapse" aria-expanded="false"
+           class="list-group-item list-group-item-action press-submenu-parent collapsed"
+           style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center;">
+                <i class="fas fa-industry me-2"></i>
+                <span>Press Production</span>
+            </div>
+            <i class="fas fa-chevron-right"></i></a>
+        <div class="collapse" id="pressSubmenu">
+            <a href="/data-adjustment" class="list-group-item list-group-item-action ps-5" id="dataAdjustmentLink">
+                <i class="fas fa-layer-group me-2"></i>Adjustment Press
+            </a>
+            <a href="/data-bon" class="list-group-item list-group-item-action ps-5" id="dataBonLink">
+                <i class="fas fa-layer-group me-2"></i>Bon Press
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Mounting Production Menu - Only show if user can access Mounting -->
+        {% if current_user.can_access_mounting() %}
+        <a href="#mountingSubmenu" data-bs-toggle="collapse" aria-expanded="false"
+           class="list-group-item list-group-item-action mounting-submenu-parent collapsed"
+           style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center;">
+                <i class="fas fa-bezier-curve me-2"></i>
+                <span>Mounting Production</span>
+            </div>
+            <i class="fas fa-chevron-right"></i></a>
+        <div class="collapse" id="mountingSubmenu">
+            <a href="/mounting-data-adjustment" class="list-group-item list-group-item-action ps-5" id="mountingDataAdjustmentLink">
+                <i class="fas fa-layer-group me-2"></i>Adjustment Mounting
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Administrator Menu - Only show if user is admin -->
+        {% if current_user.role == 'admin' %}
+        <a href="#adminSubmenu" data-bs-toggle="collapse" aria-expanded="false"
+           class="list-group-item list-group-item-action admin-submenu-parent collapsed"
+           style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center;">
+                <i class="fas fa-users-cog me-2"></i>
+                <span>Administrator</span>
+            </div>
+            <i class="fas fa-chevron-right"></i></a>
+        <div class="collapse" id="adminSubmenu">
+            <a href="/admin/users" class="list-group-item list-group-item-action ps-5" id="adminUsersLink">
+                <i class="fas fa-user-shield me-2"></i>Kelola User
+            </a>
+            <a href="/admin/divisions" class="list-group-item list-group-item-action ps-5" id="adminDivisionsLink">
+                <i class="fas fa-building me-2"></i>Kelola Divisi
+            </a>
+        </div>
+        {% endif %}
+        
+        <!-- Settings Menu - Available for all authenticated users -->
+        {% if current_user.is_authenticated %}
+        <a href="#settingsSubmenu" data-bs-toggle="collapse" aria-expanded="false"
+           class="list-group-item list-group-item-action settings-submenu-parent collapsed"
+           style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center;">
+                <i class="fas fa-cog me-2"></i>
+                <span>Settings</span>
+            </div>
+            <i class="fas fa-chevron-right"></i></a>
+        <div class="collapse" id="settingsSubmenu">
+            <a href="/settings/change-password" class="list-group-item list-group-item-action ps-5" id="changePasswordLink">
+                <i class="fas fa-key me-2"></i>Ubah Password
+            </a>
+        </div>
+
+        <!-- Logout Button at the end -->
+        <a href="{{ url_for('logout') }}" class="list-group-item list-group-item-action text-danger" 
+           style="border-top: 1px solid #dee2e6; margin-top: 10px;">
+            <i class="fas fa-sign-out-alt me-2"></i>Logout
+        </a>
+        {% endif %}
+    </div>
+</div>

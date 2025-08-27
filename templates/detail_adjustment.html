@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prepress Impact</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Clean and Professional Styling - Detail Adjustment */
+        .page-header {
+            background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+            color: white;
+            padding: 2rem 0;
+            margin: -1rem -15px 2rem -15px;
+            border-radius: 0 0 20px 20px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            background: white;
+            margin-top: 0;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .card-header {
+            border: none;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 1.25rem;
+            font-size: 1rem;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        .row.mb-2 > div {
+            padding-bottom: 0.5rem;
+        }
+        
+        /* Button styling */
+        .btn-clean {
+            border: none;
+            border-radius: 25px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-outline-secondary {
+            border: 2px solid #8b5cf6;
+            color: #8b5cf6;
+            background: transparent;
+            border-radius: 25px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-outline-secondary:hover {
+            background: #8b5cf6;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(139, 92, 246, 0.3);
+        }
+        
+        /* Card headers with gradients */
+        .card-header.bg-primary {
+            background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%) !important;
+        }
+        
+        .card-header.bg-success {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%) !important;
+        }
+        
+        .card-header.bg-warning {
+            background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%) !important;
+            color: white !important;
+        }
+        
+        /* Info labels and values */
+        .text-muted {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d !important;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+        
+        .fw-bold {
+            font-weight: 600 !important;
+            color: #2d3436;
+        }
+        
+        .border-bottom {
+            border-color: #e9ecef !important;
+        }
+        
+        /* Timeline Styling */
+        .timeline {
+            position: relative;
+            padding-left: 25px;
+        }
+        
+        /* Remove old timeline lines */
+        .timeline::before,
+        .timeline::after {
+            display: none;
+        }
+        
+        /* Individual timeline segments */
+        .timeline-segment {
+            position: absolute;
+            left: 8px;
+            width: 3px;
+            background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+            z-index: 1;
+            transition: all 0.5s ease;
+            border-radius: 2px;
+        }
+        
+        .timeline-segment.completed {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+            box-shadow: 0 0 10px rgba(86, 171, 47, 0.3);
+        }
+        
+        .timeline-item {
+            position: relative;
+            padding-bottom: 1.2rem;
+            min-height: 50px;
+        }
+        .timeline-item:last-child {
+            padding-bottom: 0.5rem;
+        }
+        
+        .timeline-marker {
+            position: absolute;
+            left: -21px;
+            top: 8px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+        
+        /* Interactive Timeline Enhancements */
+        .timeline-marker.active {
+            animation: pulse 2s infinite;
+            transform: scale(1.3);
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.3);
+        }
+        
+        .timeline-marker.completed {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%) !important;
+            transform: scale(1.2);
+            box-shadow: 0 2px 12px rgba(86, 171, 47, 0.4);
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7); }
+            70% { box-shadow: 0 0 0 12px rgba(139, 92, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+        }
+        
+        .timeline-tooltip {
+            position: absolute;
+            background: linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.8) 100%);
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .update-indicator {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+            animation: blink 1.5s infinite;
+            box-shadow: 0 0 8px rgba(86, 171, 47, 0.5);
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; transform: scale(1); }
+            51%, 100% { opacity: 0.3; transform: scale(0.8); }
+        }
+        
+        .timeline-content {
+            padding-left: 8px;
+        }
+        
+        /* Timeline marker colors with gradients */
+        .timeline-marker.bg-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        }
+        
+        .timeline-marker.bg-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .timeline-marker.bg-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        }
+        
+        .timeline-marker.bg-success {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        }
+        
+        .timeline-marker.bg-secondary {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+        }
+        
+        /* Page title styling */
+        h2 {
+            color: #2d3436;
+            font-weight: 700;
+            margin-bottom: 2rem;
+        }
+        
+        /* Shadow improvements */
+        .shadow-sm {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08) !important;
+        }
+        
+        /* Prevent flash of unstyled content */
+        body {
+            visibility: hidden;
+        }
+        
+        body.loaded {
+            visibility: visible;
+            opacity: 1;
+            transition: opacity 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="d-flex" id="wrapper">
+        {% include '_sidebar.html' %}
+        <div id="page-content-wrapper">
+            <div class="container-fluid">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div class="container-fluid">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 class="mb-1 text-white">Detail Plate Adjustment</h2>
+                                <p class="mb-0 opacity-75">Informasi lengkap proses adjustment dan timeline</p>
+                            </div>
+                            <div class="text-end">
+                                <div class="small opacity-75">Sistem Monitoring Prepress</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end mb-3">
+                    <button onclick="goBack()" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Kembali
+                    </button>
+                </div>
+                
+                <!-- Detail Card -->
+                <div class="row">
+                    <!-- Status Card -->
+                    <div class="col-12 mb-4">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Status Adjustment</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-3 mb-3">
+                                        <div class="text-front">
+                                            <span class="badge status-badge fs-6" data-status="{{ data.status }}">
+                                                {{ data.status|replace('_', ' ')|title }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-9">
+                                        <div class="row g-3">
+                                            <div class="col-md-3">
+                                                <div class="text-muted">Tanggal</div>
+                                                <div class="fw-bold" data-tanggal="{{ data.tanggal }}">{{ data.tanggal }}</div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="text-muted">Mesin Cetak</div>
+                                                <div class="fw-bold">{{ data.mesin_cetak }}</div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="text-muted">PIC</div>
+                                                <div class="fw-bold">{{ data.pic }}</div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="text-muted">Remarks</div>
+                                                <div class="fw-bold">{{ data.remarks }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Informasi Item -->
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0"><i class="fas fa-box me-2"></i>Informasi Item</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <div class="text-muted">Nama Item</div>
+                                        <div class="fw-bold">{{ data.item_name }}</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="text-muted">WO Number</div>
+                                        <div class="fw-bold">{{ data.wo_number }}</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="text-muted">MC Number</div>
+                                        <div class="fw-bold">{{ data.mc_number }}</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="text-muted">Jumlah Plate</div>
+                                        <div class="fw-bold">
+                                            <i class="fas fa-layer-group me-1 text-primary"></i>
+                                            {{ data.jumlah_plate }} plate
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="text-muted">Run Length</div>
+                                        <div class="fw-bold">
+                                            <i class="fas fa-boxes me-1 text-success"></i>
+                                            {{ data.run_length }}
+                                        </div>
+                                    </div>
+                                    {% if data.note %}
+                                    <div class="col-12">
+                                        <div class="text-muted">Catatan</div>
+                                        <div class="alert alert-light border border-warning" style="background: linear-gradient(135deg, #fff8e1 0%, #fffde7 100%); border-radius: 8px; margin-bottom: 0;">
+                                            <i class="fas fa-sticky-note me-1 text-warning"></i>
+                                            {{ data.note }}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detail Waktu -->
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header bg-warning text-white position-relative">
+                                <h6 class="mb-0"><i class="fas fa-clock me-2"></i>Timeline Proses</h6>
+                                <div class="update-indicator" id="updateIndicator" style="display: none;"></div>
+                            </div>
+                            <div class="card-body">
+                                <div class="timeline" id="timelineContainer">
+                                    <div class="timeline-tooltip" id="timelineTooltip"></div>
+                                    
+                                    <!-- Timeline segments dengan panjang yang tepat -->
+                                    <!-- Garis 1: Mesin Off ke Mulai Adjustment -->
+                                    <div class="timeline-segment" id="segment-0" style="top: 20px; height: 60px;"></div>
+                                    <!-- Garis 2: Mulai Adjustment ke Selesai Adjustment -->
+                                    <div class="timeline-segment" id="segment-1" style="top: 90px; height: 65px;"></div>
+                                    <!-- Garis 3: Selesai Adjustment ke Mulai Plate -->
+                                    <div class="timeline-segment" id="segment-2" style="top: 160px; height: 65px;"></div>
+                                    <!-- Garis 4: Mulai Plate ke Selesai Plate -->
+                                    <div class="timeline-segment" id="segment-3" style="top: 230px; height: 65px;"></div>
+                                    <!-- Garis 5: Selesai Plate ke Plate Sampai -->
+                                    <div class="timeline-segment" id="segment-4" style="top: 300px; height: 65px;"></div>
+                                    
+                                    <div class="timeline-item" data-step="machine_off">
+                                        <div class="timeline-marker bg-danger" data-tooltip="Mesin berhenti beroperasi"></div>
+                                        <div class="timeline-content">
+                                            <div class="fw-bold mb-1">Mesin Off</div>
+                                            <div class="text-dark" data-datetime="{{ data.machine_off_at }}" data-pic="{{ data.pic }}">
+                                                {{ data.machine_off_at }} 
+                                                {% if data.pic %}<span class="text-muted">[{{ data.pic }}]</span>{% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="timeline-item" data-step="adjustment_start">
+                                        <div class="timeline-marker bg-{% if data.adjustment_start_at %}info{% else %}secondary{% endif %}" data-tooltip="Mulai proses penyesuaian"></div>
+                                        <div class="timeline-content">
+                                            <div class="fw-bold mb-1">Mulai Adjustment</div>
+                                            <div class="text-dark">
+                                                {% if data.adjustment_start_at %}
+                                                    <span data-datetime="{{ data.adjustment_start_at }}" data-pic="{{ data.adjustment_by }}">
+                                                        {{ data.adjustment_start_at }}
+                                                        {% if data.adjustment_by %}<span class="text-muted">[{{ data.adjustment_by }}]</span>{% endif %}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-muted">Belum dimulai</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="timeline-item" data-step="adjustment_finish">
+                                        <div class="timeline-marker bg-{% if data.adjustment_finish_at %}info{% else %}secondary{% endif %}" data-tooltip="Selesai proses penyesuaian"></div>
+                                        <div class="timeline-content">
+                                            <div class="fw-bold mb-1">Selesai Adjustment</div>
+                                            <div class="text-dark">
+                                                {% if data.adjustment_finish_at %}
+                                                    <span data-datetime="{{ data.adjustment_finish_at }}" data-pic="{{ data.adjustment_by }}">
+                                                        {{ data.adjustment_finish_at }}
+                                                        {% if data.adjustment_by %}<span class="text-muted">[{{ data.adjustment_by }}]</span>{% endif %}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-muted">Belum selesai</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="timeline-item" data-step="plate_start">
+                                        <div class="timeline-marker bg-{% if data.plate_start_at %}primary{% else %}secondary{% endif %}" data-tooltip="Mulai proses pembuatan plate"></div>
+                                        <div class="timeline-content">
+                                            <div class="fw-bold mb-1">Mulai Plate</div>
+                                            <div class="text-dark">
+                                                {% if data.plate_start_at %}
+                                                    <span data-datetime="{{ data.plate_start_at }}" data-pic="{{ data.ctp_by }}">
+                                                        {{ data.plate_start_at }}
+                                                        {% if data.ctp_by %}<span class="text-muted">[{{ data.ctp_by }}]</span>{% endif %}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-muted">Belum dimulai</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="timeline-item" data-step="plate_finish">
+                                        <div class="timeline-marker bg-{% if data.plate_finish_at %}primary{% else %}secondary{% endif %}" data-tooltip="Selesai proses pembuatan plate"></div>
+                                        <div class="timeline-content">
+                                            <div class="fw-bold mb-1">Selesai Plate</div>
+                                            <div class="text-dark">
+                                                {% if data.plate_finish_at %}
+                                                    <span data-datetime="{{ data.plate_finish_at }}" data-pic="{{ data.ctp_by }}">
+                                                        {{ data.plate_finish_at }}
+                                                        {% if data.ctp_by %}<span class="text-muted">[{{ data.ctp_by }}]</span>{% endif %}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-muted">Belum selesai</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="timeline-item" data-step="plate_delivered">
+                                        <div class="timeline-marker bg-{% if data.plate_delivered_at %}success{% else %}secondary{% endif %}" data-tooltip="Plate sampai di mesin cetak"></div>
+                                        <div class="timeline-content">
+                                            <div class="fw-bold mb-1">Plate Sampai</div>
+                                            <div class="text-dark">
+                                                {% if data.plate_delivered_at %}
+                                                    <span data-datetime="{{ data.plate_delivered_at }}" data-pic="{{ data.ctp_by }}">
+                                                        {{ data.plate_delivered_at }}
+                                                        {% if data.ctp_by %}<span class="text-muted">[{{ data.ctp_by }}]</span>{% endif %}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-muted">Belum sampai</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+    <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/badge_system.js') }}"></script>
+    <script>
+        // Konversi tanggal ke format Indonesia
+        function formatTanggalIndonesia(dateString) {
+            if (!dateString || dateString === '-') return dateString;
+            
+            const bulanIndonesia = [
+                'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            ];
+            
+            // Coba parse berbagai format tanggal
+            let date;
+            if (dateString.includes('-')) {
+                // Format YYYY-MM-DD atau DD-MM-YYYY
+                const parts = dateString.split('-');
+                if (parts[0].length === 4) {
+                    // YYYY-MM-DD
+                    date = new Date(parts[0], parts[1] - 1, parts[2]);
+                } else {
+                    // DD-MM-YYYY
+                    date = new Date(parts[2], parts[1] - 1, parts[0]);
+                }
+            } else if (dateString.includes('/')) {
+                // Format DD/MM/YYYY atau MM/DD/YYYY
+                const parts = dateString.split('/');
+                date = new Date(parts[2], parts[1] - 1, parts[0]);
+            } else {
+                date = new Date(dateString);
+            }
+            
+            if (isNaN(date.getTime())) return dateString;
+            
+            const day = date.getDate();
+            const month = bulanIndonesia[date.getMonth()];
+            const year = date.getFullYear();
+            
+            return `${day} ${month} ${year}`;
+        }
+        
+        // Konversi datetime ke format Indonesia (untuk timeline)
+        function formatDateTimeIndonesia(datetimeString) {
+            if (!datetimeString || datetimeString === '-') return datetimeString;
+            
+            const bulanIndonesia = [
+                'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            ];
+            
+            let date;
+            
+            // Parse format ISO: YYYY-MM-DDTHH:MM:SS
+            if (datetimeString.includes('T')) {
+                const [datePart, timePart] = datetimeString.split('T');
+                const [year, month, day] = datePart.split('-');
+                const [hour, minute] = timePart.split(':');
+                
+                date = new Date(year, month - 1, day, hour, minute);
+                
+                if (!isNaN(date.getTime())) {
+                    const dayNum = date.getDate();
+                    const monthName = bulanIndonesia[date.getMonth()];
+                    const yearNum = date.getFullYear();
+                    const hourFormatted = hour.padStart(2, '0');
+                    const minuteFormatted = minute.padStart(2, '0');
+                    
+                    return `${dayNum} ${monthName} ${yearNum} - ${hourFormatted}:${minuteFormatted}`;
+                }
+            }
+            // Parse format database: YYYY-MM-DD HH:MM:SS
+            else if (datetimeString.includes(' ')) {
+                const [datePart, timePart] = datetimeString.split(' ');
+                const [year, month, day] = datePart.split('-');
+                const [hour, minute] = timePart.split(':');
+                
+                date = new Date(year, month - 1, day, hour, minute);
+                
+                if (!isNaN(date.getTime())) {
+                    const dayNum = date.getDate();
+                    const monthName = bulanIndonesia[date.getMonth()];
+                    const yearNum = date.getFullYear();
+                    const hourFormatted = hour.padStart(2, '0');
+                    const minuteFormatted = minute.padStart(2, '0');
+                    
+                    return `${dayNum} ${monthName} ${yearNum} - ${hourFormatted}:${minuteFormatted}`;
+                }
+            }
+            
+            // Fallback untuk format tanggal saja
+            return formatTanggalIndonesia(datetimeString);
+        }
+        
+        // Konversi semua tanggal sebelum halaman tampil (menghindari blink)
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Badge System
+            initializeStatusBadge();
+            
+            // Konversi tanggal di status card
+            const tanggalElements = document.querySelectorAll('[data-tanggal]');
+            tanggalElements.forEach(function(el) {
+                const tanggal = el.getAttribute('data-tanggal');
+                el.textContent = formatTanggalIndonesia(tanggal);
+            });
+            
+            // Konversi tanggal-waktu di timeline
+            const timelineElements = document.querySelectorAll('[data-datetime]');
+            timelineElements.forEach(function(el) {
+                const datetime = el.getAttribute('data-datetime');
+                const pic = el.getAttribute('data-pic');
+                
+                if (datetime && datetime !== '-') {
+                    const formattedDateTime = formatDateTimeIndonesia(datetime);
+                    el.innerHTML = `${formattedDateTime} ${pic ? '<span class="text-muted">[' + pic + ']</span>' : ''}`;
+                }
+            });
+            
+            // Initialize Interactive Timeline
+            initializeInteractiveTimeline();
+            
+            // Show content smoothly after conversion
+            document.body.classList.add('loaded');
+            document.body.style.visibility = 'visible';
+        });
+        
+        // Initialize Status Badge dengan division-aware logic
+        function initializeStatusBadge() {
+            const statusBadge = document.querySelector('[data-status]');
+            if (statusBadge && window.BadgeSystem) {
+                const status = statusBadge.getAttribute('data-status');
+                
+                // Tentukan division berdasarkan status
+                let division = 'default';
+                if (status === 'menunggu_adjustment' || status === 'proses_adjustment') {
+                    division = 'mounting';
+                } else if (status === 'proses_ctp' || status === 'proses_plate' || status === 'antar_plate' || status === 'selesai') {
+                    division = 'ctp';
+                }
+                
+                // Get status info berdasarkan division
+                const statusInfo = window.BadgeSystem.getStatusInfo(status, division);
+                if (statusInfo) {
+                    // Clear existing classes
+                    statusBadge.className = 'badge status-badge fs-6';
+                    
+                    // Add division-aware badge class
+                    statusBadge.classList.add(statusInfo.class);
+                    statusBadge.textContent = statusInfo.label;
+                    
+                    // Set data-status untuk compatibility
+                    statusBadge.setAttribute('data-status', status);
+                }
+            }
+        }
+        
+        // Interactive Timeline Functions
+        let timelineData = {
+            machine_off_at: '{{ data.machine_off_at }}',
+            adjustment_start_at: '{{ data.adjustment_start_at }}',
+            adjustment_finish_at: '{{ data.adjustment_finish_at }}',
+            plate_start_at: '{{ data.plate_start_at }}',
+            plate_finish_at: '{{ data.plate_finish_at }}',
+            plate_delivered_at: '{{ data.plate_delivered_at }}'
+        };
+        
+        function initializeInteractiveTimeline() {
+            // Setup tooltips
+            setupTooltips();
+            
+            // Determine current active step
+            updateActiveStep();
+            
+            // Setup progress bar
+            updateProgressBar();
+            
+            // Setup auto-refresh
+            setupAutoRefresh();
+        }
+        
+        function setupTooltips() {
+            const markers = document.querySelectorAll('.timeline-marker[data-tooltip]');
+            const tooltip = document.getElementById('timelineTooltip');
+            
+            markers.forEach(marker => {
+                marker.addEventListener('mouseenter', function(e) {
+                    const tooltipText = this.getAttribute('data-tooltip');
+                    tooltip.textContent = tooltipText;
+                    tooltip.style.display = 'block';
+                    tooltip.style.left = (e.pageX + 10) + 'px';
+                    tooltip.style.top = (e.pageY - 30) + 'px';
+                });
+                
+                marker.addEventListener('mouseleave', function() {
+                    tooltip.style.display = 'none';
+                });
+            });
+        }
+        
+        function updateActiveStep() {
+            const steps = ['machine_off', 'adjustment_start', 'adjustment_finish', 'plate_start', 'plate_finish', 'plate_delivered'];
+            let activeStep = null;
+            let lastCompletedStepIndex = -1;
+            
+            // Find the last completed step and determine active step
+            for (let i = 0; i < steps.length; i++) {
+                const stepData = timelineData[steps[i] + '_at'];
+                if (stepData && stepData !== '' && stepData !== '-' && stepData !== 'None') {
+                    lastCompletedStepIndex = i;
+                } else {
+                    // This is the first incomplete step, so it's active
+                    activeStep = steps[i];
+                    break;
+                }
+            }
+            
+            // Update UI for active step
+            if (activeStep) {
+                const activeItem = document.querySelector(`[data-step="${activeStep}"]`);
+                const activeMarker = activeItem?.querySelector('.timeline-marker');
+                
+                if (activeItem && activeMarker) {
+                    activeItem.classList.add('active');
+                    activeMarker.classList.add('active');
+                }
+            }
+            
+            // Mark completed steps
+            steps.forEach((step, index) => {
+                const stepData = timelineData[step + '_at'];
+                if (stepData && stepData !== '' && stepData !== '-' && stepData !== 'None') {
+                    const item = document.querySelector(`[data-step="${step}"]`);
+                    const marker = item?.querySelector('.timeline-marker');
+                    if (marker) marker.classList.add('completed');
+                }
+            });
+        }
+        
+        function updateProgressBar() {
+            const steps = ['machine_off', 'adjustment_start', 'adjustment_finish', 'plate_start', 'plate_finish', 'plate_delivered'];
+            
+            // Update each segment based on completion status
+            for (let i = 0; i < 5; i++) { // 5 segments for 6 steps
+                const currentStep = steps[i]; // Step yang memulai segmen ini
+                const segment = document.getElementById(`segment-${i}`);
+                
+                if (segment) {
+                    // Check if current step (yang memulai segmen) is completed
+                    const currentStepData = timelineData[currentStep + '_at'];
+                    const isCurrentCompleted = currentStepData && currentStepData !== '' && currentStepData !== '-' && currentStepData !== 'None';
+                    
+                    if (isCurrentCompleted) {
+                        segment.classList.add('completed');
+                    } else {
+                        segment.classList.remove('completed');
+                    }
+                }
+            }
+        }
+        
+        function setupAutoRefresh() {
+            // Auto refresh every 30 seconds
+            setInterval(async function() {
+                try {
+                    const response = await fetch(window.location.href);
+                    if (response.ok) {
+                        // Show update indicator
+                        const indicator = document.getElementById('updateIndicator');
+                        indicator.style.display = 'block';
+                        
+                        setTimeout(() => {
+                            indicator.style.display = 'none';
+                        }, 2000);
+                        
+                        // Here you would typically update the data
+                        // For now, we'll just show the indicator
+                    }
+                } catch (error) {
+                    console.log('Auto-refresh failed:', error);
+                }
+            }, 30000);
+        }
+        
+        function capitalizeFirst(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+        
+        // Function untuk kembali ke halaman sebelumnya
+        function goBack() {
+            // Cek apakah ada history sebelumnya
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                // Fallback ke data-adjustment jika tidak ada history
+                window.location.href = '/data-adjustment';
+            }
+        }
+    </script>    
+</body>
+</html>

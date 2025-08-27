@@ -1,0 +1,534 @@
+/* 
+========================================================================
+PREPRESS IMPACT - CLEAN DESIGN FRAMEWORK v1.0
+========================================================================
+Framework UI yang clean, professional, dan modern untuk semua modul
+Dibuat berdasarkan CTP Data Adjustment yang sangat disukai!
+
+USAGE:
+1. Include file ini setelah Bootstrap
+2. Gunakan CSS variables untuk customize color scheme
+3. Gunakan predefined classes untuk konsistensi
+
+FEATURES:
+- Modern gradient designs
+- Clean shadows & borders
+- Smooth animations & transitions
+- Responsive layout
+- Professional typography
+- Customizable color schemes
+========================================================================
+*/
+
+/* CSS Variables untuk Custom Color Schemes */
+:root {
+    /* Default Color Scheme (CTP Orange/Blue) */
+    --primary-gradient: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+    --secondary-gradient: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
+    --accent-gradient: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);
+    --info-gradient: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+    --success-gradient: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+    --dark-gradient: linear-gradient(135deg, #636e72 0%, #2d3436 100%);
+    
+    /* Primary Colors */
+    --primary-color: #ff9500;
+    --secondary-color: #00b4db;
+    --accent-color: #fd79a8;
+    
+    /* Shadow & Border Radius */
+    --shadow-light: 0 2px 10px rgba(0,0,0,0.08);
+    --shadow-medium: 0 8px 25px rgba(0,0,0,0.15);
+    --border-radius: 15px;
+    --border-radius-small: 10px;
+    --border-radius-button: 25px;
+    
+    /* Spacing */
+    --spacing-xs: 0.5rem;
+    --spacing-sm: 1rem;
+    --spacing-md: 1.5rem;
+    --spacing-lg: 2rem;
+    --spacing-xl: 3rem;
+}
+
+/* 
+========================================================================
+1. PAGE LAYOUT COMPONENTS
+========================================================================
+*/
+
+/* Page Header */
+.clean-page-header {
+    background: var(--primary-gradient);
+    color: white;
+    padding: var(--spacing-lg) 0;
+    margin: -1rem -15px var(--spacing-lg) -15px;
+    border-radius: 0 0 20px 20px;
+}
+
+.clean-page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.clean-page-subtitle {
+    opacity: 0.75;
+    margin-bottom: 0;
+}
+
+.clean-page-meta {
+    text-align: right;
+}
+
+.clean-page-meta .small {
+    opacity: 0.75;
+}
+
+/* 
+========================================================================
+2. CARD COMPONENTS
+========================================================================
+*/
+
+/* Summary Cards */
+.clean-summary-card {
+    border: none;
+    border-radius: var(--border-radius);
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-light);
+    background: white;
+}
+
+.clean-summary-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-medium);
+}
+
+.clean-summary-card .card-body {
+    padding: var(--spacing-md);
+}
+
+.clean-summary-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem auto;
+    font-size: 1.5rem;
+}
+
+/* Icon Color Variants */
+.clean-icon-primary { background: var(--primary-gradient); }
+.clean-icon-secondary { background: var(--secondary-gradient); }
+.clean-icon-accent { background: var(--accent-gradient); }
+.clean-icon-info { background: var(--info-gradient); }
+.clean-icon-success { background: var(--success-gradient); }
+.clean-icon-dark { background: var(--dark-gradient); }
+
+/* Data Cards */
+.clean-data-card {
+    border: none;
+    border-radius: var(--border-radius);
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-light);
+    background: white;
+    overflow: hidden;
+}
+
+.clean-data-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-medium);
+}
+
+.clean-card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: none;
+    padding: 1.25rem;
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+.clean-card-footer {
+    background: #f8f9fa;
+    border: none;
+    padding: var(--spacing-sm);
+}
+
+/* 
+========================================================================
+3. STATUS & BADGE COMPONENTS
+========================================================================
+*/
+
+.clean-status-badge {
+    padding: 0.4rem 1rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* Badge Color Variants */
+.clean-badge-primary { 
+    background: var(--primary-gradient);
+    color: white;
+}
+
+.clean-badge-secondary { 
+    background: var(--secondary-gradient);
+    color: white;
+}
+
+.clean-badge-accent { 
+    background: var(--accent-gradient);
+    color: white;
+}
+
+.clean-badge-info { 
+    background: var(--info-gradient);
+    color: white;
+}
+
+.clean-badge-success { 
+    background: var(--success-gradient);
+    color: white;
+}
+
+/* 
+========================================================================
+4. FORM & FILTER COMPONENTS
+========================================================================
+*/
+
+.clean-filter-section {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: var(--spacing-md);
+    box-shadow: var(--shadow-light);
+    margin-bottom: var(--spacing-lg);
+}
+
+.clean-form-control {
+    border: 2px solid #e9ecef;
+    border-radius: var(--border-radius-small);
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.clean-form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(255, 149, 0, 0.25);
+}
+
+.clean-form-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+/* 
+========================================================================
+5. BUTTON COMPONENTS
+========================================================================
+*/
+
+.clean-btn {
+    border: none;
+    border-radius: var(--border-radius-button);
+    padding: 0.5rem 1.5rem;
+    font-weight: 600;
+    font-size: 0.8rem;
+    transition: all 0.3s ease;
+    letter-spacing: 0.5px;
+}
+
+/* Button Variants */
+.clean-btn-primary {
+    background: var(--primary-gradient);
+    color: white;
+}
+
+.clean-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 149, 0, 0.4);
+    color: white;
+}
+
+.clean-btn-secondary {
+    background: var(--secondary-gradient);
+    color: white;
+}
+
+.clean-btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 180, 219, 0.4);
+    color: white;
+}
+
+.clean-btn-outline {
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    background: transparent;
+}
+
+.clean-btn-outline:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 149, 0, 0.3);
+}
+
+.clean-btn-accent {
+    background: var(--accent-gradient);
+    color: white;
+}
+
+.clean-btn-accent:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(253, 121, 168, 0.4);
+    color: white;
+}
+
+/* 
+========================================================================
+6. INFO & CONTENT COMPONENTS
+========================================================================
+*/
+
+.clean-info-section {
+    background: #f8f9fa;
+    border-radius: var(--border-radius-small);
+    padding: var(--spacing-sm);
+    margin: var(--spacing-sm) 0;
+    border-left: 4px solid var(--primary-color);
+}
+
+.clean-info-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.clean-info-value {
+    font-weight: 600;
+    color: #2d3436;
+}
+
+.clean-timeline-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.clean-timeline-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.clean-timeline-dot-primary { background-color: var(--primary-color); }
+.clean-timeline-dot-secondary { background-color: var(--secondary-color); }
+.clean-timeline-dot-success { background-color: #28a745; }
+.clean-timeline-dot-info { background-color: #17a2b8; }
+.clean-timeline-dot-warning { background-color: #ffc107; }
+
+/* 
+========================================================================
+7. MODAL COMPONENTS
+========================================================================
+*/
+
+.clean-modal-content {
+    border: none;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.clean-modal-header-primary {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+}
+
+.clean-modal-header-secondary {
+    background: var(--secondary-gradient);
+    color: white;
+    border: none;
+}
+
+.clean-modal-alert {
+    border: none;
+    border-radius: var(--border-radius-small);
+}
+
+.clean-modal-alert-primary {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+}
+
+.clean-modal-alert-secondary {
+    background: linear-gradient(135deg, #d1ecf1 0%, #b8daff 100%);
+}
+
+/* 
+========================================================================
+8. UTILITY COMPONENTS
+========================================================================
+*/
+
+.clean-no-data {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: var(--spacing-xl);
+    text-align: center;
+    box-shadow: var(--shadow-light);
+}
+
+.clean-loading {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    text-align: center;
+    box-shadow: var(--shadow-light);
+}
+
+.clean-container {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+}
+
+/* 
+========================================================================
+9. COLOR SCHEME VARIANTS
+========================================================================
+*/
+
+/* Mounting Color Scheme (Purple/Green) */
+.theme-mounting {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --secondary-gradient: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+    --accent-gradient: linear-gradient(135deg, #fd79a8 0%, #fdcb6e 100%);
+    --primary-color: #667eea;
+    --secondary-color: #56ab2f;
+}
+
+/* CTP Color Scheme (Orange/Blue) - Default */
+.theme-ctp {
+    --primary-gradient: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+    --secondary-gradient: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
+    --accent-gradient: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);
+    --primary-color: #ff9500;
+    --secondary-color: #00b4db;
+}
+
+/* Production Color Scheme (Red/Gold) */
+.theme-production {
+    --primary-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    --secondary-gradient: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    --accent-gradient: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+    --primary-color: #e74c3c;
+    --secondary-color: #f39c12;
+}
+
+/* Quality Control Color Scheme (Teal/Navy) */
+.theme-qc {
+    --primary-gradient: linear-gradient(135deg, #1abc9c 0%, #16a085 100%);
+    --secondary-gradient: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+    --accent-gradient: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    --primary-color: #1abc9c;
+    --secondary-color: #34495e;
+}
+
+/* Maintenance Color Scheme (Gray/Yellow) */
+.theme-maintenance {
+    --primary-gradient: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+    --secondary-gradient: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%);
+    --accent-gradient: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+    --primary-color: #95a5a6;
+    --secondary-color: #f1c40f;
+}
+
+/* 
+========================================================================
+10. RESPONSIVE UTILITIES
+========================================================================
+*/
+
+@media (max-width: 768px) {
+    .clean-page-header {
+        padding: var(--spacing-sm) 0;
+    }
+    
+    .clean-page-title {
+        font-size: 1.5rem;
+    }
+    
+    .clean-summary-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
+    
+    .clean-filter-section {
+        padding: var(--spacing-sm);
+    }
+    
+    .clean-data-card {
+        margin-bottom: var(--spacing-sm);
+    }
+}
+
+/* 
+========================================================================
+FRAMEWORK USAGE EXAMPLES:
+
+1. Basic Page Structure:
+<div class="theme-ctp"> <!-- Apply color scheme -->
+    <div class="clean-page-header">
+        <h2 class="clean-page-title">Page Title</h2>
+        <p class="clean-page-subtitle">Subtitle</p>
+    </div>
+</div>
+
+2. Summary Cards:
+<div class="card clean-summary-card">
+    <div class="card-body text-center">
+        <div class="clean-summary-icon clean-icon-primary">
+            <i class="fas fa-icon text-white"></i>
+        </div>
+        <h3>Count</h3>
+        <div class="clean-info-label">Label</div>
+    </div>
+</div>
+
+3. Data Cards:
+<div class="card clean-data-card">
+    <div class="card-header clean-card-header">
+        Header Content
+    </div>
+    <div class="card-body">
+        Body Content
+    </div>
+    <div class="card-footer clean-card-footer">
+        Footer Content
+    </div>
+</div>
+
+4. Buttons:
+<button class="btn clean-btn clean-btn-primary">Primary</button>
+<button class="btn clean-btn clean-btn-secondary">Secondary</button>
+<button class="btn clean-btn clean-btn-outline">Outline</button>
+
+5. Forms:
+<label class="form-label clean-form-label">Label</label>
+<input class="form-control clean-form-control" type="text">
+
+========================================================================
+*/

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prepress Impact</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            margin: -1rem -15px 2rem -15px;
+            border-radius: 0 0 20px 20px;
+        }
+        
+        .filter-section {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+        
+        .form-control-clean {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control-clean:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .info-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+        
+        .table-responsive {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .divisions-table {
+            margin-bottom: 0;
+        }
+        
+        .divisions-table thead th {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: none;
+            font-weight: 600;
+            color: #495057;
+            padding: 1rem 0.75rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="d-flex" id="wrapper">
+        {% include '_sidebar.html' %}
+        <div id="page-content-wrapper">
+            <div class="container-fluid">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div class="container-fluid">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 class="mb-1 text-white">Kelola Divisi</h2>
+                                <p class="mb-0 opacity-75">Monitoring semua divisi yang terdaftar</p>
+                            </div>
+                            <div class="text-end">
+                        	<button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#addDivisionModal">
+                            	<i class="fas fa-plus-circle me-1"></i>Tambah Divisi
+                        	</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Filter Section -->
+                <div class="filter-section">
+                    <div class="row align-items-end">
+                        <div class="col-md-6 mb-2 mb-md-0">
+                            <label for="searchInput" class="form-label info-label">PENCARIAN</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control form-control-clean" id="searchInput" placeholder="Cari apapun...">
+                                <button class="btn btn-outline-secondary" type="button" id="clearSearch">Clear</button>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="dataMessage" class="alert d-none" role="alert"></div>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover table-sm align-middle divisions-table" id="divisionsTable">
+                        <thead>
+                            <tr>
+                                <th data-column="name">Nama Divisi <i class="fas fa-sort float-end"></i></th>
+                                <th data-column="description">Deskripsi Divisi <i class="fas fa-sort float-end"></i></th>
+                                <th data-column="created_at">Dibuat pada <i class="fas fa-sort float-end"></i></th>
+                                <th class="text-end">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="divisionsTableBody">
+                        </tbody>
+                    </table>
+                </div>
+                <nav>
+                    <div class="row py-2"></div>
+                    <ul class="pagination justify-content-center" id="paginationNav"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="notificationToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <!-- Toast message will be set dynamically -->
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Division Modal -->
+    <div class="modal fade" id="addDivisionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Tambah Divisi Baru</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addDivisionForm" action="{{ url_for('admin_add_division') }}" method="POST">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nama Divisi</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Deskripsi</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" form="addDivisionForm" class="btn btn-primary">Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Division Modal -->
+    <div class="modal fade" id="editDivisionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Ubah Divisi</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editDivisionForm" action="{{ url_for('admin_edit_division') }}" method="POST">
+                        <input type="hidden" id="edit_division_id" name="division_id">
+                        <div class="mb-3">
+                            <label for="edit_name" class="form-label">Nama Divisi</label>
+                            <input type="text" class="form-control" id="edit_name" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_description" class="form-label">Deskripsi</label>
+                            <textarea class="form-control" id="edit_description" name="description" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" form="editDivisionForm" class="btn btn-primary">Simpan Perubahan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteDivisionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Konfirmasi Hapus</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Apakah Anda yakin ingin menghapus divisi ini?</p>
+                    <form id="deleteDivisionForm" action="{{ url_for('admin_delete_division') }}" method="POST">
+                        <input type="hidden" id="deleteDivisionId" name="division_id">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" form="deleteDivisionForm" class="btn btn-danger">Hapus</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+    <script src="{{ url_for('static', filename='js/admin_divisions.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
+</body>
+</html>

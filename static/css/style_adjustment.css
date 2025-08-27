@@ -1,0 +1,27 @@
+/* Tabel adjustment: semua kolom fit to value */
+#adjustmentDataTable {
+    table-layout: auto !important;
+    width: auto !important;
+}
+
+#adjustmentDataTable th,
+#adjustmentDataTable td {
+    white-space: nowrap;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.95rem;
+    vertical-align: middle;
+    text-align: left;
+    /* width: 1%;  // opsional, jika ingin lebih memaksa fit */
+    /* max-width: 220px; // opsional, jika ingin membatasi lebar kolom */
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Kolom ID lebih kecil */
+#adjustmentDataTable th[data-column="id"],
+#adjustmentDataTable td:nth-child(1) {
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 60px !important;
+    text-align: center;
+}
