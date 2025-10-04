@@ -125,6 +125,67 @@ function renderTable(rows) {
     });
 }
 
+// Inject current user name for JS logic
+// Get current user name from template injection
+window.currentUserName = document.querySelector('meta[name="current-user-name"]')?.content || 'Unknown User';
+
+// Main cancel function
+function cancelBonPlate(bonId, reason) {
+    // Memberi fallback 'Unknown User' jika penyisipan Jinja gagal total
+    const currentUserName = window.currentUserName || 'Unknown User'; 
+    
+    // Kirim data lengkap ke endpoint POST yang baru
+    fetch('/cancel-bon-plate', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            id: bonId, 
+            reason: reason,
+            cancelled_by: window.currentUserName 
+        })
+    })
+    // ... (Pastikan DOMContentLoaded listener memicu fungsi ini)
+    .then(res => {
+        if (!res.ok) {
+            // Coba parse pesan error yang dikirim oleh Flask
+            return res.json().then(err => { throw new Error(err.message || 'Pembatalan gagal.') });
+        }
+        return res.json();
+    })
+    .then(data => {
+        // Gunakan data.message dari respons Flask yang baru
+        showToast(data.message || `Bon Plate ID ${bonId} berhasil dibatalkan!`, 'success');
+        // Panggil fetchData() atau reload halaman
+        if (typeof fetchData === 'function') {
+             fetchData(); 
+        } else {
+             window.location.reload(); 
+        }
+    })
+    .catch(error => {
+        console.error('Error saat membatalkan bon:', error);
+        showToast('Gagal membatalkan bon: ' + error.message, 'error');
+    })
+    .finally(() => {
+        // Sembunyikan modal dan reset input
+        const cancelModalEl = document.getElementById('cancelModal');
+        const modalInstance = bootstrap.Modal.getInstance(cancelModalEl);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+        document.getElementById('cancelReason').value = '';
+    });
+}
+
+// Tambahkan fungsi ini di dalam scope DOMContentLoaded
+function showCancelModal(bonId) {
+  document.getElementById('cancelBonId').textContent = bonId;
+  document.getElementById('confirmCancelButton').dataset.bonId = bonId;
+  document.getElementById('cancelReason').value = ''; // Pastikan alasan di-reset
+
+  const modal = new bootstrap.Modal(document.getElementById('cancelModal'));
+  modal.show();
+}
 
 // Menu klik kanan dengan posisi presisi mengikuti scroll (mengadopsi kpi_ctp_handler.js)
 function showContextMenu(rowElement, x, y, row) {
@@ -182,11 +243,9 @@ function showContextMenu(rowElement, x, y, row) {
     const cancelBtn = contextMenu.querySelector('[data-action="cancel"]');
     if (cancelBtn) {
         cancelBtn.addEventListener('click', function() {
-            if (confirm('Yakin ingin membatalkan bon ini?')) {
-                // Lakukan API call cancel
-                alert('Bon dibatalkan: ' + row.id);
-            }
-            hideContextMenu();
+        hideContextMenu();
+        // Tampilkan Modal Konfirmasi Pembatalan
+        showCancelModal(row.id);
         });
     }
 
@@ -337,6 +396,56 @@ function hideContextMenu() {
         }
         updateSortIcons();
     }
+
+    // Toast notification function
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('liveToast');
+            const messageText = toast.querySelector('.message-text');
+            const toastBody = toast.querySelector('.toast-body');
+            
+            messageText.textContent = message;
+            
+    // Reset classes
+            toastBody.className = 'toast-body rounded';
+            
+    // Apply type-specific styling
+            switch(type) {
+                case 'success':
+                    toastBody.classList.add('bg-success', 'text-white');
+                    break;
+                case 'warning':
+                    toastBody.classList.add('bg-warning', 'text-dark');
+                    break;
+                case 'error':
+                    toastBody.classList.add('bg-danger', 'text-white');
+                    break;
+                default:
+                    toastBody.classList.add('bg-info', 'text-white');
+            }
+            
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+        }
+
+// TAMBAHKAN KODE INI DI DALAM document.addEventListener('DOMContentLoaded', function() { ... });
+
+const confirmButton = document.getElementById('confirmCancelButton');
+
+if (confirmButton) {
+    confirmButton.addEventListener('click', function() {
+        const reasonInput = document.getElementById('cancelReason');
+        const reason = reasonInput.value.trim();
+        const bonId = this.dataset.bonId; // Mengambil ID dari data attribute tombol
+
+        if (!reason || !bonId) {
+            showToast('Harap isi alasan pembatalan.', 'error');
+            return;
+        }
+
+        // Panggil fungsi pembatalan dengan data yang sudah divalidasi
+        cancelBonPlate(bonId, reason);
+    });
+}
 
     fetchData();
 });

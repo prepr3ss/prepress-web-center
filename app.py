@@ -7,6 +7,7 @@ from datetime import datetime, time
 import os
 import random
 import pymysql
+from plate_mappings import PlateTypeMapping
 from io import BytesIO
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill
@@ -17,6 +18,8 @@ from bon_routes import init_bon_routes, PLATE_DETAILS
 from flask_migrate import Migrate
 import pytz
 from flask import jsonify, flash
+import locale
+
 
 # Impor konfigurasi database Anda dari config.py
 from config import DB_CONFIG
@@ -49,6 +52,69 @@ import csv
 from io import StringIO
 from flask import make_response
 from datetime import datetime, timedelta
+
+# --- Notifikasi Bulet ---
+@app.route('/api/check-notifications')
+@login_required
+def check_notifications():
+    notifications = {
+        # Ganti 'ctp' dengan 'ctp_adjustment' dan 'ctp_bon'
+        'ctp_adjustment': [], 
+        'ctp_bon': [],
+        'pdnd': [],
+        'design': [],
+        'mounting': [],
+    }
+    
+    try:
+        ctp_states = ['proses_ctp', 'proses_plate', 'antar_plate']
+        
+        # CTP Adjustment notifications
+        notifications['ctp_adjustment'] = PlateAdjustmentRequest.query.filter(
+            PlateAdjustmentRequest.status.in_(ctp_states)
+        ).all()
+        
+        # CTP Bon notifications
+        notifications['ctp_bon'] = PlateBonRequest.query.filter(
+            PlateBonRequest.status.in_(ctp_states)
+        ).all()
+
+        # PDND notifications (menggunakan logika pemisahan is_epson yang sudah benar)
+        pdnd_states = ['menunggu_adjustment_pdnd', 'proses_adjustment_pdnd']
+        pdnd_q = PlateAdjustmentRequest.query.filter(PlateAdjustmentRequest.status.in_(pdnd_states))
+        pdnd_q_ditolak = PlateAdjustmentRequest.query.filter(
+            PlateAdjustmentRequest.status == 'ditolakmounting',
+            PlateAdjustmentRequest.is_epson == False 
+        )
+        notifications['pdnd'] = pdnd_q.all() + pdnd_q_ditolak.all()
+        
+        # ... (Logika Design dan Mounting tetap sama)
+        design_states = ['menunggu_adjustment_design', 'proses_adjustment_design']
+        design_q = PlateAdjustmentRequest.query.filter(PlateAdjustmentRequest.status.in_(design_states))
+        design_q_ditolak = PlateAdjustmentRequest.query.filter(
+            PlateAdjustmentRequest.status == 'ditolakmounting',
+            PlateAdjustmentRequest.is_epson == True
+        )
+        notifications['design'] = design_q.all() + design_q_ditolak.all()
+
+        mounting_states = ['menunggu_adjustment', 'proses_adjustment', 'ditolakctp']
+        notifications['mounting'] = PlateAdjustmentRequest.query.filter(
+            PlateAdjustmentRequest.status.in_(mounting_states)
+        ).all()
+
+
+        # Pastikan data yang dikirim ke frontend hanyalah list status
+        return jsonify({
+            'ctp_adjustment': [{'status': item.status} for item in notifications['ctp_adjustment']],
+            'ctp_bon': [{'status': item.status} for item in notifications['ctp_bon']],
+            'pdnd': [{'status': item.status} for item in notifications['pdnd']],
+            'design': [{'status': item.status} for item in notifications['design']],
+            'mounting': [{'status': item.status} for item in notifications['mounting']]
+        })
+
+    except Exception as e:
+        print(f"Error checking notifications: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 # --- Export Routes ---
 @app.route('/export-chemical-bon')
@@ -300,6 +366,28 @@ def require_mounting_access(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def require_pdnd_access(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return redirect(url_for('login'))
+        if not current_user.can_access_pdnd():
+            flash('Akses ditolak. Anda tidak memiliki akses ke divisi PDND.', 'error')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def require_design_access(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return redirect(url_for('login'))
+        if not current_user.can_access_design():
+            flash('Akses ditolak. Anda tidak memiliki akses ke divisi Design.', 'error')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 # User loader callback untuk Flask-Login
 @login_manager.user_loader
 def load_user(user_id):
@@ -406,14 +494,22 @@ class User(UserMixin, db.Model):
     def can_access_ctp(self):
         """Check if user can access CTP production"""
         return self.can_access_division('CTP')
-    
+
+    def can_access_pdnd(self):
+        """Check if user can access PDND production"""
+        return self.can_access_division('PDND')
+
+    def can_access_design(self):
+        """Check if user can access Design production"""
+        return self.can_access_division('DESIGN')
+
     def can_access_mounting(self):
         """Check if user can access Mounting production"""
-        return self.can_access_division('Mounting')
+        return self.can_access_division('MOUNTING')
     
     def can_access_press(self):
         """Check if user can access Press production"""
-        return self.can_access_division('Press')
+        return self.can_access_division('PRESS')
     
     def get_accessible_divisions(self):
         """Get list of divisions user can access"""
@@ -561,6 +657,16 @@ class PlateAdjustmentRequest(db.Model):
 
     machine_off_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    is_epson = db.Column(db.Boolean, default=False)
+
+    pdnd_start_at = db.Column(db.DateTime, nullable=True)
+    pdnd_finish_at = db.Column(db.DateTime, nullable=True)
+    pdnd_by = db.Column(db.String(100), nullable=True)
+
+    design_start_at = db.Column(db.DateTime, nullable=True)
+    design_finish_at = db.Column(db.DateTime, nullable=True)
+    design_by = db.Column(db.String(100), nullable=True)      
+
     adjustment_start_at = db.Column(db.DateTime, nullable=True)
     adjustment_finish_at = db.Column(db.DateTime, nullable=True)
     adjustment_by = db.Column(db.String(100), nullable=True)
@@ -570,7 +676,46 @@ class PlateAdjustmentRequest(db.Model):
     plate_delivered_at = db.Column(db.DateTime, nullable=True)
     ctp_by = db.Column(db.String(100), nullable=True)
 
-    status = db.Column(db.String(30), default='menunggu_adjustment')
+    declined_at = db.Column(db.DateTime, nullable=True)
+    declined_by = db.Column(db.String(100), nullable=True)
+    decline_reason = db.Column(db.Text, nullable=True)
+    is_declined = db.Column(db.Boolean, default=False)
+
+    cancelled_at = db.Column(db.DateTime, nullable=True)
+    cancellation_reason = db.Column(db.Text, nullable=True)
+    cancelled_by = db.Column(db.String(100), nullable=True)
+
+# Ubah default status menjadi property yang bergantung pada remarks
+    status = db.Column(db.String(30))
+
+    def __init__(self, **kwargs):
+        super(PlateAdjustmentRequest, self).__init__(**kwargs)
+        self.set_initial_status()
+
+    def set_initial_status(self):
+        """Set status awal berdasarkan prioritas: Curve > EPSON (FA) > Non-EPSON (FA)."""
+        
+        fa_remarks = ['ADJUSTMENT FA PROOF', 'ADJUSTMENT FA PRODUKSI']
+        curve_remarks = ['ADJUSTMENT CURVE PROOF', 'ADJUSTMENT CURVE PRODUKSI']
+        
+        # 1. Prioritas Tertinggi: Cek Remarks CURVE
+        # Jika Remarks adalah CURVE, abaikan is_epson, langsung ke 'menunggu_adjustment'
+        if self.remarks and self.remarks.upper() in curve_remarks:
+            self.status = 'menunggu_adjustment' 
+            
+        # 2. Prioritas Kedua: Cek Item EPSON (Hanya berlaku untuk FA)
+        # Jika Remarks adalah FA DAN is_epson = True, kirim ke 'design'
+        elif self.is_epson and self.remarks and self.remarks.upper() in fa_remarks:
+            self.status = 'menunggu_adjustment_design'
+
+        # 3. Prioritas Ketiga: Cek Remarks FA (Non-EPSON)
+        # Jika Remarks adalah FA DAN is_epson = False, kirim ke 'pdnd'
+        elif self.remarks and self.remarks.upper() in fa_remarks:
+            self.status = 'menunggu_adjustment_pdnd'
+            
+        else:
+            # Status default (untuk jaga-jaga, atau jika ada remarks yang tidak dikenal)
+            self.status = 'menunggu_adjustment' # Atau status default lain yang paling sesuai
 
     def to_dict(self):
         return {
@@ -586,6 +731,13 @@ class PlateAdjustmentRequest(db.Model):
             'jumlah_plate': self.jumlah_plate,
             'note': self.note,
             'machine_off_at': self.machine_off_at.isoformat() if self.machine_off_at else None,
+            'is_epson': self.is_epson,
+            'design_start_at': self.design_start_at.isoformat() if self.design_start_at else None,
+            'design_finish_at': self.design_finish_at.isoformat() if self.design_finish_at else None,
+            'design_by': self.design_by,
+            'pdnd_start_at': self.pdnd_start_at.isoformat() if self.pdnd_start_at else None,
+            'pdnd_finish_at': self.pdnd_finish_at.isoformat() if self.pdnd_finish_at else None,
+            'pdnd_by': self.pdnd_by,
             'adjustment_start_at': self.adjustment_start_at.isoformat() if self.adjustment_start_at else None,
             'adjustment_finish_at': self.adjustment_finish_at.isoformat() if self.adjustment_finish_at else None,
             'adjustment_by': self.adjustment_by,
@@ -594,7 +746,14 @@ class PlateAdjustmentRequest(db.Model):
             'plate_delivered_at': self.plate_delivered_at.isoformat() if self.plate_delivered_at else None,
             'ctp_by': self.ctp_by,
             'ctp_group': self.ctp_group,
-            'status': self.status
+            'status': self.status,
+            'declined_at': self.declined_at.isoformat() if self.declined_at else None,
+            'declined_by': self.declined_by,
+            'decline_reason': self.decline_reason,
+            'is_declined': self.is_declined,
+            'cancelled_at': self.cancelled_at.isoformat() if self.cancelled_at else None,
+            'cancellation_reason': self.cancellation_reason,
+            'cancelled_by': self.cancelled_by
         }
 
 #def bon table
@@ -656,110 +815,139 @@ class ChemicalBonCTP(db.Model):
             'created_by': self.user.name if self.user else None  # Mengembalikan nama user bukan ID
         }
 
+# Stock calculation and management functions integrated into models
+
 class KartuStockPlateFuji(db.Model):
     __tablename__ = 'kartu_stock_plate_fuji'
 
     id = db.Column(db.Integer, primary_key=True)
     tanggal = db.Column(db.Date, nullable=False)
+    shift = db.Column(db.String(1), nullable=False)
     item_code = db.Column(db.String(100), nullable=False)
     item_name = db.Column(db.String(255), nullable=False)
     jumlah_stock_awal = db.Column(db.Integer, nullable=False)
     jumlah_pemakaian = db.Column(db.Integer, nullable=False)
     jumlah_incoming = db.Column(db.Integer, nullable=False)
+    incoming_shift = db.Column(db.String(1), nullable=True)
     jumlah_stock_akhir = db.Column(db.Integer, nullable=False)
     jumlah_per_box = db.Column(db.Integer, nullable=False)    
-    confirmed_at = db.Column(db.DateTime, default=datetime.utcnow)
-    confirmed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    confirmed_at = db.Column(db.DateTime, nullable=True)
+    confirmed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
 
-    # Relationship dengan User
+    PLATE_TYPE_MAPPING = PlateTypeMapping.FUJI_PLATES
+
     user = db.relationship('User', backref=db.backref('stock_plates_fuji', lazy=True))
 
-    # Mapping plate types untuk CTP production logs
-    PLATE_TYPE_MAPPING = {
-        '02-049-000-0000008': 'FUJI 1030',  # Changed to match CTP log format
-        '02-023-000-0000007': 'FUJI 1030 UV',
-        '02-049-000-0000010': 'FUJI 1055',
-        '02-049-000-0000012': 'FUJI 1055 UV',
-        '02-049-000-0000013': 'FUJI 1055 LH-PL',
-        '02-049-000-0000009': 'FUJI 1630'
-    }
-
-    def get_usage_from_ctp_logs(self, shift):
-        # Get usage from CTP production logs for this specific plate type
+    def calculate_usage(self):
+        """Hitung penggunaan plat dari log produksi CTP"""
         plate_type = self.PLATE_TYPE_MAPPING.get(self.item_code)
         if not plate_type:
-            print(f"No plate type mapping found for item code: {self.item_code}")
             return 0
-            
-        # Debug print
-        print(f"\nSearching usage for: Date={self.tanggal}, Shift={shift}, Plate Type={plate_type}")
-        
-        # First check all records for this date
-        print("\nAll CTP records for this date:")
-        all_date_records = db.session.query(CTPProductionLog).filter(
-            CTPProductionLog.log_date == self.tanggal
-        ).all()
-        
-        for record in all_date_records:
-            print(f"ID: {record.id}")
-            print(f"Shift: {record.ctp_shift}")
-            print(f"Plate type: {record.plate_type_material}")
-            print(f"Good plates: {record.num_plate_good}")
-            print(f"Not good plates: {record.num_plate_not_good}")
-            print("---")
-
-        # Modify shift to match the format in the database
-        db_shift = f"Shift {shift}"
-        
-        usage_query = db.session.query(
+        ctp_shift = f"Shift {self.shift}"
+        usage = db.session.query(
             func.sum(
                 func.coalesce(CTPProductionLog.num_plate_good, 0) + 
                 func.coalesce(CTPProductionLog.num_plate_not_good, 0)
             )
         ).filter(
             CTPProductionLog.log_date == self.tanggal,
-            CTPProductionLog.ctp_shift == db_shift,
+            CTPProductionLog.ctp_shift == ctp_shift,
             CTPProductionLog.plate_type_material == plate_type
-        )
-        
-        # Debug: Print the SQL query
-        print(f"SQL Query: {usage_query}")
-        
-        # Get the usage
-        usage = usage_query.scalar()
-        
-        # Debug print
-        print(f"Usage result: {usage}")
-        
+        ).scalar()
         return usage or 0
 
-    def to_dict(self, shift=None):
-        # Get actual usage from CTP logs if shift is provided
-        jumlah_pemakaian = self.get_usage_from_ctp_logs(shift) if shift else self.jumlah_pemakaian
+    def update_stock(self):
+        """Perbarui jumlah pemakaian dan stok akhir"""
+        self.jumlah_pemakaian = self.calculate_usage()
+        self.jumlah_stock_akhir = self.jumlah_stock_awal - self.jumlah_pemakaian + self.jumlah_incoming
+
+    @classmethod
+    def get_previous_shift_stock(cls, tanggal, shift, item_code):
+        """
+        Gets the last known stock count for an item by finding the single most recent record
+        based on a chronological ordering of date and shift.
+        """
+        # A more robust query to find the last record
+        prev_record = cls.query.filter(
+            cls.item_code == item_code,
+            # Filter for records that are chronologically before the current date and shift
+            (cls.tanggal < tanggal) |
+            ((cls.tanggal == tanggal) & (cls.shift < shift))
+        ).order_by(
+            cls.tanggal.desc(),
+            cls.shift.desc()
+        ).first()
+
+        return prev_record.jumlah_stock_akhir if prev_record else 0
+
+    @classmethod
+    def get_or_create_stocks(cls, tanggal, shift, user_id):
+        stocks = cls.query.filter_by(tanggal=tanggal, shift=shift).all()
         
-        # Hitung box dan pcs untuk stock awal
+        if not stocks:
+            stocks = []
+            for item_code, item_name in cls.PLATE_TYPE_MAPPING.items():
+                prev_stock = cls.get_previous_shift_stock(tanggal, shift, item_code)
+                
+                # Logika yang ada sekarang untuk membuat baris baru
+                if item_code in PlateTypeMapping.FUJI_PLATES:
+                    jumlah_per_box = 30 if '1630' not in item_name else 15
+                else: # Fallback untuk Saphira atau lainnya, meskipun ini seharusnya tidak terjadi di kelas Fuji
+                    if '1055 PN' in item_name:
+                        jumlah_per_box = 40
+                    elif '1630' in item_name:
+                        jumlah_per_box = 30
+                    else:
+                        jumlah_per_box = 50
+                
+                new_stock = cls(
+                    tanggal=tanggal,
+                    shift=shift,
+                    item_code=item_code,
+                    item_name=item_name,
+                    jumlah_stock_awal=prev_stock,
+                    jumlah_pemakaian=0,
+                    jumlah_incoming=0,
+                    jumlah_stock_akhir=prev_stock,
+                    jumlah_per_box=jumlah_per_box,
+                    confirmed_by=user_id
+                )
+                db.session.add(new_stock)
+                stocks.append(new_stock)
+            
+            db.session.commit()
+        
+        # Perbaikan utama: Perbarui jumlah_stock_awal untuk semua entri yang sudah ada
+        for stock in stocks:
+            stock.jumlah_stock_awal = cls.get_previous_shift_stock(tanggal, shift, stock.item_code)
+            stock.update_stock() # Panggil update_stock() setelah stock awal diperbarui
+            db.session.add(stock)
+        
+        db.session.commit()
+        return stocks
+
+    def to_dict(self):
+        """Konversi data stok ke dictionary untuk respons API, termasuk konversi box/pcs"""
         stock_awal_box = self.jumlah_stock_awal // self.jumlah_per_box
         stock_awal_pcs = self.jumlah_stock_awal % self.jumlah_per_box
         
-        # Hitung box dan pcs untuk stock akhir
-        jumlah_stock_akhir = self.jumlah_stock_awal + self.jumlah_incoming - jumlah_pemakaian
-        stock_akhir_box = jumlah_stock_akhir // self.jumlah_per_box
-        stock_akhir_pcs = jumlah_stock_akhir % self.jumlah_per_box
+        stock_akhir_box = self.jumlah_stock_akhir // self.jumlah_per_box
+        stock_akhir_pcs = self.jumlah_stock_akhir % self.jumlah_per_box
         
-        # Hitung box untuk incoming (incoming selalu dalam box penuh)
         incoming_box = self.jumlah_incoming // self.jumlah_per_box
         
         return {
             'id': self.id,
             'tanggal': self.tanggal.strftime('%Y-%m-%d') if self.tanggal else None,
+            'shift': self.shift,
             'item_code': self.item_code,
             'item_name': self.item_name,
             'jumlah_stock_awal': self.jumlah_stock_awal,
             'jumlah_stock_awal_box': stock_awal_box,
             'jumlah_stock_awal_pcs': stock_awal_pcs,
-            'jumlah_pemakaian': jumlah_pemakaian,
-            'jumlah_incoming': incoming_box,  # Kirim dalam box
-            'jumlah_stock_akhir': jumlah_stock_akhir,
+            'jumlah_pemakaian': self.jumlah_pemakaian,
+            'jumlah_incoming': incoming_box,
+            'jumlah_stock_akhir': self.jumlah_stock_akhir,
             'jumlah_stock_akhir_box': stock_akhir_box,
             'jumlah_stock_akhir_pcs': stock_akhir_pcs,
             'jumlah_per_box': self.jumlah_per_box,
@@ -772,90 +960,127 @@ class KartuStockChemicalFuji(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     tanggal = db.Column(db.Date, nullable=False)
+    shift = db.Column(db.String(1), nullable=False)
     item_code = db.Column(db.String(100), nullable=False)
     item_name = db.Column(db.String(255), nullable=False)
     jumlah_stock_awal = db.Column(db.Integer, nullable=False)
     jumlah_pemakaian = db.Column(db.Integer, nullable=False)
     jumlah_incoming = db.Column(db.Integer, nullable=False)
+    incoming_shift = db.Column(db.String(1), nullable=True)
     jumlah_stock_akhir = db.Column(db.Integer, nullable=False)
-    confirmed_at = db.Column(db.DateTime, default=datetime.utcnow)
-    confirmed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    confirmed_at = db.Column(db.DateTime, nullable=True)
+    confirmed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
 
-    # Relationship dengan User
     user = db.relationship('User', backref=db.backref('stock_chemicals_fuji', lazy=True))
 
-    def get_usage_from_bon(self, shift):
-        # Define shift times
-        shift1_start = time(6, 45)  # 06:45
-        shift1_end = time(18, 45)   # 18:45
+    CHEMICAL_TYPE_MAPPING = {
+        '02-005-000-0000153': 'FUJI DEVELOPER',
+        '02-005-000-0000154': 'FUJI REPLENISHER'
+    }
 
-        print(f"\nSearching chemical usage for: Date={self.tanggal}, Shift={shift}, Item Code={self.item_code}")
-
-        # First get all chemical bon records for this date and item
-        all_records = db.session.query(
-            ChemicalBonCTP.id,
-            ChemicalBonCTP.bon_number,
-            ChemicalBonCTP.item_code,
-            ChemicalBonCTP.jumlah,
-            ChemicalBonCTP.created_at
-        ).filter(
-            ChemicalBonCTP.tanggal == self.tanggal,
-            ChemicalBonCTP.item_code == self.item_code
-        ).all()
-
-        print("\nAll chemical bon records for this date and item:")
-        for record in all_records:
-            print(f"ID: {record.id}")
-            print(f"Bon Number: {record.bon_number}")
-            print(f"Created at: {record.created_at}")
-            print(f"Amount: {record.jumlah}")
-            print("---")
-
-        # Get usage from chemical bon based on shift
-        usage_query = db.session.query(
-            func.sum(ChemicalBonCTP.jumlah)
-        ).filter(
-            ChemicalBonCTP.tanggal == self.tanggal,
-            ChemicalBonCTP.item_code == self.item_code,
-            # Shift calculation
-            or_(
-                and_(shift == '1',
-                     and_(func.time(ChemicalBonCTP.created_at) >= shift1_start,
-                          func.time(ChemicalBonCTP.created_at) < shift1_end)),
-                and_(shift == '2',
-                     or_(func.time(ChemicalBonCTP.created_at) < shift1_start,
-                         func.time(ChemicalBonCTP.created_at) >= shift1_end))
+    def calculate_usage(self):
+        """
+        Menghitung jumlah pemakaian chemical dari bon untuk shift dan tanggal yang bersangkutan.
+        """
+        
+        # Pilih model bon yang sesuai
+        if "fuji" in self.__tablename__.lower():
+            BonModel = ChemicalBonCTP # Sesuaikan jika nama model Saphira berbeda
+        else:
+            BonModel = ChemicalBonCTP
+        
+        # Definisikan rentang waktu yang relevan berdasarkan shift
+        if self.shift == '1':
+            # Shift 1: dari 06:45:00 di hari yang sama hingga 18:44:59 di hari yang sama
+            start_time = time(6, 45)
+            end_time = time(18, 45)
+            query = db.session.query(func.coalesce(func.sum(BonModel.jumlah), 0)).filter(
+                BonModel.tanggal == self.tanggal, # Menggunakan tanggal bon
+                BonModel.item_code == self.item_code,
+                func.time(BonModel.created_at) >= start_time,
+                func.time(BonModel.created_at) < end_time
             )
-        )
-
-        print(f"\nSQL Query: {usage_query}")
-        usage = usage_query.scalar()
-        print(f"Usage result: {usage}")
-
-        return usage or 0
-
-    def to_dict(self, shift=None):
-        # Get actual usage from chemical bon if shift is provided
-        jumlah_pemakaian = self.get_usage_from_bon(shift) if shift else self.jumlah_pemakaian
+        elif self.shift == '2':
+            # Shift 2: dari 18:45:00 di hari ini hingga 06:44:59 di hari berikutnya
+            start_time = time(18, 45)
+            end_time = time(6, 45)
+            next_day = self.tanggal + timedelta(days=1)
+            
+            query = db.session.query(func.coalesce(func.sum(BonModel.jumlah), 0)).filter(
+                BonModel.item_code == self.item_code,
+                or_(
+                    # Kondisi untuk bon yang dibuat dari 18:45:00 hingga tengah malam hari ini
+                    and_(
+                        BonModel.tanggal == self.tanggal,
+                        func.time(BonModel.created_at) >= start_time
+                    ),
+                    # Kondisi untuk bon yang dibuat dari tengah malam hingga 06:44:59 hari berikutnya
+                    and_(
+                        BonModel.tanggal == next_day,
+                        func.time(BonModel.created_at) < end_time
+                    )
+                )
+            )
+        else:
+            return 0
         
-        # Calculate stock akhir based on the actual usage
-        jumlah_stock_akhir = self.jumlah_stock_awal + self.jumlah_incoming - jumlah_pemakaian
+        return query.scalar()
+
+    def update_stock(self):
+        self.jumlah_pemakaian = self.calculate_usage()
+        self.jumlah_stock_akhir = self.jumlah_stock_awal + self.jumlah_incoming - self.jumlah_pemakaian
+
+    @classmethod
+    def get_previous_shift_stock(cls, tanggal, shift, item_code):
+        prev_record = None
+        if shift == '2':
+            prev_record = cls.query.filter_by(tanggal=tanggal, item_code=item_code, shift='1').first()
+        elif shift == '1':
+            prev_tanggal = tanggal - timedelta(days=1)
+            prev_record = cls.query.filter_by(tanggal=prev_tanggal, item_code=item_code, shift='2').first()
         
+        return prev_record.jumlah_stock_akhir if prev_record else 0
+
+    @classmethod
+    def get_or_create_stocks(cls, tanggal, shift, user_id):
+        stocks = cls.query.filter_by(tanggal=tanggal, shift=shift).all()
+
+        if not stocks:
+            stocks = []
+            for item_code, item_name in cls.CHEMICAL_TYPE_MAPPING.items():
+                prev_stock = cls.get_previous_shift_stock(tanggal, shift, item_code)
+                new_stock = cls(
+                    tanggal=tanggal,
+                    shift=shift,
+                    item_code=item_code,
+                    item_name=item_name,
+                    jumlah_stock_awal=prev_stock,
+                    jumlah_pemakaian=0,
+                    jumlah_incoming=0,
+                    jumlah_stock_akhir=prev_stock,
+                    confirmed_by=user_id
+                )
+                db.session.add(new_stock)
+                stocks.append(new_stock)
+            
+            db.session.commit()
+            
+        # Ini adalah bagian yang paling penting!
+        # Memastikan stok awal selalu diperbarui dari data terbaru,
+        # bahkan jika barisnya sudah ada di database.
+        for stock in stocks:
+            stock.jumlah_stock_awal = cls.get_previous_shift_stock(tanggal, shift, stock.item_code)
+            stock.update_stock() # Hitung ulang jumlah_stock_akhir
+            db.session.add(stock)
+
+        db.session.commit()
+        return stocks
+
+    def to_dict(self):
         return {
             'id': self.id,
             'tanggal': self.tanggal.strftime('%Y-%m-%d') if self.tanggal else None,
-            'item_code': self.item_code,
-            'item_name': self.item_name,
-            'jumlah_stock_awal': self.jumlah_stock_awal,
-            'jumlah_pemakaian': jumlah_pemakaian,
-            'jumlah_incoming': self.jumlah_incoming,
-            'jumlah_stock_akhir': jumlah_stock_akhir,
-            'confirmed_at': self.confirmed_at.isoformat() if self.confirmed_at else None,
-            'confirmed_by': self.user.name if self.user else None
-        }
-        return {
-            'id': self.id,
-            'tanggal': self.tanggal.strftime('%Y-%m-%d') if self.tanggal else None,
+            'shift': self.shift,
             'item_code': self.item_code,
             'item_name': self.item_name,
             'jumlah_stock_awal': self.jumlah_stock_awal,
@@ -871,29 +1096,134 @@ class KartuStockPlateSaphira(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     tanggal = db.Column(db.Date, nullable=False)
+    shift = db.Column(db.String(1), nullable=False)
     item_code = db.Column(db.String(100), nullable=False)
     item_name = db.Column(db.String(255), nullable=False)
     jumlah_stock_awal = db.Column(db.Integer, nullable=False)
     jumlah_pemakaian = db.Column(db.Integer, nullable=False)
     jumlah_incoming = db.Column(db.Integer, nullable=False)
+    incoming_shift = db.Column(db.String(1), nullable=True)
     jumlah_stock_akhir = db.Column(db.Integer, nullable=False)
-    jumlah_per_box = db.Column(db.Integer, nullable=False)    
-    confirmed_at = db.Column(db.DateTime, default=datetime.utcnow)
-    confirmed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    jumlah_per_box = db.Column(db.Integer, nullable=False)
+    confirmed_at = db.Column(db.DateTime, nullable=True)
+    confirmed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
 
-    # Relationship dengan User
+    PLATE_TYPE_MAPPING = PlateTypeMapping.SAPHIRA_PLATES
+
     user = db.relationship('User', backref=db.backref('stock_plates_saphira', lazy=True))
 
+    def calculate_usage(self):
+        """Hitung penggunaan plat dari log produksi CTP"""
+        plate_type = self.PLATE_TYPE_MAPPING.get(self.item_code)
+        if not plate_type:
+            return 0
+        ctp_shift = f"Shift {self.shift}"
+        usage = db.session.query(
+            func.sum(
+                func.coalesce(CTPProductionLog.num_plate_good, 0) + 
+                func.coalesce(CTPProductionLog.num_plate_not_good, 0)
+            )
+        ).filter(
+            CTPProductionLog.log_date == self.tanggal,
+            CTPProductionLog.ctp_shift == ctp_shift,
+            CTPProductionLog.plate_type_material == plate_type
+        ).scalar()
+        return usage or 0
+
+    def update_stock(self):
+        """Perbarui jumlah pemakaian dan stok akhir"""
+        self.jumlah_pemakaian = self.calculate_usage()
+        self.jumlah_stock_akhir = self.jumlah_stock_awal - self.jumlah_pemakaian + self.jumlah_incoming
+
+    @classmethod
+    def get_previous_shift_stock(cls, tanggal, shift, item_code):
+        """
+        Gets the last known stock count for an item by finding the single most recent record
+        based on a chronological ordering of date and shift.
+        """
+        # A more robust query to find the last record
+        prev_record = cls.query.filter(
+            cls.item_code == item_code,
+            # Filter for records that are chronologically before the current date and shift
+            (cls.tanggal < tanggal) |
+            ((cls.tanggal == tanggal) & (cls.shift < shift))
+        ).order_by(
+            cls.tanggal.desc(),
+            cls.shift.desc()
+        ).first()
+
+        return prev_record.jumlah_stock_akhir if prev_record else 0
+
+    @classmethod
+    def get_or_create_stocks(cls, tanggal, shift, user_id):
+        stocks = cls.query.filter_by(tanggal=tanggal, shift=shift).all()
+        
+        if not stocks:
+            stocks = []
+            for item_code, item_name in cls.PLATE_TYPE_MAPPING.items():
+                prev_stock = cls.get_previous_shift_stock(tanggal, shift, item_code)
+                
+                # Logika yang ada sekarang untuk membuat baris baru
+                if item_code in PlateTypeMapping.FUJI_PLATES:
+                    jumlah_per_box = 30 if '1630' not in item_name else 15
+                else: # Fallback untuk Saphira atau lainnya, meskipun ini seharusnya tidak terjadi di kelas Fuji
+                    if '1055 PN' in item_name:
+                        jumlah_per_box = 40
+                    elif '1630' in item_name:
+                        jumlah_per_box = 30
+                    else:
+                        jumlah_per_box = 50
+                
+                new_stock = cls(
+                    tanggal=tanggal,
+                    shift=shift,
+                    item_code=item_code,
+                    item_name=item_name,
+                    jumlah_stock_awal=prev_stock,
+                    jumlah_pemakaian=0,
+                    jumlah_incoming=0,
+                    jumlah_stock_akhir=prev_stock,
+                    jumlah_per_box=jumlah_per_box,
+                    confirmed_by=user_id
+                )
+                db.session.add(new_stock)
+                stocks.append(new_stock)
+            
+            db.session.commit()
+        
+        # Perbaikan utama: Perbarui jumlah_stock_awal untuk semua entri yang sudah ada
+        for stock in stocks:
+            stock.jumlah_stock_awal = cls.get_previous_shift_stock(tanggal, shift, stock.item_code)
+            stock.update_stock() # Panggil update_stock() setelah stock awal diperbarui
+            db.session.add(stock)
+        
+        db.session.commit()
+        return stocks
+
     def to_dict(self):
+        """Konversi data stok ke dictionary untuk respons API, termasuk konversi box/pcs"""
+        stock_awal_box = self.jumlah_stock_awal // self.jumlah_per_box
+        stock_awal_pcs = self.jumlah_stock_awal % self.jumlah_per_box
+        
+        stock_akhir_box = self.jumlah_stock_akhir // self.jumlah_per_box
+        stock_akhir_pcs = self.jumlah_stock_akhir % self.jumlah_per_box
+        
+        incoming_box = self.jumlah_incoming // self.jumlah_per_box
+        
         return {
             'id': self.id,
             'tanggal': self.tanggal.strftime('%Y-%m-%d') if self.tanggal else None,
+            'shift': self.shift,
             'item_code': self.item_code,
             'item_name': self.item_name,
             'jumlah_stock_awal': self.jumlah_stock_awal,
+            'jumlah_stock_awal_box': stock_awal_box,
+            'jumlah_stock_awal_pcs': stock_awal_pcs,
             'jumlah_pemakaian': self.jumlah_pemakaian,
-            'jumlah_incoming': self.jumlah_incoming,
+            'jumlah_incoming': incoming_box,
             'jumlah_stock_akhir': self.jumlah_stock_akhir,
+            'jumlah_stock_akhir_box': stock_akhir_box,
+            'jumlah_stock_akhir_pcs': stock_akhir_pcs,
             'jumlah_per_box': self.jumlah_per_box,
             'confirmed_at': self.confirmed_at.isoformat() if self.confirmed_at else None,
             'confirmed_by': self.user.name if self.user else None
@@ -904,22 +1234,128 @@ class KartuStockChemicalSaphira(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     tanggal = db.Column(db.Date, nullable=False)
+    shift = db.Column(db.String(1), nullable=False)
     item_code = db.Column(db.String(100), nullable=False)
     item_name = db.Column(db.String(255), nullable=False)
     jumlah_stock_awal = db.Column(db.Integer, nullable=False)
     jumlah_pemakaian = db.Column(db.Integer, nullable=False)
     jumlah_incoming = db.Column(db.Integer, nullable=False)
+    incoming_shift = db.Column(db.String(1), nullable=True)
     jumlah_stock_akhir = db.Column(db.Integer, nullable=False)
     confirmed_at = db.Column(db.DateTime, default=datetime.utcnow)
-    confirmed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    confirmed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
 
-    # Relationship dengan User
     user = db.relationship('User', backref=db.backref('stock_chemicals_saphira', lazy=True))
+
+    CHEMICAL_TYPE_MAPPING = {
+        '02-005-000-0000061': 'SAPHIRA DEVELOPER',
+        '02-005-000-0000046': 'SAPHIRA REPLENISHER',
+        '02-005-000-0000158': 'SAPHIRA GUM'  # Diperbarui agar sesuai dengan data bon
+    }
+
+    def calculate_usage(self):
+        """
+        Menghitung jumlah pemakaian chemical dari bon untuk shift dan tanggal yang bersangkutan.
+        """
+        
+        # Pilih model bon yang sesuai
+        if "saphira" in self.__tablename__.lower():
+            BonModel = ChemicalBonCTP # Sesuaikan jika nama model Saphira berbeda
+        else:
+            BonModel = ChemicalBonCTP
+        
+        # Definisikan rentang waktu yang relevan berdasarkan shift
+        if self.shift == '1':
+            # Shift 1: dari 06:45:00 di hari yang sama hingga 18:44:59 di hari yang sama
+            start_time = time(6, 45)
+            end_time = time(18, 45)
+            query = db.session.query(func.coalesce(func.sum(BonModel.jumlah), 0)).filter(
+                BonModel.tanggal == self.tanggal, # Menggunakan tanggal
+                BonModel.item_code == self.item_code,
+                func.time(BonModel.created_at) >= start_time,
+                func.time(BonModel.created_at) < end_time
+            )
+        elif self.shift == '2':
+            # Shift 2: dari 18:45:00 di hari ini hingga 06:44:59 di hari berikutnya
+            start_time = time(18, 45)
+            end_time = time(6, 45)
+            next_day = self.tanggal + timedelta(days=1)
+            
+            query = db.session.query(func.coalesce(func.sum(BonModel.jumlah), 0)).filter(
+                BonModel.item_code == self.item_code,
+                or_(
+                    # Kondisi untuk bon yang dibuat dari 18:45:00 hingga tengah malam hari ini
+                    and_(
+                        BonModel.tanggal == self.tanggal, # Menggunakan tanggal
+                        func.time(BonModel.created_at) >= start_time
+                    ),
+                    # Kondisi untuk bon yang dibuat dari tengah malam hingga 06:44:59 hari berikutnya
+                    and_(
+                        BonModel.tanggal == next_day, # Menggunakan tanggal
+                        func.time(BonModel.created_at) < end_time
+                    )
+                )
+            )
+        else:
+            return 0
+        
+        return query.scalar()
+
+    def update_stock(self):
+        self.jumlah_pemakaian = self.calculate_usage()
+        self.jumlah_stock_akhir = self.jumlah_stock_awal + self.jumlah_incoming - self.jumlah_pemakaian
+        
+    @classmethod
+    def get_previous_shift_stock(cls, tanggal, shift, item_code):
+        prev_record = None
+        if shift == '2':
+            prev_record = cls.query.filter_by(tanggal=tanggal, item_code=item_code, shift='1').first()
+        elif shift == '1':
+            prev_tanggal = tanggal - timedelta(days=1)
+            prev_record = cls.query.filter_by(tanggal=prev_tanggal, item_code=item_code, shift='2').first()
+        
+        return prev_record.jumlah_stock_akhir if prev_record else 0
+
+    @classmethod
+    def get_or_create_stocks(cls, tanggal, shift, user_id):
+        stocks = cls.query.filter_by(tanggal=tanggal, shift=shift).all()
+
+        if not stocks:
+            stocks = []
+            for item_code, item_name in cls.CHEMICAL_TYPE_MAPPING.items():
+                prev_stock = cls.get_previous_shift_stock(tanggal, shift, item_code)
+                new_stock = cls(
+                    tanggal=tanggal,
+                    shift=shift,
+                    item_code=item_code,
+                    item_name=item_name,
+                    jumlah_stock_awal=prev_stock,
+                    jumlah_pemakaian=0,
+                    jumlah_incoming=0,
+                    jumlah_stock_akhir=prev_stock,
+                    confirmed_by=user_id
+                )
+                db.session.add(new_stock)
+                stocks.append(new_stock)
+            
+            db.session.commit()
+            
+        # Bagian perbaikan utama:
+        # Memastikan stok awal selalu diperbarui dari data terbaru,
+        # bahkan jika barisnya sudah ada di database.
+        for stock in stocks:
+            stock.jumlah_stock_awal = cls.get_previous_shift_stock(tanggal, shift, stock.item_code)
+            stock.update_stock() # Hitung ulang jumlah_stock_akhir
+            db.session.add(stock)
+
+        db.session.commit()
+        return stocks
 
     def to_dict(self):
         return {
             'id': self.id,
             'tanggal': self.tanggal.strftime('%Y-%m-%d') if self.tanggal else None,
+            'shift': self.shift,
             'item_code': self.item_code,
             'item_name': self.item_name,
             'jumlah_stock_awal': self.jumlah_stock_awal,
@@ -982,6 +1418,15 @@ class PlateBonRequest(db.Model):
     ctp_group = db.Column(db.String(50), nullable=True)  # Mengubah ctp_grup menjadi ctp_group untuk konsistensi
     status = db.Column(db.String(30), default='proses_ctp')
 
+    cancellation_reason = db.Column(db.String(255), nullable=True)
+    cancelled_by = db.Column(db.String(100), nullable=True)
+    cancelled_at = db.Column(db.DateTime, nullable=True)
+
+    declined_at = db.Column(db.DateTime, nullable=True)
+    declined_by = db.Column(db.String(100), nullable=True)
+    decline_reason = db.Column(db.Text, nullable=True)
+    is_declined = db.Column(db.Boolean, default=False)
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -1001,7 +1446,14 @@ class PlateBonRequest(db.Model):
             'plate_delivered_at': self.plate_delivered_at.isoformat() if self.plate_delivered_at else None,
             'ctp_by': self.ctp_by,
             'ctp_group': self.ctp_group,
-            'status': self.status
+            'status': self.status,
+            'cancellation_reason': self.cancellation_reason,
+            'cancelled_by': self.cancelled_by,
+            'cancelled_at': self.cancelled_at.isoformat() if self.cancelled_at else None,
+            'declined_by': self.declined_by,
+            'declined_at': self.declined_at.isoformat() if self.declined_at else None,
+            'decline_reason': self.decline_reason,
+            'is_declined': self.is_declined
         }
 
 # Admin routes for user management
@@ -1131,6 +1583,88 @@ def admin_delete_user():
             'message': f'Gagal menghapus user: {str(e)}'
         }), 400
 
+# Function to collect plate usage data
+# Helper function to get shift name for CTP logs
+def get_ctp_shift_name(shift_num):
+    """Convert numeric shift to CTP log shift format"""
+    return f"Shift {shift_num}"
+    
+    # Update Fuji plate stock
+    fuji_stocks = KartuStockPlateFuji.query.filter_by(
+        tanggal=stock_date,
+        shift=shift_num
+    ).all()
+    
+    if not fuji_stocks:
+        app.logger.info('Creating new Fuji plate stock records')
+        # Create new stock records for all Fuji plate types
+        for item_code, plate_type in KartuStockPlateFuji.PLATE_TYPE_MAPPING.items():
+            # Get previous day's stock
+            prev_stock = KartuStockPlateFuji.get_previous_day_stock(stock_date, item_code)
+            
+            # Create new stock record
+            new_stock = KartuStockPlateFuji(
+                tanggal=stock_date,
+                shift=shift_num,
+                item_code=item_code,
+                item_name=plate_type,
+                jumlah_stock_awal=prev_stock or 0,
+                jumlah_pemakaian=usage_map.get(plate_type, 0),
+                jumlah_incoming=0,
+                jumlah_stock_akhir=(prev_stock or 0) - usage_map.get(plate_type, 0),
+                jumlah_per_box=100,
+                confirmed_by=current_user.id
+            )
+            db.session.add(new_stock)
+    else:
+        app.logger.info('Updating existing Fuji plate stock records')
+        # Update existing stock records
+        for stock in fuji_stocks:
+            plate_type = KartuStockPlateFuji.PLATE_TYPE_MAPPING.get(stock.item_code)
+            if plate_type:
+                stock.jumlah_pemakaian = usage_map.get(plate_type, 0)
+                stock.jumlah_stock_akhir = stock.jumlah_stock_awal - stock.jumlah_pemakaian + stock.jumlah_incoming
+    
+    # Update Saphira plate stock
+    saphira_stocks = KartuStockPlateSaphira.query.filter_by(
+        tanggal=stock_date,
+        shift=shift_num
+    ).all()
+    
+    if not saphira_stocks:
+        app.logger.info('Creating new Saphira plate stock records')
+        # Create new stock records for all Saphira plate types
+        for item_code, plate_type in KartuStockPlateSaphira.PLATE_TYPE_MAPPING.items():
+            # Get previous day's stock
+            prev_stock = KartuStockPlateSaphira.get_previous_day_stock(stock_date, item_code)
+            
+            # Create new stock record
+            new_stock = KartuStockPlateSaphira(
+                tanggal=stock_date,
+                shift=shift_num,
+                item_code=item_code,
+                item_name=plate_type,
+                jumlah_stock_awal=prev_stock or 0,
+                jumlah_pemakaian=usage_map.get(plate_type, 0),
+                jumlah_incoming=0,
+                jumlah_stock_akhir=(prev_stock or 0) - usage_map.get(plate_type, 0),
+                jumlah_per_box=100,
+                confirmed_by=current_user.id
+            )
+            db.session.add(new_stock)
+    else:
+        app.logger.info('Updating existing Saphira plate stock records')
+        # Update existing stock records
+        for stock in saphira_stocks:
+            plate_type = KartuStockPlateSaphira.PLATE_TYPE_MAPPING.get(stock.item_code)
+            if plate_type:
+                stock.jumlah_pemakaian = usage_map.get(plate_type, 0)
+                stock.jumlah_stock_akhir = stock.jumlah_stock_awal - stock.jumlah_pemakaian + stock.jumlah_incoming
+    
+    # Commit changes
+    db.session.commit()
+    app.logger.info('Plate usage data collection completed')
+
 # Routes for Kartu Stock CTP
 @app.route('/kartu-stock-ctp')
 @login_required
@@ -1140,87 +1674,115 @@ def kartu_stock_ctp():
 @app.route('/api/kartu-stock')
 @login_required
 def get_kartu_stock():
-    date_str = request.args.get('date')
-    shift = request.args.get('shift')
-    
-    if not date_str or not shift:
-        return jsonify({'error': 'Date and shift are required'}), 400
-        
+    """Get kartu stock data for a given date and shift"""
     try:
-        selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        date_str = request.args.get('date')
+        shift = request.args.get('shift')
+        
+        if not date_str or not shift:
+            return jsonify({'error': 'Date and shift are required'}), 400
+            
+        try:
+            tanggal = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return jsonify({'error': 'Invalid date format'}), 400
+
+        # Gunakan metode get_or_create_stocks dari setiap model dan berikan user_id
+        fuji_chemicals = KartuStockChemicalFuji.get_or_create_stocks(tanggal, shift, current_user.id)
+        saphira_chemicals = KartuStockChemicalSaphira.get_or_create_stocks(tanggal, shift, current_user.id)
+        fuji_stocks = KartuStockPlateFuji.get_or_create_stocks(tanggal, shift, current_user.id)
+        saphira_stocks = KartuStockPlateSaphira.get_or_create_stocks(tanggal, shift, current_user.id)
+        
+        db.session.commit()
+
+        # Konversi data ke format dictionary untuk respons JSON
+        fuji_chemical_data = [stock.to_dict() for stock in fuji_chemicals]
+        saphira_chemical_data = [stock.to_dict() for stock in saphira_chemicals]
+        fuji_plate_data = [stock.to_dict() for stock in fuji_stocks]
+        saphira_plate_data = [stock.to_dict() for stock in saphira_stocks]
+
+        response_data = {
+            'fuji': {
+                'plate': {
+                    'data': fuji_plate_data,
+                    'confirmed': any(stock.confirmed_at for stock in fuji_stocks)
+                },
+                'chemical': {
+                    'data': fuji_chemical_data,
+                    'confirmed': any(stock.confirmed_at for stock in fuji_chemicals)
+                }
+            },
+            'saphira': {
+                'plate': {
+                    'data': saphira_plate_data,
+                    'confirmed': any(stock.confirmed_at for stock in saphira_stocks)
+                },
+                'chemical': {
+                    'data': saphira_chemical_data,
+                    'confirmed': any(stock.confirmed_at for stock in saphira_chemicals)
+                }
+            }
+        }
+
+        app.logger.info('Successfully processed kartu stock request')
+        return jsonify(response_data)
+
     except ValueError:
+        app.logger.error(f'Invalid date format: {date_str}')
         return jsonify({'error': 'Invalid date format'}), 400
-
-    # Get plate usage from CTP production logs
-    plate_usage = {}
-    plate_usage_data = db.session.query(
-        CTPProductionLog.plate_type_material,
-        func.sum(CTPProductionLog.num_plate_good + CTPProductionLog.num_plate_not_good).label('total_usage')
-    ).filter(
-        CTPProductionLog.log_date == selected_date,
-        CTPProductionLog.ctp_shift == shift
-    ).group_by(CTPProductionLog.plate_type_material).all()
-    
-    # Convert plate usage data into dictionary for easier lookup
-    for plate_type, total in plate_usage_data:
-        plate_usage[plate_type] = total or 0
-
-    # Get chemical usage from chemical bon with shift calculation
-    shift1_start = time(6, 45)  # 06:45
-    shift1_end = time(18, 45)   # 18:45
-
-    chemical_usage = {}
-    chemical_usage_data = db.session.query(
-        ChemicalBonCTP.item_code,
-        func.sum(ChemicalBonCTP.jumlah).label('total_usage')
-    ).filter(
-        ChemicalBonCTP.tanggal == selected_date,
-        # Shift calculation using created_at time
-        or_(
-            and_(shift == '1',
-                 and_(func.time(ChemicalBonCTP.created_at) >= shift1_start,
-                      func.time(ChemicalBonCTP.created_at) < shift1_end)),
-            and_(shift == '2',
-                 or_(func.time(ChemicalBonCTP.created_at) < shift1_start,
-                     func.time(ChemicalBonCTP.created_at) >= shift1_end))
-        )
-    ).group_by(ChemicalBonCTP.item_code).all()
-
-    # Convert chemical usage data into dictionary for easier lookup
-    for item_code, total in chemical_usage_data:
-        chemical_usage[item_code] = total or 0
-
-    # Get stock data
-    fuji_plate_stock = KartuStockPlateFuji.query.filter_by(tanggal=selected_date).all()
-    fuji_chemical_stock = KartuStockChemicalFuji.query.filter_by(tanggal=selected_date).all()
-    saphira_plate_stock = KartuStockPlateSaphira.query.filter_by(tanggal=selected_date).all()
-    saphira_chemical_stock = KartuStockChemicalSaphira.query.filter_by(tanggal=selected_date).all()
+        
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f'Error processing kartu stock: {str(e)}', exc_info=True)
+        return jsonify({'error': str(e)}), 500
+# This code has been moved to the model class methods
+            
+# This functionality has been moved to the model class methods
 
     # Get confirmation status
-    confirmation_status = {
-        'fuji': {
-            'shift': shift,
-            'confirmed': any(stock.confirmed_by for stock in fuji_plate_stock + fuji_chemical_stock),
-            'confirmedBy': next((stock.user.name for stock in fuji_plate_stock + fuji_chemical_stock if stock.confirmed_by), None)
-        },
-        'saphira': {
-            'shift': shift,
-            'confirmed': any(stock.confirmed_by for stock in saphira_plate_stock + saphira_chemical_stock),
-            'confirmedBy': next((stock.user.name for stock in saphira_plate_stock + saphira_chemical_stock if stock.confirmed_by), None)
-        }
-    }
+    def get_confirmation_status(brand_stocks):
+        if not brand_stocks:
+            return {"confirmed": False}
+        
+        all_confirmed = all(stock.get('confirmed', False) for stock in brand_stocks)
+        if all_confirmed:
+            confirmed_by = User.query.get(brand_stocks[0].get('confirmed_by'))
+            return {
+                "confirmed": True,
+                "confirmedBy": confirmed_by.name if confirmed_by else "Unknown"
+            }
+        return {"confirmed": False}
+
+    # Dapatkan data untuk setiap jenis stok
+    fuji_plate = get_stock_data(KartuStockPlateFuji)
+    fuji_chemical = get_stock_data(KartuStockChemicalFuji)
+    saphira_plate = get_stock_data(KartuStockPlateSaphira)
+    saphira_chemical = get_stock_data(KartuStockChemicalSaphira)
 
     return jsonify({
         'fuji': {
-            'plate': [stock.to_dict(shift=shift) for stock in fuji_plate_stock],
-            'chemical': [stock.to_dict(shift=shift) for stock in fuji_chemical_stock]
+            'plate': {
+                'data': fuji_plate,
+                'status': get_confirmation_status(fuji_plate)
+            },
+            'chemical': {
+                'data': fuji_chemical,
+                'status': get_confirmation_status(fuji_chemical)
+            }
         },
         'saphira': {
-            'plate': [stock.to_dict() for stock in saphira_plate_stock],
-            'chemical': [stock.to_dict() for stock in saphira_chemical_stock]
-        },
-        'confirmationStatus': confirmation_status
+            'plate': {
+                'data': saphira_plate,
+                'status': get_confirmation_status(saphira_plate)
+            },
+            'chemical': {
+                'data': saphira_chemical,
+                'status': get_confirmation_status(saphira_chemical)
+            }
+        }
     })
+
+
 
 @app.route('/api/confirm-stock', methods=['POST'])
 @login_required
@@ -1234,28 +1796,39 @@ def confirm_stock():
         return jsonify({'error': 'Missing required fields'}), 400
 
     try:
-        selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        tanggal = datetime.strptime(date_str, '%Y-%m-%d').date()
     except ValueError:
         return jsonify({'error': 'Invalid date format'}), 400
 
-    # Update confirmation status based on brand
+    # Pilih model berdasarkan brand
     if brand == 'fuji':
-        stocks = KartuStockPlateFuji.query.filter_by(tanggal=selected_date).all()
-        stocks.extend(KartuStockChemicalFuji.query.filter_by(tanggal=selected_date).all())
+        models = [KartuStockPlateFuji, KartuStockChemicalFuji]
     else:
-        stocks = KartuStockPlateSaphira.query.filter_by(tanggal=selected_date).all()
-        stocks.extend(KartuStockChemicalSaphira.query.filter_by(tanggal=selected_date).all())
+        models = [KartuStockPlateSaphira, KartuStockChemicalSaphira]
+    
+    # Update semua stok untuk brand yang dipilih
+    stocks_updated = False
+    for model in models:
+        stocks = model.query.filter_by(
+            tanggal=tanggal,
+            shift=shift
+        ).all()
+        
+        for stock in stocks:
+            stock.update_stock()  # Pastikan data terbaru
+            stock.confirmed_at = datetime.utcnow()
+            stock.confirmed_by = current_user.id
+            stocks_updated = True
 
-    if not stocks:
-        return jsonify({'error': 'No stock data found for the specified date'}), 404
-
-    # Update confirmation for all stocks
-    for stock in stocks:
-        stock.confirmed_by = current_user.id
-        stock.confirmed_at = datetime.utcnow()
+    if not stocks_updated:
+        return jsonify({'error': 'No stock data found for the specified date and shift'}), 404
 
     try:
         db.session.commit()
+        return jsonify({'message': f'Stock {brand} confirmed successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
         return jsonify({'message': f'Stock {brand} berhasil dikonfirmasi'})
     except Exception as e:
         db.session.rollback()
@@ -1353,119 +1926,141 @@ def input_incoming_stock():
     data = request.get_json()
     date_str = data.get('date')
     shift = data.get('shift')
-    
+
     if not date_str or not shift:
         return jsonify({'error': 'Tanggal dan shift harus diisi'}), 400
 
     try:
-        selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        tanggal = datetime.strptime(date_str, '%Y-%m-%d').date()
 
-        # Process Fuji plates
-        for plate in data.get('fuji', {}).get('plates', []):
-            if plate.get('jumlah_incoming', 0) > 0:
-                # Cari record yang sudah ada
-                existing = KartuStockPlateFuji.query.filter_by(
-                    tanggal=selected_date,
-                    item_code=plate['item_code']
-                ).first()
-
-                if existing:
-                    # Update record yang ada
-                    existing.jumlah_incoming += plate['jumlah_incoming']
-                    existing.jumlah_stock_akhir += plate['jumlah_incoming']
-                else:
-                    # Buat record baru
-                    stock = KartuStockPlateFuji(
-                        tanggal=selected_date,
+        # Proses data berdasarkan brand yang dipilih
+        if 'fuji' in data:
+            # Proses Fuji plates
+            for plate in data['fuji'].get('plates', []):
+                incoming_amount = plate.get('jumlah_incoming', 0)
+                if incoming_amount > 0:
+                    stock = KartuStockPlateFuji.query.filter_by(
+                        tanggal=tanggal,
                         item_code=plate['item_code'],
-                        item_name=plate['item_name'],
-                        jumlah_stock_awal=0,
-                        jumlah_pemakaian=0,
-                        jumlah_incoming=plate['jumlah_incoming'],
-                        jumlah_stock_akhir=plate['jumlah_incoming'],
-                        jumlah_per_box=plate['jumlah_per_box'],
-                        confirmed_by=current_user.id
-                    )
-                    db.session.add(stock)
+                        shift=shift  # PERBAIKAN: Tambahkan filter shift
+                    ).first()
 
-        # Process Fuji chemicals
-        for chemical in data.get('fuji', {}).get('chemicals', []):
-            if chemical.get('jumlah_incoming', 0) > 0:
-                existing = KartuStockChemicalFuji.query.filter_by(
-                    tanggal=selected_date,
-                    item_code=chemical['item_code']
-                ).first()
+                    if stock:
+                        stock.jumlah_incoming += incoming_amount
+                        stock.incoming_shift = shift
+                        stock.jumlah_stock_akhir += incoming_amount
+                    else:
+                        new_stock = KartuStockPlateFuji(
+                            tanggal=tanggal,
+                            shift=shift,
+                            item_code=plate['item_code'],
+                            item_name=plate['item_name'],
+                            jumlah_stock_awal=0,
+                            jumlah_pemakaian=0,
+                            jumlah_incoming=incoming_amount,
+                            incoming_shift=shift,
+                            jumlah_stock_akhir=incoming_amount,
+                            jumlah_per_box=plate['jumlah_per_box'],
+                            confirmed_by=current_user.id
+                        )
+                        db.session.add(new_stock)
 
-                if existing:
-                    existing.jumlah_incoming += chemical['jumlah_incoming']
-                    existing.jumlah_stock_akhir += chemical['jumlah_incoming']
-                else:
-                    stock = KartuStockChemicalFuji(
-                        tanggal=selected_date,
+            # Proses Fuji chemicals
+            for chemical in data['fuji'].get('chemicals', []):
+                incoming_amount = chemical.get('jumlah_incoming', 0)
+                if incoming_amount > 0:
+                    stock = KartuStockChemicalFuji.query.filter_by(
+                        tanggal=tanggal,
                         item_code=chemical['item_code'],
-                        item_name=chemical['item_name'],
-                        jumlah_stock_awal=0,
-                        jumlah_pemakaian=0,
-                        jumlah_incoming=chemical['jumlah_incoming'],
-                        jumlah_stock_akhir=chemical['jumlah_incoming'],
-                        confirmed_by=current_user.id
-                    )
-                    db.session.add(stock)
+                        shift=shift  # PERBAIKAN: Tambahkan filter shift
+                    ).first()
 
-        # Process Saphira plates
-        for plate in data.get('saphira', {}).get('plates', []):
-            if plate.get('jumlah_incoming', 0) > 0:
-                existing = KartuStockPlateSaphira.query.filter_by(
-                    tanggal=selected_date,
-                    item_code=plate['item_code']
-                ).first()
+                    if stock:
+                        stock.jumlah_incoming += incoming_amount
+                        stock.incoming_shift = shift
+                        stock.jumlah_stock_akhir += incoming_amount
+                    else:
+                        new_stock = KartuStockChemicalFuji(
+                            tanggal=tanggal,
+                            shift=shift,
+                            item_code=chemical['item_code'],
+                            item_name=chemical['item_name'],
+                            jumlah_stock_awal=0,
+                            jumlah_pemakaian=0,
+                            jumlah_incoming=incoming_amount,
+                            incoming_shift=shift,
+                            jumlah_stock_akhir=incoming_amount,
+                            confirmed_by=current_user.id
+                        )
+                        db.session.add(new_stock)
 
-                if existing:
-                    existing.jumlah_incoming += plate['jumlah_incoming']
-                    existing.jumlah_stock_akhir += plate['jumlah_incoming']
-                else:
-                    stock = KartuStockPlateSaphira(
-                        tanggal=selected_date,
+        if 'saphira' in data:
+            # Proses Saphira plates
+            for plate in data['saphira'].get('plates', []):
+                incoming_amount = plate.get('jumlah_incoming', 0)
+                if incoming_amount > 0:
+                    stock = KartuStockPlateSaphira.query.filter_by(
+                        tanggal=tanggal,
                         item_code=plate['item_code'],
-                        item_name=plate['item_name'],
-                        jumlah_stock_awal=0,
-                        jumlah_pemakaian=0,
-                        jumlah_incoming=plate['jumlah_incoming'],
-                        jumlah_stock_akhir=plate['jumlah_incoming'],
-                        jumlah_per_box=plate['jumlah_per_box'],
-                        confirmed_by=current_user.id
-                    )
-                    db.session.add(stock)
+                        shift=shift  # PERBAIKAN: Tambahkan filter shift
+                    ).first()
 
-        # Process Saphira chemicals
-        for chemical in data.get('saphira', {}).get('chemicals', []):
-            if chemical.get('jumlah_incoming', 0) > 0:
-                existing = KartuStockChemicalSaphira.query.filter_by(
-                    tanggal=selected_date,
-                    item_code=chemical['item_code']
-                ).first()
-
-                if existing:
-                    existing.jumlah_incoming += chemical['jumlah_incoming']
-                    existing.jumlah_stock_akhir += chemical['jumlah_incoming']
-                else:
-                    stock = KartuStockChemicalSaphira(
-                        tanggal=selected_date,
+                    if stock:
+                        stock.jumlah_incoming += incoming_amount
+                        stock.incoming_shift = shift
+                        stock.jumlah_stock_akhir += incoming_amount
+                    else:
+                        new_stock = KartuStockPlateSaphira(
+                            tanggal=tanggal,
+                            shift=shift,
+                            item_code=plate['item_code'],
+                            item_name=plate['item_name'],
+                            jumlah_stock_awal=0,
+                            jumlah_pemakaian=0,
+                            jumlah_incoming=incoming_amount,
+                            incoming_shift=shift,
+                            jumlah_stock_akhir=incoming_amount,
+                            jumlah_per_box=plate['jumlah_per_box'],
+                            confirmed_by=current_user.id
+                        )
+                        db.session.add(new_stock)
+            
+            # Proses Saphira chemicals
+            for chemical in data['saphira'].get('chemicals', []):
+                incoming_amount = chemical.get('jumlah_incoming', 0)
+                if incoming_amount > 0:
+                    stock = KartuStockChemicalSaphira.query.filter_by(
+                        tanggal=tanggal,
                         item_code=chemical['item_code'],
-                        item_name=chemical['item_name'],
-                        jumlah_stock_awal=0,
-                        jumlah_pemakaian=0,
-                        jumlah_incoming=chemical['jumlah_incoming'],
-                        jumlah_stock_akhir=chemical['jumlah_incoming'],
-                        confirmed_by=current_user.id
-                    )
-                    db.session.add(stock)
+                        shift=shift  # PERBAIKAN: Tambahkan filter shift
+                    ).first()
+
+                    if stock:
+                        stock.jumlah_incoming += incoming_amount
+                        stock.incoming_shift = shift
+                        stock.jumlah_stock_akhir += incoming_amount
+                    else:
+                        new_stock = KartuStockChemicalSaphira(
+                            tanggal=tanggal,
+                            shift=shift,
+                            item_code=chemical['item_code'],
+                            item_name=chemical['item_name'],
+                            jumlah_stock_awal=0,
+                            jumlah_pemakaian=0,
+                            jumlah_incoming=incoming_amount,
+                            incoming_shift=shift,
+                            jumlah_stock_akhir=incoming_amount,
+                            confirmed_by=current_user.id
+                        )
+                        db.session.add(new_stock)
 
         db.session.commit()
-        return jsonify({'message': 'Stock incoming berhasil disimpan'})
+        return jsonify({'message': 'Stock incoming berhasil disimpan'}), 200
+
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        print(f"Error: {str(e)}")
+        return jsonify({'error': 'Terjadi kesalahan saat menyimpan data: ' + str(e)}), 500
 
 # Routes for Division Management
 @app.route('/admin/divisions')
@@ -1849,6 +2444,8 @@ def get_chemical_bon_list():
 @require_ctp_access
 def create_chemical_bon():
     try:
+        jakarta_tz = pytz.timezone('Asia/Jakarta')
+        now_jakarta = datetime.now(jakarta_tz)
         data = request.get_json()
         
         # Validasi data dasar
@@ -1928,7 +2525,8 @@ def create_chemical_bon():
                 brand=data['brand'],
                 unit='GLN',  # Selalu GLN
                 jumlah=item['jumlah'],
-                created_by=current_user.id
+                created_by=current_user.id,
+                created_at=now_jakarta
             )
             
             db.session.add(new_bon)
@@ -2221,6 +2819,16 @@ def submit_plate_adjustment():
     try:
         jakarta_tz = pytz.timezone('Asia/Jakarta')
         now_jakarta = datetime.now(jakarta_tz)
+        
+        # --- 1. Ambil dan Konversi Nilai EPSON ---
+        # Ambil nilai '1' atau '0' dari JSON. Default ke '0' (TIDAK) jika tidak ada.
+        is_epson_value = data.get('item_epson_boolean', '0')
+        
+        # Konversi string '1' menjadi True, dan '0' (atau nilai lain) menjadi False.
+        # Ini adalah cara paling efisien karena '1' dan '0' adalah nilai yang pasti.
+        is_epson_converted = (is_epson_value == '1')
+        # ----------------------------------------
+        
         new_request = PlateAdjustmentRequest(
             tanggal=datetime.strptime(data['tanggal'], '%Y-%m-%d').date(),
             mesin_cetak=data['mesin_cetak'],
@@ -2232,13 +2840,17 @@ def submit_plate_adjustment():
             item_name=data['item_name'],
             jumlah_plate=data['jumlah_plate'],
             note=data.get('note'),
-            machine_off_at=now_jakarta  # waktu mesin off otomatis
+            machine_off_at=now_jakarta,  # waktu mesin off otomatis
+            is_epson=is_epson_converted 
         )
+        
         db.session.add(new_request)
         db.session.commit()
         return jsonify({'message': 'Request plate adjustment berhasil disubmit!'}), 201
     except Exception as e:
         db.session.rollback()
+        # Sebaiknya tambahkan logging untuk error yang lebih baik
+        print(f"Error submitting plate adjustment: {e}") 
         return jsonify({'error': str(e)}), 400
 
 # --- API untuk submit plate bon
@@ -2459,6 +3071,102 @@ def get_bon_data():
     except Exception as e:
         print(f"Error fetching adjustment data: {e}")
         return jsonify({'error': str(e)}), 500
+
+# NEW: API untuk pembatalan Bon Plate
+# NEW: API untuk pembatalan Bon Plate
+@app.route('/cancel-bon-plate', methods=['POST'])
+@login_required
+@require_press_access 
+def cancel_bon_plate():
+    try:
+        data = request.get_json()
+        
+        # Ambil data dari JSON Body
+        bon_id = data.get('id')
+        reason = data.get('reason')
+        cancelled_by = data.get('cancelled_by') # Ini adalah NAMA PENGGUNA (String)
+        
+        # Validasi Input Dasar
+        if not bon_id or not reason or not cancelled_by:
+             return jsonify({'success': False, 'message': 'Data (ID, alasan, atau pembatal) tidak lengkap.'}), 400
+        if not reason.strip():
+             return jsonify({'success': False, 'message': 'Alasan pembatalan tidak boleh kosong.'}), 400
+
+        bon_request = PlateBonRequest.query.get(bon_id)
+
+        if not bon_request:
+            return jsonify({'success': False, 'message': f'Bon Plate ID {bon_id} tidak ditemukan.'}), 404
+            
+        cancellable_statuses = ['menunggu_plate', 'proses_plate', 'proses_ctp']
+        if bon_request.status not in cancellable_statuses:
+             return jsonify({
+                 'success': False,
+                 'message': f'Bon tidak dapat dibatalkan. Status saat ini adalah: {bon_request.status}'
+             }), 403 
+
+        # Lakukan Pembatalan
+        bon_request.status = 'bondibatalkan'
+        bon_request.cancellation_reason = reason.strip()
+        bon_request.cancelled_by = cancelled_by # Menyimpan NAMA PENGGUNA (STRING)
+        bon_request.cancelled_at = datetime.now()
+
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Bon Plate ID {bon_id} berhasil dibatalkan.'
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+    
+@app.route('/cancel-adjustment-plate', methods=['POST'])
+@login_required
+@require_press_access
+def cancel_adjustment_plate():
+    try:
+        data = request.get_json()
+        
+        # Ambil data dari JSON Body
+        adjustment_id = data.get('id')
+        reason = data.get('reason')
+        cancelled_by = data.get('cancelled_by') # Ini adalah NAMA PENGGUNA (String)
+        
+        # Validasi Input Dasar
+        if not adjustment_id or not reason or not cancelled_by:
+             return jsonify({'success': False, 'message': 'Data (ID, alasan, atau pembatal) tidak lengkap.'}), 400
+        if not reason.strip():
+             return jsonify({'success': False, 'message': 'Alasan pembatalan tidak boleh kosong.'}), 400
+
+        adjustment_request = PlateAdjustmentRequest.query.get(adjustment_id)
+
+        if not adjustment_request:
+            return jsonify({'success': False, 'message': f'Adjustment Plate ID {adjustment_id} tidak ditemukan.'}), 404
+
+        cancellable_statuses = ['menunggu_adjustment_pdnd', 'menunggu_adjustment']
+        if adjustment_request.status not in cancellable_statuses:
+             return jsonify({
+                 'success': False,
+                 'message': f'Adjustment tidak dapat dibatalkan. Status saat ini adalah: {adjustment_request.status}'
+             }), 403 
+
+        # Lakukan Pembatalan
+        adjustment_request.status = 'adjustmentdibatalkan'
+        adjustment_request.cancellation_reason = reason.strip()
+        adjustment_request.cancelled_by = cancelled_by # Menyimpan NAMA PENGGUNA (STRING)
+        adjustment_request.cancelled_at = datetime.now()
+
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Bon Plate ID {adjustment_id} berhasil dibatalkan.'
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
     
 # API untuk Submit Data KPI (POST request dari form untuk data baru)
 @app.route('/submit-kpi', methods=['POST'])
@@ -2524,8 +3232,6 @@ def submit_kpi():
         print(f"Error submitting data: {e}")
         return jsonify({'error': str(e)}), 400
     
-    renderPagination();
-
 # API untuk Mengambil Data KPI (GET request untuk tabel)
 @app.route('/get-kpi-data', methods=['GET'])
 def get_kpi_data():
@@ -3011,6 +3717,37 @@ def delete_kpi_ctp(data_id):
         abort(500, description=f"Internal server error: {str(e)}")
 
 # --- Mounting Production Routes ---
+@app.route('/decline-adjustment', methods=['POST'])
+@login_required
+@require_mounting_access
+def decline_adjustment():
+    try:
+        data = request.get_json()
+        adjustment_id = data.get('id')
+        reason = data.get('reason')
+        declined_by = data.get('declined_by')
+        
+        adjustment = PlateAdjustmentRequest.query.get(adjustment_id)
+        if not adjustment:
+            return jsonify({'success': False, 'message': 'Adjustment tidak ditemukan'}), 404
+            
+        adjustment.declined_at = datetime.now()
+        adjustment.declined_by = declined_by
+        adjustment.decline_reason = reason
+        adjustment.is_declined = True
+        adjustment.status = 'ditolakmounting'
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Adjustment berhasil ditolak'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @app.route('/mounting-data-adjustment')
 @login_required
 @require_mounting_access
@@ -3061,11 +3798,23 @@ def start_adjustment():
         if adjustment is None:
             abort(404, description="Plate Adjustment Request not found")
         
-        # Update status dan waktu mulai adjustment
+        # Check if this is a reprocess
+        is_reprocess = data.get('is_reprocess', False)
+
+        # Update status
         adjustment.status = 'proses_adjustment'
-        adjustment.adjustment_start_at = datetime.now()
         adjustment.adjustment_by = adjustment_by
-        
+
+        #Jika bukan proses ulang (first time), set adjustment_start_at
+        if not is_reprocess:
+            adjustment.adjustment_start_at = datetime.now()        
+        # Jika ini adalah proses ulang, reset field terkait penolakan
+        if is_reprocess:
+            adjustment.adjustment_finish_at = None
+            adjustment.declined_at = None
+            adjustment.declined_by = None
+            adjustment.decline_reason = None        
+
         db.session.commit()
         
         return jsonify({'success': True, 'message': 'Adjustment started successfully'})
@@ -3099,7 +3848,471 @@ def finish_adjustment():
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# --- PDND Production Routes ---
+@app.route('/pdnd-data-adjustment')
+@login_required
+@require_pdnd_access
+def pdnd_data_adjustment_page():
+    return render_template('pdnd_data_adjustment.html')
+
+@app.route('/get-pdnd-adjustment-data', methods=['GET'])
+@login_required
+@require_pdnd_access
+def get_pdnd_adjustment_data():
+    try:
+        # Filter untuk pdnd: menunggu_adjustment, proses_adjustment
+        # Juga termasuk data yang sudah selesai untuk menghitung summary
+        adjustments = PlateAdjustmentRequest.query.order_by(PlateAdjustmentRequest.id.desc()).all()
+
+        # Filter hanya yang relevan untuk pdnd (status menunggu dan proses)
+        pdnd_data = [
+            adjustment.to_dict() for adjustment in adjustments 
+            if adjustment.status in ['menunggu_adjustment_pdnd', 'proses_adjustment_pdnd']
+        ]
+        
+        # Semua data untuk summary calculation
+        all_data = [adjustment.to_dict() for adjustment in adjustments]
+        
+        return jsonify({
+            'success': True,
+            'data': pdnd_data,
+            'all_data': all_data,  # Untuk summary calculation
+            'total': len(pdnd_data)
+        })
+    except Exception as e:
+        print(f"Error fetching pdnd adjustment data: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/start-adjustment-pdnd', methods=['POST'])
+def start_adjustment_pdnd():
+    try:
+        data = request.get_json()
+        adjustment_id = data.get('id')
+        pdnd_by = data.get('pdnd_by')
+
+        if not adjustment_id or not pdnd_by:
+            return jsonify({'success': False, 'error': 'Missing required data'}), 400
+        
+        adjustment = db.session.get(PlateAdjustmentRequest, adjustment_id) # Menggunakan db.session.get
+        if adjustment is None:
+            abort(404, description="Plate Adjustment Request not found")
+        
+        # Check if this is a reprocess
+        is_reprocess = data.get('is_reprocess', False)
+        
+        # Update status
+        adjustment.status = 'proses_adjustment_pdnd'
+        adjustment.pdnd_by = pdnd_by
+        
+        # Jika bukan proses ulang (first time), set pdnd_start_at
+        if not is_reprocess:
+            adjustment.pdnd_start_at = datetime.now()
+        # Jika ini adalah proses ulang, reset field terkait penolakan
+        else:
+            adjustment.pdnd_finish_at = None
+            adjustment.declined_at = None
+            adjustment.declined_by = None
+            adjustment.decline_reason = None
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Adjustment PDND started successfully'})
+    except Exception as e:
+        print(f"Error starting PDND adjustment: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/finish-adjustment-pdnd', methods=['POST'])
+def finish_adjustment_pdnd():
+    try:
+        data = request.get_json()
+        adjustment_id = data.get('id')
+        
+        if not adjustment_id:
+            return jsonify({'success': False, 'error': 'Missing adjustment ID'}), 400
+        
+        adjustment = db.session.get(PlateAdjustmentRequest, adjustment_id) # Menggunakan db.session.get
+        if adjustment is None:
+            abort(404, description="Plate Adjustment Request not found")
+        
+        # Update status dan waktu selesai adjustment
+        adjustment.status = 'menunggu_adjustment'
+        adjustment.pdnd_finish_at = datetime.now()
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Adjustment PDND finished successfully'})
+    except Exception as e:
+        print(f"Error finishing adjustment: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/export-pdnd-adjustment', methods=['GET'])
+def export_pdnd_adjustment():
+    try:
+        from flask import make_response, request, jsonify
+        import io
+        import openpyxl
+        from datetime import datetime
+        
+        # Get filter parameters
+        status_filter = request.args.get('status', '')
+        remarks_filter = request.args.get('remarks', '')
+        date_from = request.args.get('date_from', '')
+        date_to = request.args.get('date_to', '')
+        
+        # Build query
+        query = PlateAdjustmentRequest.query
+        
+        # Apply filters
+        if status_filter:
+            if status_filter == 'selesai':
+                query = query.filter(PlateAdjustmentRequest.status.in_(['selesai', 'menunggu_adjustment_pdnd']))
+            else:
+                query = query.filter(PlateAdjustmentRequest.status == status_filter)
+        
+        if remarks_filter:
+            query = query.filter(PlateAdjustmentRequest.remarks.ilike(f'%{remarks_filter}%'))
+        
+        if date_from:
+            query = query.filter(PlateAdjustmentRequest.tanggal >= date_from)
+        if date_to:
+            query = query.filter(PlateAdjustmentRequest.tanggal <= date_to)
+        
+        # Get data sorted by date (newest first)
+        adjustments = query.order_by(PlateAdjustmentRequest.tanggal.desc(), PlateAdjustmentRequest.id.desc()).all()
+        
+        # Create an in-memory Excel workbook and worksheet
+        workbook = openpyxl.Workbook()
+        worksheet = workbook.active
+        worksheet.title = "PDND Adjustment Data"
+        
+        # Write headers
+        headers = [
+            'ID', 'Tanggal', 'Mesin Cetak', 'PIC', 'Remarks', 'WO Number', 'MC Number', 
+            'Run Length', 'Item Name', 'Jumlah Plate', 'Note', 'Machine Off At',
+            'PDND Start At', 'PDND Finish At', 'PDND By',
+            'Design Start At', 'Design Finish At', 'Design By',
+            'Adjustment Start At', 'Adjustment Finish At', 'Adjustment By', 
+            'Plate Start At', 'Plate Finish At', 'Plate Delivered At', 'CTP By', 'Status'
+        ]
+        worksheet.append(headers)
+        
+        # Write data rows
+        for adj in adjustments:
+            row_data = [
+                str(adj.id or ''),
+                adj.tanggal.strftime('%Y-%m-%d') if adj.tanggal else '',
+                str(adj.mesin_cetak or ''),
+                str(adj.pic or ''),
+                str(adj.remarks or ''),
+                str(adj.wo_number or ''),
+                str(adj.mc_number or ''),
+                str(adj.run_length or ''),
+                str(adj.item_name or ''),
+                str(adj.jumlah_plate or ''),
+                str(adj.note or ''),
+                adj.machine_off_at.strftime('%Y-%m-%d %H:%M:%S') if adj.machine_off_at else '',
+                adj.pdnd_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.pdnd_start_at else '',
+                adj.pdnd_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.pdnd_finish_at else '',
+                str(adj.pdnd_by or ''),
+                adj.design_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.design_start_at else '',
+                adj.design_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.design_finish_at else '',
+                str(adj.design_by or ''),
+                adj.adjustment_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_start_at else '',
+                adj.adjustment_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_finish_at else '',
+                str(adj.adjustment_by or ''),
+                adj.plate_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_start_at else '',
+                adj.plate_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_finish_at else '',
+                adj.plate_delivered_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_delivered_at else '',
+                str(adj.ctp_by or ''),
+                str(adj.status or '')
+            ]
+            worksheet.append(row_data)
+        
+        # Create response with proper Excel headers
+        output = io.BytesIO()
+        workbook.save(output)
+        output.seek(0)
+        
+        response = make_response(output.getvalue())
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response.headers['Content-Disposition'] = f'attachment; filename=pdnd_adjustment_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        
+        return response
+        
+    except Exception as e:
+        print(f"Error exporting data: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# --- Design Production Routes ---
+@app.route('/design-data-adjustment')
+@login_required
+@require_design_access
+def design_data_adjustment_page():
+    return render_template('design_data_adjustment.html')
+
+@app.route('/get-design-adjustment-data', methods=['GET'])
+@login_required
+@require_design_access
+def get_design_adjustment_data():
+    try:
+        # Filter untuk design: menunggu_adjustment, proses_adjustment
+        # Juga termasuk data yang sudah selesai untuk menghitung summary
+        adjustments = PlateAdjustmentRequest.query.order_by(PlateAdjustmentRequest.id.desc()).all()
+
+        # Filter hanya yang relevan untuk design (status menunggu dan proses)
+        design_data = [
+            adjustment.to_dict() for adjustment in adjustments 
+            if adjustment.status in ['menunggu_adjustment_design', 'proses_adjustment_design']
+        ]
+        
+        # Semua data untuk summary calculation
+        all_data = [adjustment.to_dict() for adjustment in adjustments]
+        
+        return jsonify({
+            'success': True,
+            'data': design_data,
+            'all_data': all_data,  # Untuk summary calculation
+            'total': len(design_data)
+        })
+    except Exception as e:
+        print(f"Error fetching design adjustment data: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/start-adjustment-design', methods=['POST'])
+def start_adjustment_design():
+    try:
+        data = request.get_json()
+        adjustment_id = data.get('id')
+        design_by = data.get('design_by')
+
+        if not adjustment_id or not design_by:
+            return jsonify({'success': False, 'error': 'Missing required data'}), 400
+        
+        adjustment = db.session.get(PlateAdjustmentRequest, adjustment_id) # Menggunakan db.session.get
+        if adjustment is None:
+            abort(404, description="Plate Adjustment Request not found")
+        
+        # Check if this is a reprocess
+        is_reprocess = data.get('is_reprocess', False)
+        
+        # Update status
+        adjustment.status = 'proses_adjustment_design'
+        adjustment.design_by = design_by
+        
+        #Jika bukan proses ulang (first time), set design_start_at
+        if not is_reprocess:
+            adjustment.design_start_at = datetime.now()
+        # Jika ini adalah proses ulang, reset field terkait penolakan
+        if is_reprocess:
+            adjustment.design_finish_at = None
+            adjustment.declined_at = None
+            adjustment.declined_by = None
+            adjustment.decline_reason = None
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Adjustment Design started successfully'})
+    except Exception as e:
+        print(f"Error starting Design adjustment: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/finish-adjustment-design', methods=['POST'])
+def finish_adjustment_design():
+    try:
+        data = request.get_json()
+        adjustment_id = data.get('id')
+        
+        if not adjustment_id:
+            return jsonify({'success': False, 'error': 'Missing adjustment ID'}), 400
+        
+        adjustment = db.session.get(PlateAdjustmentRequest, adjustment_id) # Menggunakan db.session.get
+        if adjustment is None:
+            abort(404, description="Plate Adjustment Request not found")
+        
+        # Update status dan waktu selesai adjustment
+        adjustment.status = 'menunggu_adjustment'
+        adjustment.design_finish_at = datetime.now()
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Adjustment Design finished successfully'})
+    except Exception as e:
+        print(f"Error finishing adjustment: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/export-design-adjustment', methods=['GET'])
+def export_design_adjustment():
+    try:
+        from flask import make_response, request, jsonify
+        import io
+        import openpyxl
+        from datetime import datetime
+        
+        # Get filter parameters
+        status_filter = request.args.get('status', '')
+        remarks_filter = request.args.get('remarks', '')
+        date_from = request.args.get('date_from', '')
+        date_to = request.args.get('date_to', '')
+        
+        # Build query
+        query = PlateAdjustmentRequest.query
+        
+        # Apply filters
+        if status_filter:
+            if status_filter == 'selesai':
+                query = query.filter(PlateAdjustmentRequest.status.in_(['selesai', 'menunggu_adjustment_design']))
+            else:
+                query = query.filter(PlateAdjustmentRequest.status == status_filter)
+        
+        if remarks_filter:
+            query = query.filter(PlateAdjustmentRequest.remarks.ilike(f'%{remarks_filter}%'))
+        
+        if date_from:
+            query = query.filter(PlateAdjustmentRequest.tanggal >= date_from)
+        if date_to:
+            query = query.filter(PlateAdjustmentRequest.tanggal <= date_to)
+        
+        # Get data sorted by date (newest first)
+        adjustments = query.order_by(PlateAdjustmentRequest.tanggal.desc(), PlateAdjustmentRequest.id.desc()).all()
+        
+        # Create an in-memory Excel workbook and worksheet
+        workbook = openpyxl.Workbook()
+        worksheet = workbook.active
+        worksheet.title = "Design Adjustment Data"
+        
+        # Write headers
+        headers = [
+            'ID', 'Tanggal', 'Mesin Cetak', 'PIC', 'Remarks', 'WO Number', 'MC Number', 
+            'Run Length', 'Item Name', 'Jumlah Plate', 'Note', 'Machine Off At',
+            'PDND Start At', 'PDND Finish At', 'PDND By',
+            'Design Start At', 'Design Finish At', 'Design By',
+            'Adjustment Start At', 'Adjustment Finish At', 'Adjustment By', 
+            'Plate Start At', 'Plate Finish At', 'Plate Delivered At', 'CTP By', 'Status'
+        ]
+        worksheet.append(headers)
+        
+        # Write data rows
+        for adj in adjustments:
+            row_data = [
+                str(adj.id or ''),
+                adj.tanggal.strftime('%Y-%m-%d') if adj.tanggal else '',
+                str(adj.mesin_cetak or ''),
+                str(adj.pic or ''),
+                str(adj.remarks or ''),
+                str(adj.wo_number or ''),
+                str(adj.mc_number or ''),
+                str(adj.run_length or ''),
+                str(adj.item_name or ''),
+                str(adj.jumlah_plate or ''),
+                str(adj.note or ''),
+                adj.machine_off_at.strftime('%Y-%m-%d %H:%M:%S') if adj.machine_off_at else '',
+                adj.pdnd_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.pdnd_start_at else '',
+                adj.pdnd_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.pdnd_finish_at else '',
+                str(adj.pdnd_by or ''),
+                adj.design_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.design_start_at else '',
+                adj.design_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.design_finish_at else '',
+                str(adj.design_by or ''),
+                adj.adjustment_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_start_at else '',
+                adj.adjustment_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_finish_at else '',
+                str(adj.adjustment_by or ''),
+                adj.plate_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_start_at else '',
+                adj.plate_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_finish_at else '',
+                adj.plate_delivered_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_delivered_at else '',
+                str(adj.ctp_by or ''),
+                str(adj.status or '')
+            ]
+            worksheet.append(row_data)
+        
+        # Create response with proper Excel headers
+        output = io.BytesIO()
+        workbook.save(output)
+        output.seek(0)
+        
+        response = make_response(output.getvalue())
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response.headers['Content-Disposition'] = f'attachment; filename=design_adjustment_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        
+        return response
+        
+    except Exception as e:
+        print(f"Error exporting data: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # --- CTP Production Routes ---
+@app.route('/decline-ctp', methods=['POST'])
+@login_required
+@require_ctp_access
+def decline_ctp():
+    try:
+        data = request.get_json()
+        adjustment_id = data.get('id')
+        reason = data.get('reason')
+        declined_by = data.get('declined_by')
+        
+        adjustment = PlateAdjustmentRequest.query.get(adjustment_id)
+        if not adjustment:
+            return jsonify({'success': False, 'message': 'Adjustment tidak ditemukan'}), 404
+            
+        adjustment.declined_at = datetime.now()
+        adjustment.declined_by = declined_by
+        adjustment.decline_reason = reason
+        adjustment.is_declined = True
+        adjustment.status = 'ditolakctp'
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Adjustment berhasil ditolak'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+    
+@app.route('/decline-ctp-bon', methods=['POST'])
+@login_required
+@require_ctp_access
+def decline_ctp_bon():
+    try:
+        data = request.get_json()
+        bon_id = data.get('id')
+        reason = data.get('reason')
+        declined_by = data.get('declined_by')
+        
+        bon = PlateBonRequest.query.get(bon_id)
+        if not bon:
+            return jsonify({'success': False, 'message': 'Bon tidak ditemukan'}), 404
+
+        bon.declined_at = datetime.now()
+        bon.declined_by = declined_by
+        bon.decline_reason = reason
+        bon.is_declined = True
+        bon.status = 'ditolakctp'
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Bon berhasil ditolak'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @app.route('/stock-opname-ctp')
 @login_required
 @require_ctp_access
@@ -4176,11 +5389,11 @@ def plate_delivered_bon():
 @app.route('/export-ctp-adjustment', methods=['GET'])
 def export_ctp_adjustment():
     try:
-        from flask import make_response
+        from flask import make_response, request, jsonify
         import io
-        import csv
+        import openpyxl
         from datetime import datetime
-        
+
         # Get filter parameters
         status_filter = request.args.get('status', '')
         mesin_filter = request.args.get('mesin', '')
@@ -4188,17 +5401,17 @@ def export_ctp_adjustment():
         search_filter = request.args.get('search', '')
         date_from = request.args.get('date_from', '')
         date_to = request.args.get('date_to', '')
-        
+
         # Build query for CTP adjustments
         query = PlateAdjustmentRequest.query
-        
+
         # Apply filters
         if status_filter:
             if status_filter == 'selesai':
                 query = query.filter(PlateAdjustmentRequest.status.in_(['selesai', 'proses_ctp']))
             else:
                 query = query.filter(PlateAdjustmentRequest.status == status_filter)
-        
+
         if mesin_filter:
             query = query.filter(PlateAdjustmentRequest.mesin_cetak == mesin_filter)
             
@@ -4225,23 +5438,22 @@ def export_ctp_adjustment():
         # Get CTP data sorted by date (newest first)
         adjustments = query.order_by(PlateAdjustmentRequest.tanggal.desc(), PlateAdjustmentRequest.id.desc()).all()
         
-        # Create CSV content using semicolon delimiter for Excel Indonesia compatibility
-        output = io.StringIO()
-        writer = csv.writer(output, 
-                          delimiter=';',        # Use semicolon for Excel Indonesia
-                          quoting=csv.QUOTE_MINIMAL, 
-                          lineterminator='\n',
-                          doublequote=True)
-        
+        # Create an in-memory Excel workbook and worksheet
+        workbook = openpyxl.Workbook()
+        worksheet = workbook.active
+        worksheet.title = "CTP Adjustment Data"
+
         # Write headers
         headers = [
             'ID', 'Tanggal', 'Mesin Cetak', 'PIC', 'Remarks', 'WO Number', 'MC Number', 
             'Run Length', 'Item Name', 'Jumlah Plate', 'Note', 'Machine Off At',
+            'PDND Start At', 'PDND Finish At', 'PDND By',
+            'Design Start At', 'Design Finish At', 'Design By',
             'Adjustment Start At', 'Adjustment Finish At', 'Adjustment By', 
             'Plate Start At', 'Plate Finish At', 'Plate Delivered At', 'CTP By', 'Status'
         ]
-        writer.writerow(headers)
-        
+        worksheet.append(headers)
+
         # Write data rows
         for adj in adjustments:
             row_data = [
@@ -4257,6 +5469,9 @@ def export_ctp_adjustment():
                 str(adj.jumlah_plate or ''),
                 str(adj.note or ''),
                 adj.machine_off_at.strftime('%Y-%m-%d %H:%M:%S') if adj.machine_off_at else '',
+                adj.pdnd_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.pdnd_start_at else '',
+                adj.pdnd_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.pdnd_finish_at else '',
+                str(adj.pdnd_by or ''),
                 adj.adjustment_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_start_at else '',
                 adj.adjustment_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_finish_at else '',
                 str(adj.adjustment_by or ''),
@@ -4266,13 +5481,16 @@ def export_ctp_adjustment():
                 str(adj.ctp_by or ''),
                 str(adj.status or '')
             ]
-            writer.writerow(row_data)
+            worksheet.append(row_data)
         
-        # Create response with proper CSV headers
+        # Create response with proper Excel headers
+        output = io.BytesIO()
+        workbook.save(output)
         output.seek(0)
+        
         response = make_response(output.getvalue())
-        response.headers['Content-Type'] = 'text/csv; charset=utf-8'
-        response.headers['Content-Disposition'] = f'attachment; filename=ctp_adjustment_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response.headers['Content-Disposition'] = f'attachment; filename=ctp_adjustment_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
         
         return response
         
@@ -4285,9 +5503,9 @@ def export_ctp_adjustment():
 @app.route('/export-mounting-adjustment', methods=['GET'])
 def export_mounting_adjustment():
     try:
-        from flask import make_response
+        from flask import make_response, request, jsonify
         import io
-        import csv
+        import openpyxl
         from datetime import datetime
         
         # Get filter parameters
@@ -4317,22 +5535,21 @@ def export_mounting_adjustment():
         # Get data sorted by date (newest first)
         adjustments = query.order_by(PlateAdjustmentRequest.tanggal.desc(), PlateAdjustmentRequest.id.desc()).all()
         
-        # Create CSV content using semicolon delimiter for Excel Indonesia compatibility
-        output = io.StringIO()
-        writer = csv.writer(output, 
-                          delimiter=';',        # Use semicolon for Excel Indonesia
-                          quoting=csv.QUOTE_MINIMAL, 
-                          lineterminator='\n',
-                          doublequote=True)
+        # Create an in-memory Excel workbook and worksheet
+        workbook = openpyxl.Workbook()
+        worksheet = workbook.active
+        worksheet.title = "Mounting Adjustment Data"
         
         # Write headers
         headers = [
             'ID', 'Tanggal', 'Mesin Cetak', 'PIC', 'Remarks', 'WO Number', 'MC Number', 
             'Run Length', 'Item Name', 'Jumlah Plate', 'Note', 'Machine Off At',
+            'PDND Start At', 'PDND Finish At', 'PDND By',
+            'Design Start At', 'Design Finish At', 'Design By',
             'Adjustment Start At', 'Adjustment Finish At', 'Adjustment By', 
             'Plate Start At', 'Plate Finish At', 'Plate Delivered At', 'CTP By', 'Status'
         ]
-        writer.writerow(headers)
+        worksheet.append(headers)
         
         # Write data rows
         for adj in adjustments:
@@ -4345,10 +5562,13 @@ def export_mounting_adjustment():
                 str(adj.wo_number or ''),
                 str(adj.mc_number or ''),
                 str(adj.run_length or ''),
-                str(adj.item_name or ''),  # This will be properly separated now
+                str(adj.item_name or ''),
                 str(adj.jumlah_plate or ''),
                 str(adj.note or ''),
                 adj.machine_off_at.strftime('%Y-%m-%d %H:%M:%S') if adj.machine_off_at else '',
+                adj.pdnd_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.pdnd_start_at else '',
+                adj.pdnd_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.pdnd_finish_at else '',
+                str(adj.pdnd_by or ''),
                 adj.adjustment_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_start_at else '',
                 adj.adjustment_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_finish_at else '',
                 str(adj.adjustment_by or ''),
@@ -4358,13 +5578,16 @@ def export_mounting_adjustment():
                 str(adj.ctp_by or ''),
                 str(adj.status or '')
             ]
-            writer.writerow(row_data)
+            worksheet.append(row_data)
         
-        # Create response with proper CSV headers
+        # Create response with proper Excel headers
+        output = io.BytesIO()
+        workbook.save(output)
         output.seek(0)
+        
         response = make_response(output.getvalue())
-        response.headers['Content-Type'] = 'text/csv; charset=utf-8'
-        response.headers['Content-Disposition'] = f'attachment; filename=mounting_adjustment_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response.headers['Content-Disposition'] = f'attachment; filename=mounting_adjustment_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
         
         return response
         
@@ -4412,9 +5635,9 @@ def check_bon_request():
 @app.route('/export-ctp-adjustment-data', methods=['GET'])
 def export_ctp_adjustment_data():
     try:
-        from flask import make_response
+        from flask import make_response, request, jsonify
         import io
-        import csv
+        import openpyxl  # Import the openpyxl library
         from datetime import datetime
         
         # Get filter parameters
@@ -4422,7 +5645,9 @@ def export_ctp_adjustment_data():
         remarks_filter = request.args.get('remarks', '')
         start_date = request.args.get('start_date', '')
         end_date = request.args.get('end_date', '')
-        filename = request.args.get('filename', f'ctp_adjustment_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv')
+        
+        # Define the filename with .xlsx extension
+        filename = f'ctp_adjustment_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
         
         # Build query
         query = PlateAdjustmentRequest.query
@@ -4445,22 +5670,21 @@ def export_ctp_adjustment_data():
         # Get data sorted by date (newest first)
         adjustment_requests = query.order_by(PlateAdjustmentRequest.tanggal.desc(), PlateAdjustmentRequest.id.desc()).all()
         
-        # Create CSV content using semicolon delimiter for Excel Indonesia compatibility
-        output = io.StringIO()
-        writer = csv.writer(output, 
-                          delimiter=';',        # Use semicolon for Excel Indonesia
-                          quoting=csv.QUOTE_MINIMAL, 
-                          lineterminator='\n',
-                          doublequote=True)
+        # Create an in-memory Excel workbook and worksheet
+        workbook = openpyxl.Workbook()
+        worksheet = workbook.active
+        worksheet.title = "CTP Adjustment Data"
         
         # Write headers
         headers = [
             'ID', 'Tanggal', 'Mesin Cetak', 'PIC', 'Remarks', 'WO Number', 'MC Number', 
             'Run Length', 'Item Name', 'Jumlah Plate', 'Note', 'Machine Off At',
+            'PDND Start At', 'PDND Finish At', 'PDND By',
+            'Design Start At', 'Design Finish At', 'Design By',
             'Adjustment Start At', 'Adjustment Finish At', 'Adjustment By', 
             'Plate Start At', 'Plate Finish At', 'Plate Delivered At', 'CTP By', 'Status'
         ]
-        writer.writerow(headers)
+        worksheet.append(headers)
         
         # Write data rows
         for adj in adjustment_requests:
@@ -4477,6 +5701,9 @@ def export_ctp_adjustment_data():
                 str(adj.jumlah_plate or ''),
                 str(adj.note or ''),
                 adj.machine_off_at.strftime('%Y-%m-%d %H:%M:%S') if adj.machine_off_at else '',
+                adj.pdnd_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.pdnd_start_at else '',
+                adj.pdnd_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.pdnd_finish_at else '',
+                str(adj.pdnd_by or ''),
                 adj.adjustment_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_start_at else '',
                 adj.adjustment_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_finish_at else '',
                 str(adj.adjustment_by or ''),
@@ -4486,12 +5713,15 @@ def export_ctp_adjustment_data():
                 str(adj.ctp_by or ''),
                 str(adj.status or '')
             ]
-            writer.writerow(row_data)
+            worksheet.append(row_data)
         
-        # Create response with proper CSV headers
+        # Create response with proper Excel headers
+        output = io.BytesIO()
+        workbook.save(output)
         output.seek(0)
+        
         response = make_response(output.getvalue())
-        response.headers['Content-Type'] = 'text/csv; charset=utf-8'
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         response.headers['Content-Disposition'] = f'attachment; filename={filename}'
         
         return response
@@ -4507,11 +5737,9 @@ def export_adjustment_press():
     try:
         from flask import make_response, request, jsonify
         import io
-        import csv
+        import openpyxl  # Menggunakan openpyxl untuk XLSX
         from datetime import datetime
-        # Asumsikan Anda mengimpor model PlateAdjustmentRequest di sini
-        # from your_models import PlateAdjustmentRequest
-
+        
         # Get filter parameters
         date_from = request.args.get('date_from', '')
         date_to = request.args.get('date_to', '')
@@ -4531,23 +5759,22 @@ def export_adjustment_press():
         # Get Adjustment Press sorted by date (newest first)
         adjustment_data = query.order_by(PlateAdjustmentRequest.tanggal.desc(), PlateAdjustmentRequest.id.desc()).all()
 
-        # Create CSV content using semicolon delimiter for Excel Indonesia compatibility
-        output = io.StringIO()
-        writer = csv.writer(output, 
-                            delimiter=';', 
-                            quoting=csv.QUOTE_MINIMAL, 
-                            lineterminator='\n',
-                            doublequote=True)
+        # Create an in-memory Excel workbook and worksheet
+        workbook = openpyxl.Workbook()
+        worksheet = workbook.active
+        worksheet.title = "Adjustment Press Data"
         
         # Write headers
         headers = [
-            'Tanggal', 'PIC', 'Mesin Cetak', 'Remarks', 'Nomor WO', 'Nomor MC',
-            'Run Length', 'Nama Item', 'Jumlah Plate', 'Note',
-            'Mesin Off', 'Adjustment Start', 'Adjustment Selesai',
-            'PIC Adjustment', 'Plate Start', 'Plate Selesai', 'Plate Sampai',
+            'ID', 'Tanggal', 'PIC', 'Mesin Cetak', 'Remarks', 'Nomor WO', 'Nomor MC',
+            'Run Length', 'Nama Item', 'Jumlah Plate', 'Note', 'Mesin Off',
+            'PDND Start', 'PDND Selesai', 'PIC PDND',
+            'Design Start', 'Design Selesai', 'Design By',
+            'Adjustment Start', 'Adjustment Selesai', 'PIC Adjustment',
+            'Plate Start', 'Plate Selesai', 'Plate Sampai',
             'PIC CTP', 'Grup CTP', 'Status', 'Total Downtime (jam)'
         ]
-        writer.writerow(headers)
+        worksheet.append(headers)
         
         # Write data rows
         for adjustment in adjustment_data:
@@ -4557,11 +5784,11 @@ def export_adjustment_press():
                 try:
                     # Asumsikan format string adalah 'YYYY-MM-DD HH:MM:SS'
                     machine_off_dt = datetime.strptime(str(adjustment.machine_off_at), '%Y-%m-%d %H:%M:%S')
-                except ValueError:
+                except (ValueError, TypeError):
                     # Atau format lain, coba sesuaikan
                     try:
                         machine_off_dt = datetime.strptime(str(adjustment.machine_off_at), '%d/%m/%Y %H:%M')
-                    except ValueError:
+                    except (ValueError, TypeError):
                         pass # Biarkan machine_off_dt tetap None jika konversi gagal
 
             # Hitung downtime hanya jika kedua variabel adalah objek datetime yang valid
@@ -4571,6 +5798,7 @@ def export_adjustment_press():
                 total_downtime_hours = round(time_delta.total_seconds() / 3600, 2) # Dibulatkan 2 desimal
 
             row_data = [
+                str(adjustment.id or ''),
                 adjustment.tanggal.strftime('%Y-%m-%d') if adjustment.tanggal else '',
                 str(adjustment.pic or ''),
                 str(adjustment.mesin_cetak or ''),
@@ -4582,6 +5810,12 @@ def export_adjustment_press():
                 str(adjustment.jumlah_plate or ''),
                 str(adjustment.note or ''),
                 str(adjustment.machine_off_at or ''),
+                adjustment.pdnd_start_at.strftime('%Y-%m-%d %H:%M:%S') if adjustment.pdnd_start_at else '',
+                adjustment.pdnd_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adjustment.pdnd_finish_at else '',
+                str(adjustment.pdnd_by or ''),
+                adjustment.design_start_at.strftime('%Y-%m-%d %H:%M:%S') if adjustment.design_start_at else '',
+                adjustment.design_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adjustment.design_finish_at else '',
+                str(adjustment.design_by or ''),
                 adjustment.adjustment_start_at.strftime('%Y-%m-%d %H:%M:%S') if adjustment.adjustment_start_at else '',
                 adjustment.adjustment_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adjustment.adjustment_finish_at else '',
                 str(adjustment.adjustment_by or ''),
@@ -4593,13 +5827,16 @@ def export_adjustment_press():
                 str(adjustment.status or ''),
                 total_downtime_hours
             ]
-            writer.writerow(row_data)
+            worksheet.append(row_data)
         
-        # Create response with proper CSV headers
+        # Create response with proper Excel headers
+        output = io.BytesIO()
+        workbook.save(output)
         output.seek(0)
+        
         response = make_response(output.getvalue())
-        response.headers['Content-Type'] = 'text/csv; charset=utf-8'
-        response.headers['Content-Disposition'] = f'attachment; filename=adjustment_press_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response.headers['Content-Disposition'] = f'attachment; filename=adjustment_press_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
         
         return response
         
@@ -4614,10 +5851,8 @@ def export_bon_press():
     try:
         from flask import make_response, request, jsonify
         import io
-        import csv
+        import openpyxl  # Menggunakan openpyxl untuk XLSX
         from datetime import datetime
-        # Asumsikan Anda mengimpor model PlateBonRequest di sini
-        # from your_models import PlateBonRequest
         
         # Get filter parameters
         date_from = request.args.get('date_from', '')
@@ -4638,13 +5873,10 @@ def export_bon_press():
         # Get Bon Press sorted by date (newest first)
         bon_data = query.order_by(PlateBonRequest.tanggal.desc(), PlateBonRequest.id.desc()).all()
 
-        # Create CSV content using semicolon delimiter for Excel Indonesia compatibility
-        output = io.StringIO()
-        writer = csv.writer(output, 
-                            delimiter=';', 
-                            quoting=csv.QUOTE_MINIMAL, 
-                            lineterminator='\n',
-                            doublequote=True)
+        # Create an in-memory Excel workbook and worksheet
+        workbook = openpyxl.Workbook()
+        worksheet = workbook.active
+        worksheet.title = "Bon Press Data"
         
         # Write headers
         headers = [
@@ -4653,7 +5885,7 @@ def export_bon_press():
             'Mesin Off', 'Plate Start', 'Plate Selesai', 'Plate Sampai',
             'PIC CTP', 'Grup CTP', 'Status', 'Total Downtime (jam)'
         ]
-        writer.writerow(headers)
+        worksheet.append(headers)
         
         # Write data rows
         for bon in bon_data:
@@ -4663,7 +5895,7 @@ def export_bon_press():
                 try:
                     # Asumsikan format string adalah 'YYYY-MM-DD HH:MM:SS'
                     machine_off_dt = datetime.strptime(str(bon.machine_off_at), '%Y-%m-%d %H:%M:%S')
-                except ValueError:
+                except (ValueError, TypeError):
                     # Atau format lain jika diperlukan
                     pass
 
@@ -4693,13 +5925,16 @@ def export_bon_press():
                 str(bon.status or ''),
                 total_downtime_hours
             ]
-            writer.writerow(row_data)
+            worksheet.append(row_data)
         
-        # Create response with proper CSV headers
+        # Create response with proper Excel headers
+        output = io.BytesIO()
+        workbook.save(output)
         output.seek(0)
+        
         response = make_response(output.getvalue())
-        response.headers['Content-Type'] = 'text/csv; charset=utf-8'
-        response.headers['Content-Disposition'] = f'attachment; filename=bon_press_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response.headers['Content-Disposition'] = f'attachment; filename=bon_press_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
         
         return response
         
@@ -4712,19 +5947,19 @@ def export_bon_press():
 @app.route('/export-kpi-ctp', methods=['GET'])
 def export_kpi_ctp():
     try:
-        from flask import make_response
+        from flask import make_response, request, jsonify
         import io
-        import csv
+        import openpyxl
         from datetime import datetime
-        
+
         # Get filter parameters
         date_from = request.args.get('date_from', '')
         date_to = request.args.get('date_to', '')
-        ctp_group = request.args.get('ctp_group', '')  # Optional group filter
-        
+        ctp_group = request.args.get('ctp_group', '')
+
         # Build query for KPI CTP data
         query = CTPProductionLog.query
-        
+
         # Apply filters
         if date_from:
             query = query.filter(CTPProductionLog.log_date >= date_from)
@@ -4732,18 +5967,15 @@ def export_kpi_ctp():
             query = query.filter(CTPProductionLog.log_date <= date_to)
         if ctp_group:
             query = query.filter(CTPProductionLog.ctp_group == ctp_group)
-        
+
         # Get CTP data sorted by date (newest first)
         kpi_data = query.order_by(CTPProductionLog.log_date.desc(), CTPProductionLog.id.desc()).all()
-        
-        # Create CSV content using semicolon delimiter for Excel Indonesia compatibility
-        output = io.StringIO()
-        writer = csv.writer(output, 
-                          delimiter=';',        # Use semicolon for Excel Indonesia
-                          quoting=csv.QUOTE_MINIMAL, 
-                          lineterminator='\n',
-                          doublequote=True)
-        
+
+        # Create an in-memory Excel workbook and worksheet
+        workbook = openpyxl.Workbook()
+        worksheet = workbook.active
+        worksheet.title = "KPI CTP Data"
+
         # Write headers
         headers = [
             'Tanggal', 'Group CTP', 'Shift', 'PIC', 'Mesin CTP',
@@ -4761,8 +5993,8 @@ def export_kpi_ctp():
             'Spot Color 4 25%', 'Spot Color 4 50%', 'Spot Color 4 75%',
             'Start Time', 'Finish Time'
         ]
-        writer.writerow(headers)
-        
+        worksheet.append(headers)
+
         # Write data rows
         for kpi in kpi_data:
             row_data = [
@@ -4808,20 +6040,23 @@ def export_kpi_ctp():
                 str(kpi.u_75_percent or ''),
                 str(kpi.v_25_percent or ''),
                 str(kpi.v_50_percent or ''),
-                str(kpi.v_75_percent or ''),                 
+                str(kpi.v_75_percent or ''),
                 kpi.start_time.strftime('%H:%M') if kpi.start_time else '',
                 kpi.finish_time.strftime('%H:%M') if kpi.finish_time else ''
             ]
-            writer.writerow(row_data)
+            worksheet.append(row_data)
         
-        # Create response with proper CSV headers
+        # Create response with proper Excel headers
+        output = io.BytesIO()
+        workbook.save(output)
         output.seek(0)
+        
         response = make_response(output.getvalue())
-        response.headers['Content-Type'] = 'text/csv; charset=utf-8'
-        response.headers['Content-Disposition'] = f'attachment; filename=kpi_ctp_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response.headers['Content-Disposition'] = f'attachment; filename=kpi_ctp_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
         
         return response
-        
+    
     except Exception as e:
         print(f"Error exporting KPI CTP data: {e}")
         import traceback
@@ -4831,9 +6066,9 @@ def export_kpi_ctp():
 @app.route('/export-ctp-bon', methods=['GET'])
 def export_ctp_bon():
     try:
-        from flask import make_response
+        from flask import make_response, request, jsonify
         import io
-        import csv
+        import openpyxl  # Menggunakan openpyxl untuk XLSX
         from datetime import datetime
         
         # Get filter parameters
@@ -4860,13 +6095,10 @@ def export_ctp_bon():
         # Get data sorted by date (newest first)
         bon_requests = query.order_by(PlateBonRequest.tanggal.desc(), PlateBonRequest.id.desc()).all()
         
-        # Create CSV content using semicolon delimiter for Excel Indonesia compatibility
-        output = io.StringIO()
-        writer = csv.writer(output, 
-                          delimiter=';',        # Use semicolon for Excel Indonesia
-                          quoting=csv.QUOTE_MINIMAL, 
-                          lineterminator='\n',
-                          doublequote=True)
+        # Create an in-memory Excel workbook and worksheet
+        workbook = openpyxl.Workbook()
+        worksheet = workbook.active
+        worksheet.title = "CTP Bon Data"
         
         # Write headers
         headers = [
@@ -4874,7 +6106,7 @@ def export_ctp_bon():
             'Run Length', 'Item Name', 'Jumlah Plate', 'Note', 'Machine Off At',
             'Plate Start At', 'Plate Finish At', 'Plate Delivered At', 'CTP By', 'Status'
         ]
-        writer.writerow(headers)
+        worksheet.append(headers)
         
         # Write data rows
         for bon in bon_requests:
@@ -4897,13 +6129,16 @@ def export_ctp_bon():
                 str(bon.ctp_by or ''),
                 str(bon.status or '')
             ]
-            writer.writerow(row_data)
+            worksheet.append(row_data)
         
-        # Create response with proper CSV headers
+        # Create response with proper Excel headers
+        output = io.BytesIO()
+        workbook.save(output)
         output.seek(0)
+        
         response = make_response(output.getvalue())
-        response.headers['Content-Type'] = 'text/csv; charset=utf-8'
-        response.headers['Content-Disposition'] = f'attachment; filename=ctp_bon_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response.headers['Content-Disposition'] = f'attachment; filename=ctp_bon_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
         
         return response
         
@@ -4916,9 +6151,9 @@ def export_ctp_bon():
 @app.route('/export-ctp-bon-data', methods=['GET'])
 def export_ctp_bon_data():
     try:
-        from flask import make_response
+        from flask import make_response, request, jsonify
         import io
-        import csv
+        import openpyxl  # Menggunakan openpyxl untuk XLSX
         from datetime import datetime
         
         # Get filter parameters
@@ -4926,7 +6161,9 @@ def export_ctp_bon_data():
         remarks_filter = request.args.get('remarks', '')
         start_date = request.args.get('start_date', '')
         end_date = request.args.get('end_date', '')
-        filename = request.args.get('filename', f'ctp_bon_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv')
+        
+        # Define the filename with .xlsx extension
+        filename = f'ctp_bon_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
         
         # Build query
         query = PlateBonRequest.query
@@ -4949,13 +6186,10 @@ def export_ctp_bon_data():
         # Get data sorted by date (newest first)
         bon_requests = query.order_by(PlateBonRequest.tanggal.desc(), PlateBonRequest.id.desc()).all()
         
-        # Create CSV content using semicolon delimiter for Excel Indonesia compatibility
-        output = io.StringIO()
-        writer = csv.writer(output, 
-                          delimiter=';',        # Use semicolon for Excel Indonesia
-                          quoting=csv.QUOTE_MINIMAL, 
-                          lineterminator='\n',
-                          doublequote=True)
+        # Create an in-memory Excel workbook and worksheet
+        workbook = openpyxl.Workbook()
+        worksheet = workbook.active
+        worksheet.title = "CTP Bon Data"
         
         # Write headers
         headers = [
@@ -4963,7 +6197,7 @@ def export_ctp_bon_data():
             'Run Length', 'Item Name', 'Jumlah Plate', 'Note', 'Machine Off At',
             'Plate Start At', 'Plate Finish At', 'Plate Delivered At', 'CTP By', 'Status'
         ]
-        writer.writerow(headers)
+        worksheet.append(headers)
         
         # Write data rows
         for bon in bon_requests:
@@ -4986,12 +6220,15 @@ def export_ctp_bon_data():
                 str(bon.ctp_by or ''),
                 str(bon.status or '')
             ]
-            writer.writerow(row_data)
+            worksheet.append(row_data)
         
-        # Create response with proper CSV headers
+        # Create response with proper Excel headers
+        output = io.BytesIO()
+        workbook.save(output)
         output.seek(0)
+        
         response = make_response(output.getvalue())
-        response.headers['Content-Type'] = 'text/csv; charset=utf-8'
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         response.headers['Content-Disposition'] = f'attachment; filename={filename}'
         
         return response
@@ -5003,4 +6240,4 @@ def export_ctp_bon_data():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5021, debug=True)

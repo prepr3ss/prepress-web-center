@@ -258,10 +258,24 @@
                     </div>
 
                     <div class="row g-3 mb-4">
-                        <div class="col-md-7">
+                        <div class="col-md-5">
                             <label class="info-label">Nama Item</label>
                             <input type="text" name="item_name" class="form-control form-control-clean" placeholder="Masukkan nama produk/item" required>
                         </div>
+                        <div class="col-md-2">
+                            <label class="info-label">Item EPSON ?</label>
+                            <div class="form-control-clean">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="item_epson_boolean" id="epson_ya" value="1" required>
+                                    <label class="form-check-label" for="epson_ya">YA</label>
+                                </div>
+                                
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="item_epson_boolean" id="epson_tidak" value="0" required>
+                                    <label class="form-check-label" for="epson_tidak">TIDAK</label>
+                                </div>
+                            </div>
+                        </div>                      
                         <div class="col-md-5">
                             <label class="info-label">Jenis Adjustment</label>
                             <select name="remarks" class="form-select form-select-clean" required>

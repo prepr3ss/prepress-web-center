@@ -181,7 +181,6 @@ async function handleFinalize() {
     }
 
     try {
-        // Prepare and validate items data
         const items = Array.from(selectedItems.entries()).map(([code, data]) => ({
             item_code: code,
             item_name: data.name,
@@ -207,27 +206,15 @@ async function handleFinalize() {
         const result = await response.json();
 
         if (result.success) {
-            // Close modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('newBonModal'));
-            modal.hide();
-            
-            // Reset form dan selectedItems
-            selectedItems.clear();
-            document.getElementById('newBonForm').reset();
-            document.getElementById('itemsTableSection').style.display = 'none';
-            document.getElementById('bonWebSection').style.display = 'none';
-            document.getElementById('requestNumberSection').style.display = 'none';
-            
-            // Re-enable inputs
-            document.getElementById('tanggal').readOnly = false;
-            document.getElementById('bonPeriode').readOnly = false;
-            document.getElementById('modalBrandFilter').disabled = false;
-            
-            // Refresh table data
-            filterTableData();
-            
-            // Show success message
+            // Tampilkan pesan sukses
             showToast('Chemical Bon berhasil dibuat', 'success');
+
+            // Tambahkan sedikit delay agar pesan toast terlihat
+            setTimeout(() => {
+                // Refresh halaman setelah 2 detik
+                window.location.reload();
+            }, 2000); // Waktu dalam milidetik
+
         } else {
             showToast(result.message || 'Gagal membuat Chemical Bon', 'error');
         }
@@ -267,6 +254,58 @@ function resetModal() {
     document.getElementById('bonPeriode').value = `${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
 }
 
+// Fungsi ini harus berada di lingkup global, tidak di dalam fungsi lain.
+function updatePagination(pagination) {
+    const paginationElement = document.getElementById('pagination');
+    paginationElement.innerHTML = '';
+    if (pagination.pages <= 1) return;
+
+    const createButton = (page, text, disabled) => {
+        const li = document.createElement('li');
+        li.className = `page-item ${disabled ? 'disabled' : ''} ${page === pagination.page ? 'active' : ''}`;
+        li.innerHTML = `<button class="page-link" onclick="changePage(${page})" ${disabled ? 'disabled' : ''}>${text}</button>`;
+        return li;
+    };
+
+    paginationElement.appendChild(createButton(pagination.page - 1, '<i class="fas fa-chevron-left"></i>', pagination.page === 1));
+
+    let startPage = Math.max(1, pagination.page - 2);
+    let endPage = Math.min(pagination.pages, pagination.page + 2);
+
+    if (startPage > 1) {
+        paginationElement.appendChild(createButton(1, '1', false));
+        if (startPage > 2) {
+            const ellipsis = document.createElement('li');
+            ellipsis.className = 'page-item disabled';
+            ellipsis.innerHTML = '<span class="page-link">...</span>';
+            paginationElement.appendChild(ellipsis);
+        }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        paginationElement.appendChild(createButton(i, i, false));
+    }
+
+    if (endPage < pagination.pages) {
+        if (endPage < pagination.pages - 1) {
+            const ellipsis = document.createElement('li');
+            ellipsis.className = 'page-item disabled';
+            ellipsis.innerHTML = '<span class="page-link">...</span>';
+            paginationElement.appendChild(ellipsis);
+        }
+        paginationElement.appendChild(createButton(pagination.pages, pagination.pages, false));
+    }
+
+    paginationElement.appendChild(createButton(pagination.page + 1, '<i class="fas fa-chevron-right"></i>', pagination.page === pagination.pages));
+}
+
+function changePage(page) {
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('page', page);
+    history.pushState(null, '', `?${urlParams.toString()}`);
+    filterTableData();
+}
+
 async function filterTableData() {
     const year = document.getElementById('yearFilter').value;
     const month = document.getElementById('monthFilter').value;
@@ -274,46 +313,37 @@ async function filterTableData() {
     const searchInput = document.getElementById('searchInput').value;
     
     try {
-        // Mendapatkan nilai page dan per_page dari URL atau set default
         const urlParams = new URLSearchParams(window.location.search);
         const currentPage = parseInt(urlParams.get('page')) || 1;
-        // Asumsi per_page default sama dengan di backend (10)
         const itemsPerPage = parseInt(urlParams.get('per_page')) || 10; 
 
-        // Mengirimkan parameter page dan per_page ke backend
         const response = await fetch(`/api/chemical-bon-ctp/list?year=${year}&month=${month}&brand=${brand}&search=${searchInput}&page=${currentPage}&per_page=${itemsPerPage}`);
         const data = await response.json();
 
         const tableBody = document.getElementById('chemicalBonTableBody');
-        tableBody.innerHTML = ''; // Clear existing table data first
+        tableBody.innerHTML = '';
 
-        // Add the new check for no data
         if (!data.success || !data.data || data.data.length === 0) {
             tableBody.innerHTML = '<tr><td colspan="10" class="text-center">Tidak ada data</td></tr>';
             const paginationElement = document.getElementById('pagination');
             if (paginationElement) {
                 paginationElement.innerHTML = ''; 
             }
-            return; // Exit function if no data
+            return;
         }
 
-        // Ambil nilai total dari respons backend
         const totalItems = data.total || 0; 
-
-        // Jika ada paginationElement, update pagination UI
         const paginationElement = document.getElementById('pagination');
+
         if (paginationElement) {
-            // Perlu menyesuaikan struktur pagination dengan yang dikembalikan backend
             updatePagination({
                 page: data.current_page || 1,
-                per_page: itemsPerPage, // Gunakan itemsPerPage dari frontend atau default backend
+                per_page: itemsPerPage,
                 total: data.total || 0,
                 pages: data.pages || 1
             });
         }
-
-
-        // If data exists, proceed to populate the table
+        
         data.data.forEach((bon, index) => {
             const row = document.createElement('tr');
             const tanggal = new Date(bon.tanggal);
@@ -322,11 +352,7 @@ async function filterTableData() {
                 month: 'long', 
                 year: 'numeric'
             };
-
-            // Hitung nomor urut terbalik
-            // totalItems (total dari backend) - ( (currentPage - 1) * itemsPerPage ) - index (index di halaman saat ini)
             const reversedIndex = totalItems - ((currentPage - 1) * itemsPerPage) - index;
-
             row.innerHTML = `
                 <td>${reversedIndex}</td>
                 <td>${tanggal.toLocaleDateString('id-ID', options)}</td>
@@ -348,7 +374,6 @@ async function filterTableData() {
     } catch (error) {
         console.error('Error fetching data:', error);
         showToast('Terjadi kesalahan saat memuat data', 'error');
-        // If an error occurs, also show "Tidak ada data"
         const tableBody = document.getElementById('chemicalBonTableBody');
         tableBody.innerHTML = '<tr><td colspan="10" class="text-center">Terjadi kesalahan saat memuat data.</td></tr>';
         const paginationElement = document.getElementById('pagination');

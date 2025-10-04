@@ -42,7 +42,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (window.BadgeSystem) {
             // Tentukan division berdasarkan status
             let division = 'default';
-            if (status === 'menunggu_adjustment' || status === 'proses_adjustment') {
+            if (status === 'menunggu_adjustment_pdnd' || status === 'proses_adjustment_pdnd') {
+                division = 'pdnd';
+            } else if (status === 'menunggu_adjustment' || status === 'proses_adjustment') {
                 division = 'mounting';
             } else if (status === 'proses_ctp' || status === 'proses_plate' || status === 'antar_plate' || status === 'selesai') {
                 division = 'ctp';
@@ -56,6 +58,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Fallback jika badge system tidak tersedia
         const statusMap = {
+            menunggu_adjustment_pdnd: { label: "Menunggu Adjustment PDND", badge: "badge-menunggu" },
+            proses_adjustment_pdnd:   { label: "Proses Adjustment PDND",   badge: "badge-proses" },
             menunggu_adjustment: { label: "Menunggu Adjustment", badge: "badge-menunggu" },
             proses_adjustment:   { label: "Proses Adjustment",   badge: "badge-proses" },
             proses_ctp:          { label: "Proses CTP",          badge: "badge-menunggu-plate" },
@@ -126,6 +130,61 @@ function renderTable(rows) {
 }
 
 
+// Get current user name from template injection
+window.currentUserName = document.querySelector('meta[name="current-user-name"]')?.content || 'Unknown User';
+
+// Cancel adjustment function
+function cancelAdjustmentPlate(adjustmentId, reason) {
+    const currentUserName = window.currentUserName || 'Unknown User'; 
+    
+    // Send cancel request
+    fetch('/cancel-adjustment-plate', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            id: adjustmentId, 
+            reason: reason,
+            cancelled_by: currentUserName 
+        })
+    })
+    .then(res => {
+        if (!res.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return res.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Hide modal
+            bootstrap.Modal.getInstance(document.getElementById('cancelModal')).hide();
+            // Show success message
+            showToast('Adjustment berhasil dibatalkan', 'success');
+            // Refresh data
+            fetchData();
+        } else {
+            throw new Error(data.message || 'Failed to cancel adjustment');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Gagal membatalkan adjustment: ' + error.message, 'error');
+    })
+    .finally(() => {
+        // Reset form
+        document.getElementById('cancelReason').value = '';
+    });
+}
+
+// Show cancel modal function
+function showCancelModal(adjustmentId) {
+    document.getElementById('cancelAdjustmentId').textContent = adjustmentId;
+    document.getElementById('confirmCancelButton').dataset.adjustmentId = adjustmentId;
+    document.getElementById('cancelReason').value = '';
+
+    const modal = new bootstrap.Modal(document.getElementById('cancelModal'));
+    modal.show();
+}
+
 // Menu klik kanan dengan posisi presisi mengikuti scroll (mengadopsi kpi_ctp_handler.js)
 function showContextMenu(rowElement, x, y, row) {
     hideContextMenu();
@@ -141,7 +200,7 @@ function showContextMenu(rowElement, x, y, row) {
 
     // --- Opsional: Cegah menu keluar dari layar ---
     const menuWidth = 180; // atau sesuai minWidth menu Anda
-    const menuHeight = row.status === 'menunggu_adjustment' ? 90 : 50; // kira-kira tinggi menu (1/2 tombol)
+    const menuHeight = row.status === 'menunggu_adjustment_pdnd' ? 90 : 50; // kira-kira tinggi menu (1/2 tombol)
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     if (left + menuWidth > viewportWidth + window.scrollX) {
@@ -165,7 +224,7 @@ function showContextMenu(rowElement, x, y, row) {
         <button type="button" class="list-group-item list-group-item-action" data-action="detail">
             <i class="fas fa-search me-2"></i> Detail Adjustment
         </button>
-        ${row.status === 'menunggu_adjustment' ? `
+        ${row.status === 'menunggu_adjustment_pdnd' || row.status === 'menunggu_adjustment' ? `
         <button type="button" class="list-group-item list-group-item-action text-danger" data-action="cancel">
             <i class="fas fa-ban me-2"></i> Cancel Adjustment
         </button>
@@ -182,11 +241,9 @@ function showContextMenu(rowElement, x, y, row) {
     const cancelBtn = contextMenu.querySelector('[data-action="cancel"]');
     if (cancelBtn) {
         cancelBtn.addEventListener('click', function() {
-            if (confirm('Yakin ingin membatalkan adjustment ini?')) {
-                // Lakukan API call cancel
-                alert('Adjustment dibatalkan: ' + row.id);
-            }
-            hideContextMenu();
+        hideContextMenu();
+        // Tampilkan Modal Konfirmasi Pembatalan
+        showCancelModal(row.id);
         });
     }
 
@@ -337,6 +394,56 @@ function hideContextMenu() {
         }
         updateSortIcons();
     }
+
+    // Toast notification function
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('liveToast');
+            const messageText = toast.querySelector('.message-text');
+            const toastBody = toast.querySelector('.toast-body');
+            
+            messageText.textContent = message;
+            
+    // Reset classes
+            toastBody.className = 'toast-body rounded';
+            
+    // Apply type-specific styling
+            switch(type) {
+                case 'success':
+                    toastBody.classList.add('bg-success', 'text-white');
+                    break;
+                case 'warning':
+                    toastBody.classList.add('bg-warning', 'text-dark');
+                    break;
+                case 'error':
+                    toastBody.classList.add('bg-danger', 'text-white');
+                    break;
+                default:
+                    toastBody.classList.add('bg-info', 'text-white');
+            }
+            
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+        }
+
+// TAMBAHKAN KODE INI DI DALAM document.addEventListener('DOMContentLoaded', function() { ... });
+
+const confirmButton = document.getElementById('confirmCancelButton');
+
+if (confirmButton) {
+    confirmButton.addEventListener('click', function() {
+        const reasonInput = document.getElementById('cancelReason');
+        const reason = reasonInput.value.trim();
+        const adjustmentId = this.dataset.adjustmentId; // Mengambil ID dari data attribute tombol
+
+        if (!reason || !adjustmentId) {
+            showToast('Harap isi alasan pembatalan.', 'error');
+            return;
+        }
+
+        // Panggil fungsi pembatalan dengan data yang sudah divalidasi
+        cancelAdjustmentPlate(adjustmentId, reason);
+    });
+}
 
     fetchData();
 });

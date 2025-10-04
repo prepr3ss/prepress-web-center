@@ -110,6 +110,7 @@
         .timeline {
             position: relative;
             padding-left: 25px;
+            padding-right: 300px;
         }
         
         /* Remove old timeline lines */
@@ -133,16 +134,193 @@
             background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
             box-shadow: 0 0 10px rgba(86, 171, 47, 0.3);
         }
+
+        .timeline-segment.declined {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            box-shadow: 0 0 10px rgba(238, 90, 82, 0.3);
+        }
+
+        .timeline-segment.cancelled {
+            background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+            box-shadow: 0 0 10px rgba(255, 71, 87, 0.3);
+        }
+
+        .timeline-marker.declined {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%) !important;
+            transform: scale(1.2);
+            box-shadow: 0 2px 12px rgba(238, 90, 82, 0.4);
+        }
+
+        .declined-info {
+            position: absolute;
+            right: -290px;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 12px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(255,107,107,0.1) 0%, rgba(238,90,82,0.1) 100%);
+            border-left: 4px solid #ee5a52;
+            font-size: 0.9rem;
+            width: 350px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            z-index: 100;
+        }
+
+        .declined-info .declined-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .declined-info .declined-header i {
+            margin-right: 8px;
+        }
+
+        .declined-info .declined-details {
+            color: #6c757d;
+            margin-left: 24px;
+        }
+
+        .declined-info .declined-details span {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .declined-info .declined-reason {
+            margin-top: 8px;
+            padding: 8px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 4px;
+            color: #495057;
+        }
         
+        /* Cancelled styling */
+        .timeline-segment.cancelled {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            box-shadow: 0 0 10px rgba(238, 90, 82, 0.3);
+        }
+
+        .timeline-marker.cancelled {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%) !important;
+            transform: scale(1.2);
+            box-shadow: 0 2px 12px rgba(238, 90, 82, 0.4);
+        }
+
+        .cancelled-info {
+            position: absolute;
+            right: -290px;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 15px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(255,71,87,0.1) 0%, rgba(255,107,129,0.1) 100%);
+            border-left: 4px solid #ff4757;
+            font-size: 0.9rem;
+            width: 350px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            z-index: 100;
+            color: #2d3436;
+        }
+
+        .cancelled-info .cancelled-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            color: #ff4757;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .cancelled-info .cancelled-header i {
+            margin-right: 8px;
+        }
+
+        .cancelled-info .cancelled-details {
+            padding-left: 24px;
+        }
+
+        .cancelled-info .cancelled-details span {
+            display: block;
+            margin-bottom: 8px;
+            color: #6c757d;
+            font-size: 0.85rem;
+        }
+
+        .cancelled-info .cancelled-reason {
+            margin-top: 12px;
+            padding: 10px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 6px;
+            color: #495057;
+        }
+        
+        /* Responsive cancelled info */
+        @media (max-width: 1200px) {
+            .timeline {
+                padding-right: 0;
+            }
+            
+            .cancelled-info {
+                position: relative;
+                right: auto;
+                top: auto;
+                transform: none;
+                margin: 10px 0 10px 25px;
+                width: calc(100% - 25px);
+            }
+            
+            .timeline-item.has-cancelled-info {
+                padding-bottom: 0;
+            }
+        }
+
         .timeline-item {
             position: relative;
             padding-bottom: 1.2rem;
             min-height: 50px;
         }
+        
+        .timeline-item.has-declined-info {
+            position: relative;
+        }
+
+        /* Responsive styling for declined info */
+        @media (max-width: 1200px) {
+            .timeline {
+                padding-right: 0;
+            }
+            
+            .declined-info {
+                position: relative;
+                right: auto;
+                top: auto;
+                transform: none;
+                margin: 10px 0 10px 25px;
+                width: calc(100% - 25px);
+            }
+            
+            .timeline-item.has-declined-info {
+                padding-bottom: 0;
+            }
+        }
         .timeline-item:last-child {
             padding-bottom: 0.5rem;
         }
         
+        .timeline-item {
+            transition: top 0.3s ease-in-out, opacity 0.3s ease-in-out;
+        }
+
+        .timeline-segment {
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .timeline {
+            min-height: 500px; /* Sesuaikan dengan kebutuhan */
+            position: relative;
+        }        
         .timeline-marker {
             position: absolute;
             left: -21px;
@@ -158,8 +336,11 @@
         
         /* Interactive Timeline Enhancements */
         .timeline-marker.active {
-            animation: pulse 2s infinite;
             transform: scale(1.3);
+        }
+        
+        .timeline-marker.pulse {
+            animation: pulse 2s infinite;
             box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.3);
         }
         
@@ -386,13 +567,17 @@
                                     <div class="timeline-segment" id="segment-0" style="top: 20px; height: 60px;"></div>
                                     <!-- Garis 2: Mulai Adjustment ke Selesai Adjustment -->
                                     <div class="timeline-segment" id="segment-1" style="top: 90px; height: 65px;"></div>
-                                    <!-- Garis 3: Selesai Adjustment ke Mulai Plate -->
+                                    <!-- Garis 3: Selesai Adjustment ke Mulai Mounting -->
                                     <div class="timeline-segment" id="segment-2" style="top: 160px; height: 65px;"></div>
-                                    <!-- Garis 4: Mulai Plate ke Selesai Plate -->
+                                    <!-- Garis 4: Mulai Mounting ke Selesai Mounting -->
                                     <div class="timeline-segment" id="segment-3" style="top: 230px; height: 65px;"></div>
-                                    <!-- Garis 5: Selesai Plate ke Plate Sampai -->
+                                    <!-- Garis 5: Selesai Mounting ke Mulai Plate -->
                                     <div class="timeline-segment" id="segment-4" style="top: 300px; height: 65px;"></div>
-                                    
+                                    <!-- Garis 6: Mulai Plate ke Selesai Plate -->
+                                    <div class="timeline-segment" id="segment-5" style="top: 370px; height: 65px;"></div>                                    
+                                    <!-- Garis 7: Selesai Plate ke Plate Sampai -->
+                                    <div class="timeline-segment" id="segment-6" style="top: 440px; height: 65px;"></div> 
+
                                     <div class="timeline-item" data-step="machine_off">
                                         <div class="timeline-marker bg-danger" data-tooltip="Mesin berhenti beroperasi"></div>
                                         <div class="timeline-content">
@@ -403,10 +588,80 @@
                                             </div>
                                         </div>
                                     </div>
+                                    {% if not data.is_epson %}
+                                    <div class="timeline-item" data-step="pdnd_start">
+                                        <div class="timeline-marker bg-{% if data.pdnd_start_at %}info{% else %}secondary{% endif %}" data-tooltip="Mulai proses penyesuaian"></div>
+                                        <div class="timeline-content">
+                                            <div class="fw-bold mb-1">Mulai Adjustment</div>
+                                            <div class="text-dark">
+                                                {% if data.pdnd_start_at %}
+                                                    <span data-datetime="{{ data.pdnd_start_at }}" data-pic="{{ data.pdnd_by }}">
+                                                        {{ data.pdnd_start_at }}
+                                                        {% if data.pdnd_by %}<span class="text-muted">[{{ data.pdnd_by }}]</span>{% endif %}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-muted">Belum dimulai</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="timeline-item" data-step="pdnd_finish">
+                                        <div class="timeline-marker bg-{% if data.pdnd_finish_at %}info{% else %}secondary{% endif %}" data-tooltip="Selesai proses penyesuaian"></div>
+                                        <div class="timeline-content">
+                                            <div class="fw-bold mb-1">Selesai Adjustment</div>
+                                            <div class="text-dark">
+                                                {% if data.pdnd_finish_at %}
+                                                    <span data-datetime="{{ data.pdnd_finish_at }}" data-pic="{{ data.pdnd_by }}">
+                                                        {{ data.pdnd_finish_at }}
+                                                        {% if data.pdnd_by %}<span class="text-muted">[{{ data.pdnd_by }}]</span>{% endif %}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-muted">Belum selesai</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    {% if data.is_epson %}
+                                    <div class="timeline-item" data-step="design_start">
+                                        <div class="timeline-marker bg-{% if data.design_start_at %}info{% else %}secondary{% endif %}" data-tooltip="Mulai proses penyesuaian"></div>
+                                        <div class="timeline-content">
+                                            <div class="fw-bold mb-1">Mulai Adjustment</div>
+                                            <div class="text-dark">
+                                                {% if data.design_start_at %}
+                                                    <span data-datetime="{{ data.design_start_at }}" data-pic="{{ data.design_by }}">
+                                                        {{ data.design_start_at }}
+                                                        {% if data.design_by %}<span class="text-muted">[{{ data.design_by }}]</span>{% endif %}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-muted">Belum dimulai</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>                                    
+                                    <div class="timeline-item" data-step="design_finish">
+                                        <div class="timeline-marker bg-{% if data.design_finish_at %}info{% else %}secondary{% endif %}" data-tooltip="Selesai proses penyesuaian"></div>
+                                        <div class="timeline-content">
+                                            <div class="fw-bold mb-1">Selesai Adjustment</div>
+                                            <div class="text-dark">
+                                                {% if data.design_finish_at %}
+                                                    <span data-datetime="{{ data.design_finish_at }}" data-pic="{{ data.design_by }}">
+                                                        {{ data.design_finish_at }}
+                                                        {% if data.design_by %}<span class="text-muted">[{{ data.design_by }}]</span>{% endif %}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-muted">Belum selesai</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
                                     <div class="timeline-item" data-step="adjustment_start">
                                         <div class="timeline-marker bg-{% if data.adjustment_start_at %}info{% else %}secondary{% endif %}" data-tooltip="Mulai proses penyesuaian"></div>
                                         <div class="timeline-content">
-                                            <div class="fw-bold mb-1">Mulai Adjustment</div>
+                                            <div class="fw-bold mb-1">Mulai Mounting</div>
                                             <div class="text-dark">
                                                 {% if data.adjustment_start_at %}
                                                     <span data-datetime="{{ data.adjustment_start_at }}" data-pic="{{ data.adjustment_by }}">
@@ -422,7 +677,7 @@
                                     <div class="timeline-item" data-step="adjustment_finish">
                                         <div class="timeline-marker bg-{% if data.adjustment_finish_at %}info{% else %}secondary{% endif %}" data-tooltip="Selesai proses penyesuaian"></div>
                                         <div class="timeline-content">
-                                            <div class="fw-bold mb-1">Selesai Adjustment</div>
+                                            <div class="fw-bold mb-1">Selesai Mounting</div>
                                             <div class="text-dark">
                                                 {% if data.adjustment_finish_at %}
                                                     <span data-datetime="{{ data.adjustment_finish_at }}" data-pic="{{ data.adjustment_by }}">
@@ -434,7 +689,7 @@
                                                 {% endif %}
                                             </div>
                                         </div>
-                                    </div>
+                                    </div>                                    
                                     <div class="timeline-item" data-step="plate_start">
                                         <div class="timeline-marker bg-{% if data.plate_start_at %}primary{% else %}secondary{% endif %}" data-tooltip="Mulai proses pembuatan plate"></div>
                                         <div class="timeline-content">
@@ -626,7 +881,11 @@
                 
                 // Tentukan division berdasarkan status
                 let division = 'default';
-                if (status === 'menunggu_adjustment' || status === 'proses_adjustment') {
+                if (status === 'menunggu_adjustment_design' || status === 'proses_adjustment_design') {
+                    division = 'design';                
+                } else if (status === 'menunggu_adjustment_pdnd' || status === 'proses_adjustment_pdnd') {
+                    division = 'pdnd';                
+                } else if (status === 'menunggu_adjustment' || status === 'proses_adjustment') {
                     division = 'mounting';
                 } else if (status === 'proses_ctp' || status === 'proses_plate' || status === 'antar_plate' || status === 'selesai') {
                     division = 'ctp';
@@ -651,6 +910,10 @@
         // Interactive Timeline Functions
         let timelineData = {
             machine_off_at: '{{ data.machine_off_at }}',
+            design_start_at: '{{ data.design_start_at }}',
+            design_finish_at: '{{ data.design_finish_at}}',
+            pdnd_start_at: '{{ data.pdnd_start_at }}',
+            pdnd_finish_at: '{{ data.pdnd_finish_at }}',
             adjustment_start_at: '{{ data.adjustment_start_at }}',
             adjustment_finish_at: '{{ data.adjustment_finish_at }}',
             plate_start_at: '{{ data.plate_start_at }}',
@@ -692,65 +955,319 @@
         }
         
         function updateActiveStep() {
-            const steps = ['machine_off', 'adjustment_start', 'adjustment_finish', 'plate_start', 'plate_finish', 'plate_delivered'];
-            let activeStep = null;
-            let lastCompletedStepIndex = -1;
+            // Ambil data dari Jinja
+            const remarks = '{{ data.remarks }}';
+            const status = '{{ data.status }}';
+            // VARIABEL BARU: Ambil status is_epson
+            const isEpson = '{{ data.is_epson | tojson }}' === 'true'; // Konversi ke boolean JS
             
-            // Find the last completed step and determine active step
-            for (let i = 0; i < steps.length; i++) {
-                const stepData = timelineData[steps[i] + '_at'];
-                if (stepData && stepData !== '' && stepData !== '-' && stepData !== 'None') {
-                    lastCompletedStepIndex = i;
+            // Fungsi isRequirePDND menentukan apakah adjustment diperlukan (FA/Curve)
+            // Asumsi: isRequirePDND sudah menangani Remarks FA/Curve
+            const requireAdjustment = isRequirePDND(remarks); 
+            
+            let steps = ['machine_off'];
+
+            if (requireAdjustment) {
+                if (isEpson) {
+                    // Jika EPSON: Gunakan langkah Design
+                    steps.push('design_start', 'design_finish');
                 } else {
-                    // This is the first incomplete step, so it's active
-                    activeStep = steps[i];
+                    // Jika BUKAN EPSON: Gunakan langkah PDND
+                    steps.push('pdnd_start', 'pdnd_finish');
+                }
+            }
+
+            // Langkah berikutnya selalu Adjustment (Mounting) dan Plate/CTP
+            steps.push('adjustment_start', 'adjustment_finish', 'plate_start', 'plate_finish', 'plate_delivered');
+
+            // Reset all states
+            document.querySelectorAll('.timeline-item').forEach(item => {
+                item.classList.remove('active');
+                const marker = item.querySelector('.timeline-marker');
+                if (marker) {
+                    marker.classList.remove('active', 'completed', 'pulse');
+                }
+            });
+
+            // Don't proceed for special statuses
+            if (['ditolakmounting', 'ditolakctp', 'adjustmentdibatalkan'].includes(status)) {
+                return;
+            }
+
+            // Find first incomplete step
+            let activeStepFound = false;
+            
+            for (let i = 0; i < steps.length && !activeStepFound; i++) {
+                const step = steps[i];
+                // Asumsi: timelineData adalah objek global yang berisi semua timestamp
+                const stepData = timelineData[step + '_at']; 
+                
+                // Pilih item yang relevan (hanya item yang ada di array 'steps' yang akan diquery)
+                const item = document.querySelector(`[data-step="${step}"]`);
+                const marker = item?.querySelector('.timeline-marker');
+
+                if (stepData && stepData !== '' && stepData !== '-' && stepData !== 'None') {
+                    // Mark completed steps
+                    if (marker) {
+                        marker.classList.add('completed');
+                    }
+                } else {
+                    // Found first incomplete step
+                    if (item && marker) {
+                        item.classList.add('active');
+                        marker.classList.add('active', 'pulse');
+                        activeStepFound = true;
+                    }
                     break;
                 }
             }
-            
-            // Update UI for active step
-            if (activeStep) {
-                const activeItem = document.querySelector(`[data-step="${activeStep}"]`);
-                const activeMarker = activeItem?.querySelector('.timeline-marker');
-                
-                if (activeItem && activeMarker) {
-                    activeItem.classList.add('active');
-                    activeMarker.classList.add('active');
-                }
-            }
-            
-            // Mark completed steps
-            steps.forEach((step, index) => {
-                const stepData = timelineData[step + '_at'];
-                if (stepData && stepData !== '' && stepData !== '-' && stepData !== 'None') {
-                    const item = document.querySelector(`[data-step="${step}"]`);
-                    const marker = item?.querySelector('.timeline-marker');
-                    if (marker) marker.classList.add('completed');
-                }
-            });
         }
         
+        // Update timeline progress bar and status markers
         function updateProgressBar() {
-            const steps = ['machine_off', 'adjustment_start', 'adjustment_finish', 'plate_start', 'plate_finish', 'plate_delivered'];
+            const remarks = '{{ data.remarks }}';
+            const status = '{{ data.status }}';
+            const isEpson = '{{ data.is_epson | tojson }}' === 'true'; // Ambil status EPSON
+            const requireAdjustment = isRequirePDND(remarks);
+            const isCancelled = status === 'adjustmentdibatalkan';
+            const isDeclined = status === 'ditolakmounting' || status === 'ditolakctp';
             
-            // Update each segment based on completion status
-            for (let i = 0; i < 5; i++) { // 5 segments for 6 steps
-                const currentStep = steps[i]; // Step yang memulai segmen ini
-                const segment = document.getElementById(`segment-${i}`);
+            // --- Perubahan Utama di sini ---
+            // Definisikan langkah-langkah berdasarkan kebutuhan Adjustment (requireAdjustment) dan jenisnya (isEpson)
+            let adjustmentSteps = [];
+            if (requireAdjustment) {
+                if (isEpson) {
+                    adjustmentSteps = ['design_start', 'design_finish'];
+                } else {
+                    adjustmentSteps = ['pdnd_start', 'pdnd_finish'];
+                }
+            }
+
+            // Gabungkan semua langkah
+            const steps = [
+                'machine_off',
+                ...adjustmentSteps,
+                'adjustment_start', 
+                'adjustment_finish', 
+                'plate_start', 
+                'plate_finish', 
+                'plate_delivered'
+            ];
+            // --------------------------------
+
+            // Reset all statuses and info boxes
+            document.querySelectorAll('.timeline-item').forEach(item => {
+                item.classList.remove('has-cancelled-info', 'has-declined-info');
+                const marker = item.querySelector('.timeline-marker');
+                if (marker) {
+                    marker.classList.remove('completed', 'active', 'cancelled', 'declined');
+                }
+            });
+            
+            document.querySelectorAll('.timeline-segment').forEach(segment => {
+                segment.classList.remove('completed', 'cancelled', 'declined');
+            });
+            
+            document.querySelectorAll('.cancelled-info, .declined-info').forEach(info => info.remove());
+
+            // Handle cancelled status first
+            if (isCancelled) {
+                const timelineItems = document.querySelectorAll('.timeline-item');
+                // NOTE: Karena jumlah item di DOM tidak selalu sama dengan panjang array 'steps'
+                // dan item yang tidak relevan (PDND/DESIGN) disembunyikan, 
+                // disarankan untuk hanya beriterasi pada item yang *terlihat* atau menggunakan array 'steps' sebagai panduan.
+
+                // Kita akan menggunakan array 'steps' untuk memastikan logika segmen bekerja.
+                // Asumsi: Timeline item di DOM sudah diurutkan berdasarkan 'steps' yang *terlihat*.
                 
-                if (segment) {
-                    // Check if current step (yang memulai segmen) is completed
-                    const currentStepData = timelineData[currentStep + '_at'];
-                    const isCurrentCompleted = currentStepData && currentStepData !== '' && currentStepData !== '-' && currentStepData !== 'None';
+                timelineItems.forEach((item, index) => {
+                    const marker = item.querySelector('.timeline-marker');
+                    // Ganti segment index menjadi segmentId yang konsisten (jika DOM tidak berubah urutan)
+                    // Segment ID harusnya mengikuti urutan kemunculan di DOM, kita asumsikan urutan DOM tetap.
+                    const segment = document.getElementById(`segment-${index}`);
+                    // ... (Tidak perlu stepTimestamp di sini)
                     
-                    if (isCurrentCompleted) {
+                    // Add cancelled info box at first item
+                    if (index === 0) {
+                        const cancelledInfo = document.createElement('div');
+                        cancelledInfo.className = 'cancelled-info';
+                        // ... (detail info box dibiarkan sama) ...
+                        const cancelledAt = '{{ data.cancelled_at }}';
+                        const formattedDateTime = formatDateTimeIndonesia(cancelledAt);
+                        cancelledInfo.innerHTML = `
+                            <div class="cancelled-header">
+                                <i class="fas fa-ban"></i>
+                                Adjustment Dibatalkan
+                            </div>
+                            <div class="cancelled-details">
+                                <span><i class="fas fa-user me-2"></i>Dibatalkan oleh: {{ data.cancelled_by }}</span>
+                                <span><i class="fas fa-clock me-2"></i>Waktu: ${formattedDateTime}</span>
+                            </div>
+                            <div class="cancelled-reason">
+                                <i class="fas fa-info-circle me-2"></i>Alasan:
+                                <p class="mb-0 mt-1">{{ data.cancelled_reason }}</p>
+                            </div>
+                        `;
+                        item.classList.add('has-cancelled-info');
+                        item.appendChild(cancelledInfo);
+                    }
+
+                    // Set all markers and segments to cancelled state
+                    if (marker) {
+                        marker.classList.remove('completed', 'active');
+                        marker.classList.add('cancelled');
+                    }
+                    if (segment) {
+                        segment.classList.remove('completed');
+                        segment.classList.add('cancelled');
+                    }
+                });
+                
+                return; // Exit after handling cancellation
+            }
+
+            // Handle declined status
+            if (isDeclined) {
+                const isDeclinedMounting = status === 'ditolakmounting';
+                
+                // Tentukan completedSteps secara dinamis berdasarkan array 'steps' yang baru
+                let completedSteps = ['machine_off'];
+                
+                // Tentukan langkah akhir yang diselesaikan sebelum ditolak
+                let declineStepIndex; // Indeks langkah yang ditolak (misal adjustment_start atau plate_start)
+
+                if (isDeclinedMounting) {
+                    if (adjustmentSteps.length > 0) {
+                        completedSteps.push(...adjustmentSteps); // Tambahkan PDND/Design
+                    }
+                    declineStepIndex = steps.indexOf('adjustment_start'); // adjustment_start ditolak
+                } else { // ditolakctp
+                    if (adjustmentSteps.length > 0) {
+                        completedSteps.push(...adjustmentSteps); // Tambahkan PDND/Design
+                    }
+                    completedSteps.push('adjustment_start', 'adjustment_finish'); // Tambahkan Mounting
+                    declineStepIndex = steps.indexOf('plate_start'); // plate_start ditolak
+                }
+                
+                // Mark completed steps up to decline point
+                completedSteps.forEach((step, index) => {
+                    const item = document.querySelector(`[data-step="${step}"]`);
+                    const marker = item?.querySelector('.timeline-marker');
+                    // Segment index mengikuti index di DOM dari item yang *terlihat*
+                    const segment = document.getElementById(`segment-${index}`);
+                    
+                    if (marker) {
+                        marker.classList.remove('active');
+                        marker.classList.add('completed');
+                    }
+                    if (segment) {
+                        segment.classList.remove('declined');
+                        segment.classList.add('completed');
+                    }
+                });
+
+                // Set declined segment and marker
+                const declinedSegmentIndex = declineStepIndex - 1; // Segment yang ditolak adalah segmen sebelum langkah yang ditolak
+                const declinedSegment = document.getElementById(`segment-${declinedSegmentIndex}`);
+                
+                if (declinedSegment) {
+                    declinedSegment.classList.remove('completed');
+                    declinedSegment.classList.add('declined');
+                }
+
+                // Update marker for declined step
+                const declinedStep = steps[declineStepIndex];
+                const declinedMarker = document.querySelector(`[data-step="${declinedStep}"] .timeline-marker`);
+                if (declinedMarker) {
+                    declinedMarker.classList.remove('completed', 'active');
+                    declinedMarker.classList.add('declined');
+                }
+
+                // Add decline info
+                const declinedItem = document.querySelector(`[data-step="${declinedStep}"]`);
+                if (declinedItem) {
+                    const declinedInfo = document.createElement('div');
+                    // ... (detail info box dibiarkan sama) ...
+                    declinedInfo.className = 'declined-info';
+                    const declinedAt = '{{ data.declined_at }}';
+                    const formattedDateTime = formatDateTimeIndonesia(declinedAt);
+                    declinedInfo.innerHTML = `
+                        <div class="declined-header">
+                            <span><i class="fas fa-ban me-2"></i>Data Adjustment Ditolak</span>
+                        </div>
+                        <div class="declined-details">
+                            <span><i class="fas fa-user me-2"></i>Ditolak oleh: {{ data.declined_by }}</span>
+                            <span><i class="fas fa-clock me-2"></i>Waktu: ${formattedDateTime}</span>
+                            <div class="declined-reason">
+                                <i class="fas fa-info-circle me-2"></i>Alasan:
+                                <p class="mb-0 mt-1">{{ data.decline_reason }}</p>
+                            </div>
+                        </div>
+                    `;
+                    declinedItem.classList.add('has-declined-info');
+                    declinedItem.appendChild(declinedInfo);
+                }
+                return; // Exit after handling declined
+            }
+            
+            // Handle normal progress (Iterasi melalui array steps yang sudah diperbarui)
+            for (let i = 0; i < steps.length - 1; i++) {
+                // Asumsi: segment-i sesuai dengan segmen antara steps[i] dan steps[i+1]
+                const segment = document.getElementById(`segment-${i}`);
+                const marker = document.querySelector(`[data-step="${steps[i]}"] .timeline-marker`);
+                
+                if (segment && marker) {
+                    const currentTimestamp = timelineData[`${steps[i]}_at`];
+                    // const nextTimestamp = timelineData[`${steps[i + 1]}_at`]; // Tidak diperlukan di sini
+                    
+                    if (currentTimestamp && currentTimestamp !== '' && currentTimestamp !== '-' && currentTimestamp !== 'None') {
+                        marker.classList.add('completed');
                         segment.classList.add('completed');
                     } else {
+                        marker.classList.remove('completed', 'active');
                         segment.classList.remove('completed');
                     }
                 }
             }
+            
+            // Update last marker
+            const lastStep = steps[steps.length - 1];
+            const lastMarker = document.querySelector(`[data-step="${lastStep}"] .timeline-marker`);
+            const lastTimestamp = timelineData[`${lastStep}_at`];
+            if (lastMarker && lastTimestamp && lastTimestamp !== '' && lastTimestamp !== '-' && lastTimestamp !== 'None') {
+                lastMarker.classList.add('completed');
+            }
         }
+
+        // Tambahkan di bagian script
+        function isRequirePDND(remarks) {
+            const faRemarks = ['ADJUSTMENT FA PROOF', 'ADJUSTMENT FA PRODUKSI'];
+            return faRemarks.includes(remarks.toUpperCase());
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const remarks = '{{ data.remarks }}';
+            const timelineContainer = document.getElementById('timelineContainer');
+            const requirePDND = isRequirePDND(remarks);
+
+            // Sembunyikan elemen PDND jika tidak diperlukan
+            if (!requirePDND) {
+                const pdndElements = document.querySelectorAll('[data-step="pdnd_start"], [data-step="pdnd_finish"]');
+                pdndElements.forEach(el => el.style.display = 'none');
+                
+                // Sembunyikan segment timeline yang terkait
+                document.getElementById('segment-5').style.display = 'none';
+                document.getElementById('segment-6').style.display = 'none';
+
+                // Sesuaikan tinggi segment lainnya
+                const segments = document.querySelectorAll('.timeline-segment');
+                segments.forEach(segment => {
+                    if (segment.style.display !== 'none') {
+                        segment.style.height = '65px';
+                    }
+                });
+            }
+        });
         
         function setupAutoRefresh() {
             // Auto refresh every 30 seconds

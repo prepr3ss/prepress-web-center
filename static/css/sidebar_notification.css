@@ -1,0 +1,21 @@
+.notification-dot {
+    position: absolute;
+    right: 35px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 7.5px;
+    height: 7.5px;
+    background: #dc3545;
+    border-radius: 50%;
+}
+
+.submenu-notification-dot {
+    position: absolute;
+    right: 30px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 7.5px;
+    height: 7.5px;
+    background: #dc3545;
+    border-radius: 50%;
+}

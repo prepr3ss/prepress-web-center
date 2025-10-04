@@ -207,7 +207,7 @@
                         <div class="col-md-2 mb-2 mb-md-0">
                             <label class="form-label">&nbsp;</label>
                             <button class="btn btn-export-csv w-100" onclick="showExportModal()" type="button">
-                                <i class="fas fa-file-export me-2"></i>Export CSV
+                                <i class="fas fa-file-export me-2"></i>Export Data
                             </button>
                         </div>
                     </div>
@@ -296,6 +296,33 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Modal Cancel Data -->
+    <div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title" id="cancelModalLabel">
+            <i class="fas fa-exclamation-triangle me-2"></i> Konfirmasi Pembatalan
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>Anda akan membatalkan Bon Plate dengan ID: <strong id="cancelAdjustmentId"></strong>.</p>
+          <p class="text-danger fw-bold">Tindakan ini tidak dapat dibatalkan!</p>
+          <div class="mb-3">
+            <label for="cancelReason" class="form-label">Alasan Pembatalan (Wajib)</label>
+            <textarea class="form-control" id="cancelReason" rows="3" placeholder="Masukkan alasan pembatalan..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+          <button type="button" class="btn btn-danger" id="confirmCancelButton">
+            <i class="fas fa-ban me-2"></i>Batalkan Bon
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>    
     <script>
     // Show Export Modal
         function showExportModal() {
@@ -368,7 +395,7 @@
         bootstrap.Modal.getInstance(document.getElementById('exportModal')).hide();
                 
     // Show success notification
-        showToast('Export CSV berhasil dimulai, file akan segera didownload', 'success');
+        showToast('Export Data berhasil dimulai, file akan segera didownload', 'success');
         });
     });
     </script>

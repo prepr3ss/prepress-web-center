@@ -375,7 +375,7 @@
                                 </div>
                                 <!-- Export button -->
                                 <button class="btn btn-success-clean btn-clean" id="exportData">
-                                    <i class="fas fa-download me-2"></i>Export CSV
+                                    <i class="fas fa-download me-2"></i>Export Data
                                 </button>
                                 <!-- Refresh button -->
                                 <button class="btn btn-outline-clean btn-clean" id="refreshData">
@@ -614,6 +614,42 @@
         </div>
     </div>
 
+    <!-- Modal Decline Adjustment -->
+    <div class="modal fade" id="declineAdjustmentModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border: none; border-radius: 15px; overflow: hidden;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #dc3545 0%, #ff4b2b 100%); color: white; border: none;">
+                    <h5 class="modal-title"><i class="fas fa-times-circle me-2"></i>Tolak Adjustment</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert" style="background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%); border: none; border-radius: 10px;">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-exclamation-circle me-2 text-danger"></i>
+                            <div>
+                                <strong>Konfirmasi Tolak Adjustment</strong>
+                                <div class="small text-muted">Harap berikan alasan penolakan adjustment ini</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="declineAdjustmentInfo" class="info-section mb-3"></div>
+                    <div class="mb-3">
+                        <label for="declineReason" class="form-label info-label">Alasan Penolakan <span class="text-danger">*</span></label>
+                        <textarea id="declineReason" class="form-control form-control-clean" rows="3" placeholder="Tuliskan alasan penolakan..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4">
+                    <button type="button" class="btn btn-outline-clean btn-clean" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Batal
+                    </button>
+                    <button type="button" class="btn btn-danger btn-clean" id="confirmDecline">
+                        <i class="fas fa-times-circle me-1"></i>Tolak Adjustment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>    
+
     <!-- Modal Plate Delivered -->
     <div class="modal fade" id="plateDeliveredModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
@@ -735,6 +771,8 @@
 
         // Load data
         async function loadData() {
+            // Request notification permission when loading data
+            await requestNotificationPermission();
             try {
                 document.getElementById('loadingIndicator').style.display = 'block';
                 document.getElementById('noDataMessage').classList.add('d-none');
@@ -747,6 +785,15 @@
                 
                 adjustmentData = result.data || [];
                 const allData = result.all_data || result.data || [];
+
+                // Check untuk adjustment baru yang menunggu
+                const waitingAdjustments = allData.filter(item => item.status === 'proses_ctp');
+                if (waitingAdjustments.length > 0) {
+                    showBrowserNotification('Adjustment Menunggu', {
+                        body: `Terdapat ${waitingAdjustments.length} adjustment yang menunggu untuk diproses`,
+                        requireInteraction: false
+                    });
+                }                
                 
                 // Use allData instead of adjustmentData for filtering to include completed items
                 adjustmentData = allData;
@@ -775,6 +822,13 @@
                     
                     if (priorityA !== priorityB) {
                         return priorityA - priorityB;
+                    }
+                    
+                    // Special handling for completed items: sort by machine off time in reverse order
+                    if (a.status === 'selesai' && b.status === 'selesai') {
+                        const dateA = new Date(a.machine_off_at || 0);
+                        const dateB = new Date(b.machine_off_at || 0);
+                        return dateB - dateA; // Newest first
                     }
                     
                     // Within same priority, sort by ID FIFO (oldest first for queue)
@@ -918,17 +972,60 @@
                                     ${item.machine_off_at ? `
                                     <div class="col-12">
                                         <div class="d-flex align-items-center">
-                                            <div class="bg-warning rounded-circle me-2" style="width: 8px; height: 8px;"></div>
+                                            <div class="bg-danger rounded-circle me-2" style="width: 8px; height: 8px;"></div>
                                             <small class="text-muted">Mesin Off:</small>
                                             <small class="ms-auto fw-bold">${formatDateTimeIndonesia(item.machine_off_at)}</small>
                                         </div>
                                     </div>
                                     ` : ''}
+                                    
+                                    ${!item.is_epson ? `
+                                        ${item.pdnd_start_at ? `
+                                        <div class="col-12">
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-info rounded-circle me-2" style="width: 8px; height: 8px;"></div>
+                                                <small class="text-muted">Mulai Adjustment:</small>
+                                                <small class="ms-auto fw-bold">${formatDateTimeIndonesia(item.pdnd_start_at)}</small>
+                                            </div>
+                                        </div>
+                                        ` : ''}
+                                        ${item.pdnd_finish_at ? `
+                                        <div class="col-12">
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-success rounded-circle me-2" style="width: 8px; height: 8px;"></div>
+                                                <small class="text-muted">Selesai Adjustment:</small>
+                                                <small class="ms-auto fw-bold">${formatDateTimeIndonesia(item.pdnd_finish_at)}</small>
+                                            </div>
+                                        </div>
+                                        ` : ''}
+                                    ` : ''}
+                                    
+                                    ${item.is_epson ? `
+                                        ${item.design_start_at ? `
+                                        <div class="col-12">
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-info rounded-circle me-2" style="width: 8px; height: 8px;"></div>
+                                                <small class="text-muted">Mulai Adjustment:</small>
+                                                <small class="ms-auto fw-bold">${formatDateTimeIndonesia(item.design_start_at)}</small>
+                                            </div>
+                                        </div>
+                                        ` : ''}
+                                        ${item.design_finish_at ? `
+                                        <div class="col-12">
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-success rounded-circle me-2" style="width: 8px; height: 8px;"></div>
+                                                <small class="text-muted">Selesai Adjustment:</small>
+                                                <small class="ms-auto fw-bold">${formatDateTimeIndonesia(item.design_finish_at)}</small>
+                                            </div>
+                                        </div> 
+                                        ` : ''}
+                                    ` : ''}
+                                    
                                     ${item.adjustment_start_at ? `
                                     <div class="col-12">
                                         <div class="d-flex align-items-center">
                                             <div class="bg-info rounded-circle me-2" style="width: 8px; height: 8px;"></div>
-                                            <small class="text-muted">Mulai Adjustment:</small>
+                                            <small class="text-muted">Mulai Mounting:</small>
                                             <small class="ms-auto fw-bold">${formatDateTimeIndonesia(item.adjustment_start_at)}</small>
                                         </div>
                                     </div>
@@ -937,7 +1034,7 @@
                                     <div class="col-12">
                                         <div class="d-flex align-items-center">
                                             <div class="bg-success rounded-circle me-2" style="width: 8px; height: 8px;"></div>
-                                            <small class="text-muted">Selesai Adjustment:</small>
+                                            <small class="text-muted">Selesai Mounting:</small>
                                             <small class="ms-auto fw-bold">${formatDateTimeIndonesia(item.adjustment_finish_at)}</small>
                                         </div>
                                     </div>
@@ -1033,12 +1130,86 @@
             }
         }
 
+        // Fungsi untuk menampilkan modal decline
+        function declineAdjustment(id) {
+            const item = adjustmentData.find(item => item.id === id);
+            if (!item) return;
+            
+            currentAdjustmentId = id;
+            document.getElementById('declineReason').value = '';
+            
+            document.getElementById('declineAdjustmentInfo').innerHTML = `
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="info-label">Item Name</div>
+                        <div class="info-value">
+                            <i class="fas fa-box me-1 text-danger"></i>
+                            ${item.item_name}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-label">WO Number</div>
+                        <div class="info-value">${item.wo_number}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-label">MC Number</div>
+                        <div class="info-value">${item.mc_number}</div>
+                    </div>
+                    <div class="col-12">
+                        <div class="info-label">Remarks</div>
+                        <div class="info-value">${item.remarks || '-'}</div>
+                    </div>
+                </div>
+            `;
+            
+            new bootstrap.Modal(document.getElementById('declineAdjustmentModal')).show();
+        }
+
+        // Event listener untuk konfirmasi decline
+        document.getElementById('confirmDecline').addEventListener('click', async function() {
+            const reason = document.getElementById('declineReason').value.trim();
+            
+            if (!reason) {
+                showToast('Harap isi alasan penolakan', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/decline-ctp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: currentAdjustmentId,
+                        reason: reason,
+                        declined_by: window.currentUserName
+                    })
+                });
+                
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('declineAdjustmentModal')).hide();
+                    showToast('Adjustment berhasil ditolak', 'success');
+                    loadData();
+                } else {
+                    throw new Error('Failed to decline adjustment');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Terjadi kesalahan saat menolak adjustment', 'error');
+            }
+        });
+
         // Get action buttons
         function getActionButtons(item) {
             if (item.status === 'proses_ctp') {
-                return `<button class="btn btn-ctp-clean btn-clean flex-grow-1" onclick="startCtp(${item.id})">
-                    <i class="fas fa-play me-1"></i>Mulai Plate
-                </button>`;
+                return `
+                    <div class="d-flex gap-2 w-100">
+                        <button class="btn btn-ctp-clean btn-clean flex-grow-1" onclick="startCtp(${item.id})">
+                            <i class="fas fa-play me-1"></i>Mulai Plate
+                        </button>
+                        <button class="btn btn-danger btn-clean" onclick="declineAdjustment(${item.id})">
+                            <i class="fas fa-times me-1"></i>Tolak
+                        </button>
+                    </div>`;
             } else if (item.status === 'proses_plate') {
                 if (window.currentUserName && item.ctp_by && window.currentUserName === item.ctp_by) {
                     return `<button class="btn btn-success-clean btn-clean flex-grow-1" onclick="finishCtp(${item.id})">
@@ -1074,10 +1245,20 @@
                     item.plate_finish_at && item.plate_finish_at.startsWith(today)
                 ).length,
                 totalAdjustmentFA: data.filter(item => 
-                    item.remarks && (item.remarks.includes('ADJUSTMENT FA PROOF') || item.remarks.includes('ADJUSTMENT FA PRODUKSI'))
+                     (item.status === 'proses_ctp' ||
+                     item.status === 'proses_plate' ||
+                     item.status === 'antar_plate' ||
+                     item.status === 'selesai') &&
+                    (item.remarks.toLowerCase().includes('adjustment fa proof') ||
+                     item.remarks.toLowerCase().includes('adjustment fa produksi'))
                 ).length,
                 totalAdjustmentCurve: data.filter(item => 
-                    item.remarks && (item.remarks.includes('ADJUSTMENT CURVE PROOF') || item.remarks.includes('ADJUSTMENT CURVE PRODUKSI'))
+                    (item.status === 'proses_ctp' ||
+                     item.status === 'proses_plate' ||
+                     item.status === 'antar_plate' ||
+                     item.status === 'selesai') &&
+                    (item.remarks.toLowerCase().includes('adjustment curve proof') ||
+                     item.remarks.toLowerCase().includes('adjustment curve produksi'))
                 ).length
             };
 
@@ -1401,7 +1582,9 @@
         });
 
         // Initialize page
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Request notification permission when page loads
+            await requestNotificationPermission();
             loadData();
             
             // Add event listeners for filters
@@ -1440,7 +1623,7 @@
                 window.open(`/export-ctp-adjustment${queryString}`, '_blank');
                 bootstrap.Modal.getInstance(document.getElementById('exportModal')).hide();
                 
-                showToast('Export CSV berhasil dimulai, file akan segera didownload', 'success');
+                showToast('Export Data berhasil dimulai, file akan segera didownload', 'success');
             });
             
             // Auto refresh toggle
@@ -1539,6 +1722,57 @@
             }
         }
         
+        // Add audio element for notification sound
+        const notificationSound = new Audio('/static/sounds/adjustment.mp3');
+
+        // Browser Notification System
+        async function requestNotificationPermission() {
+            if (!('Notification' in window)) {
+                console.log('Browser tidak mendukung notifikasi');
+                return false;
+            }
+
+            if (Notification.permission === 'granted') {
+                return true;
+            }
+
+            if (Notification.permission !== 'denied') {
+                const permission = await Notification.requestPermission();
+                return permission === 'granted';
+            }
+
+            return false;
+        }
+
+        // Function to show browser notification
+        function showBrowserNotification(title, options = {}) {
+            if (Notification.permission === 'granted') {
+                const defaultOptions = {
+                    icon: '/static/img/prepress_impact_logo.png',
+                    badge: '/static/img/prepress_impact_logo.png',
+                    vibrate: [200, 100, 200],
+                    silent: false,
+                    requireInteraction: false,
+                    sound: '/static/sounds/adjustment.mp3'
+                };
+
+                // Create and show notification
+                const notification = new Notification(title, { ...defaultOptions, ...options });
+
+                // Play sound if not silent
+                if (!options.silent) {
+                    notificationSound.play().catch(e => console.log('Error playing sound:', e));
+                }
+
+                // Add click event listener
+                notification.onclick = function(event) {
+                    event.preventDefault();
+                    window.focus();
+                    notification.close();
+                };
+            }
+        }
+
         // Toast notification system
         function showToast(message, type = 'info', duration = 5000) {
             const toastContainer = document.getElementById('toastContainer');

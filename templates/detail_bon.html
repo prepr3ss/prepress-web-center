@@ -252,6 +252,97 @@
             opacity: 1;
             transition: opacity 0.3s ease-in-out;
         }
+
+        /* Timeline styling adjustments for positioning the info box */
+        .timeline {
+            /* Mengubah padding-right agar ada ruang untuk cancelled-info pada layar lebar */
+            padding-right: 300px;
+        }
+
+        /* Individual timeline segments (The line between markers) */
+        /* RED line for cancelled/cancelled segments */
+        .timeline-segment.cancelled {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            box-shadow: 0 0 10px rgba(238, 90, 82, 0.3);
+        }
+
+        /* RED marker/dot for cancelled/cancelled step */
+        .timeline-marker.cancelled {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%) !important;
+            transform: scale(1.2);
+            box-shadow: 0 2px 12px rgba(238, 90, 82, 0.4);
+        }
+
+        /* Box for cancellation/decline details */
+        .cancelled-info {
+            position: absolute;
+            right: -290px; /* Jarak ke kanan dari timeline */
+            top: 120%;
+            transform: translateY(-50%);
+            padding: 12px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(255,107,107,0.1) 0%, rgba(238,90,82,0.1) 100%);
+            border-left: 4px solid #ee5a52;
+            font-size: 0.9rem;
+            width: 350px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            z-index: 100;
+        }
+
+        .cancelled-info .cancelled-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            color: #dc3545; /* Merah terang */
+            font-weight: 600;
+        }
+
+        .cancelled-info .cancelled-header i {
+            margin-right: 8px;
+        }
+
+        .cancelled-info .cancelled-details {
+            color: #6c757d;
+            margin-left: 24px;
+        }
+
+        .cancelled-info .cancelled-details span {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .cancelled-info .cancelled-reason {
+            margin-top: 8px;
+            padding: 8px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 4px;
+            color: #495057;
+        }
+
+        /* Class penanda pada item yang memiliki kotak info penolakan */
+        .timeline-item.has-cancelled-info {
+            position: relative; /* Penting untuk penempatan absolute cancelled-info */
+        }
+
+        /* Responsive styling for cancelled info */
+        @media (max-width: 1200px) {
+            .timeline {
+                padding-right: 0;
+            }
+            
+            .cancelled-info {
+                position: relative;
+                right: auto;
+                top: auto;
+                transform: none;
+                margin: 10px 0 10px 25px;
+                width: calc(100% - 25px);
+            }
+            
+            .timeline-item.has-cancelled-info {
+                padding-bottom: 0;
+            }
+        }        
     </style>
 </head>
 <body>
@@ -634,6 +725,9 @@
             // Setup auto-refresh
             setupAutoRefresh();
         }
+
+        // Inject current user name for JS logic
+        window.currentUserName = "{{ current_user.name | default('Unknown User') }}"; 
         
         function setupTooltips() {
             const markers = document.querySelectorAll('.timeline-marker[data-tooltip]');
@@ -655,6 +749,12 @@
         }
         
         function updateActiveStep() {
+            const bonStatus = '{{ data.status }}';
+            // If bon is cancelled or declined, don't show any active steps
+            if (bonStatus === 'bondibatalkan' || bonStatus === 'ditolakctp') {
+                return;
+            }
+
             const steps = ['machine_off',  'plate_start', 'plate_finish', 'plate_delivered'];
             let activeStep = null;
             let lastCompletedStepIndex = -1;
@@ -694,10 +794,87 @@
         }
         
         function updateProgressBar() {
+            const bonStatus = '{{ data.status }}'; 
+            const isCancelled = bonStatus === 'bondibatalkan';
+            const isDeclined = bonStatus === 'ditolakctp';
+            
+            // Urutan steps bon default
             const steps = ['machine_off', 'plate_start', 'plate_finish', 'plate_delivered'];
             
+            if (isCancelled || isDeclined) {
+                // Mark all segments and markers as cancelled
+                const segments = document.querySelectorAll('.timeline-segment');
+                segments.forEach(segment => {
+                    segment.classList.add('cancelled');
+                    segment.classList.remove('completed');
+                });
+
+                const markers = document.querySelectorAll('.timeline-marker');
+                markers.forEach(marker => {
+                    marker.classList.add('cancelled');
+                    marker.classList.remove('completed');
+                });
+                
+                const firstItem = document.querySelector('[data-step="machine_off"]');
+                if (firstItem) {
+                    // Remove any existing info
+                    const existingInfo = firstItem.querySelector('.cancelled-info');
+                    if (existingInfo) {
+                        existingInfo.remove();
+                    }
+                    
+                    // Add new info box
+                    const infoBox = document.createElement('div');
+                    infoBox.className = 'cancelled-info';
+                    
+                    if (isCancelled) {
+                        const cancelledAt = '{{ data.cancelled_at }}'; 
+                        const formattedDateTime = formatDateTimeIndonesia(cancelledAt);
+                        
+                        infoBox.innerHTML = `
+                            <div class="cancelled-header">
+                                <span><i class="fas fa-ban me-2"></i>Bon Dibatalkan</span>
+                            </div>
+                            <div class="cancelled-details">
+                                <span><i class="fas fa-user me-2"></i>Dibatalkan oleh: {{ data.cancelled_by }}</span>
+                                <span><i class="fas fa-clock me-2"></i>Waktu: ${formattedDateTime}</span>
+                                <div class="cancelled-reason">
+                                    <i class="fas fa-info-circle me-2"></i>Alasan:
+                                    <p class="mb-0 mt-1">{{ data.cancellation_reason }}</p>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // For declined status
+                        const declinedAt = '{{ data.declined_at }}'; 
+                        const formattedDateTime = formatDateTimeIndonesia(declinedAt);
+                        
+                        infoBox.innerHTML = `
+                            <div class="cancelled-header">
+                                <span><i class="fas fa-ban me-2"></i>Bon Ditolak</span>
+                            </div>
+                            <div class="cancelled-details">
+                                <span><i class="fas fa-user me-2"></i>Ditolak oleh: {{ data.declined_by }}</span>
+                                <span><i class="fas fa-clock me-2"></i>Waktu: ${formattedDateTime}</span>
+                                <div class="cancelled-reason">
+                                    <i class="fas fa-info-circle me-2"></i>Alasan:
+                                    <p class="mb-0 mt-1">{{ data.decline_reason }}</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    firstItem.classList.add('has-cancelled-info');
+                    firstItem.appendChild(infoBox);
+                }
+                
+                return; 
+            }
+            
+            // --- LOGIKA DEFAULT (JIKA TIDAK DIBATALKAN) ---
+            
             // Update each segment based on completion status
-            for (let i = 0; i < 5; i++) { // 5 segments for 6 steps
+            for (let i = 0; i < steps.length - 1; i++) { // Loop steps.length-1 segments (4 segments for 5 steps)
                 const currentStep = steps[i]; // Step yang memulai segmen ini
                 const segment = document.getElementById(`segment-${i}`);
                 
@@ -711,6 +888,9 @@
                     } else {
                         segment.classList.remove('completed');
                     }
+                    
+                    // Hapus class 'cancelled' jika sebelumnya ada (penting saat data di-reload)
+                    segment.classList.remove('cancelled'); 
                 }
             }
         }

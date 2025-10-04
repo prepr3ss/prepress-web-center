@@ -72,8 +72,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function getRoleBadge(role) {
         const roleClasses = {
-            admin: 'bg-danger',
-            operator: 'bg-info',
+            admin: 'badge-admin',
+            operator: 'badge-operator',
         };
         const badgeClass = roleClasses[role.toLowerCase()] || 'bg-secondary';
         return `<span class="badge ${badgeClass}">${role}</span>`;
@@ -95,21 +95,27 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Role badge dengan warna yang sesuai
             const roleBadge = row.role === 'admin' ? 
-                '<span class="badge bg-danger">Admin</span>' : 
-                '<span class="badge bg-primary">Operator</span>';
+                '<span class="badge badge-admin">Admin</span>' : 
+                '<span class="badge badge-operator">Operator</span>';
             
             // Division badge dengan warna yang sesuai
             let divisionBadge = '-';
             if (row.division_name) {
                 switch(row.division_name.toUpperCase()) {
-                    case 'MOUNTING':
-                        divisionBadge = '<span class="badge bg-info">MOUNTING</span>';
-                        break;
                     case 'CTP':
-                        divisionBadge = '<span class="badge bg-warning text-dark">CTP</span>';
+                        divisionBadge = '<span class="badge badge-ctp">CTP</span>';
+                        break;
+                    case 'MOUNTING':
+                        divisionBadge = '<span class="badge badge-mounting">MOUNTING</span>';
+                        break;
+                    case 'DESIGN':
+                        divisionBadge = '<span class="badge badge-design">DESIGN</span>';
                         break;
                     case 'PRESS':
-                        divisionBadge = '<span class="badge bg-success">PRESS</span>';
+                        divisionBadge = '<span class="badge badge-press">PRESS</span>';
+                        break;
+                    case 'PDND':
+                        divisionBadge = '<span class="badge badge-pdnd">PDND</span>';
                         break;
                     default:
                         divisionBadge = `<span class="badge bg-secondary">${row.division_name}</span>`;

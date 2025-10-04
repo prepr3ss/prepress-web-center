@@ -49,6 +49,39 @@
     text-shadow: 0 1px 2px rgba(0,0,0,0.2);
     transition: all 0.3s ease;
 }
+/* Division-specific badge colors */
+.badge-admin {
+    background: #dc3545;/* Merah */
+    color: white !important;
+}
+.badge-operator {
+    background: #0d6efd;/* Biru */
+    color: white !important;
+}
+.badge-ctp {
+    background: #198754;/* Hijau */
+    color: white !important;
+}
+.badge-mounting {
+    background: #6610f2;/* Ungu */
+    color: white !important;
+}
+.badge-design {
+    background: #4D4D4D;/* Abu-abu */
+    color: white !important;
+}
+.badge-press {
+    background: #A0522D;/* Coklat */
+    color: white !important;
+}
+.badge-pdnd {
+    background: #FF6600;/* Oranye */
+    color: white !important;
+}
+.badge-grup {
+    background: #464B59;/* Abu-abu Gelap */
+    color: white !important;
+}
 
 /* Status-specific badge colors - Simplified Workflow */
 .badge-menunggu {
@@ -79,6 +112,13 @@
 .badge-selesai {
     background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
     color: white !important;
+}
+
+.badge-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #ff4b2b 100%);
+    color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
 }
 
 /* Badge hover effects */

@@ -5,15 +5,39 @@
 
 // Status mapping untuk badge classes - Simplified Workflow per Division
 const STATUS_BADGE_MAPPING = {
-    'menunggu_adjustment': {
+    'menunggu_adjustment_pdnd': {
         class: 'badge-menunggu',
-        label: 'Menunggu Adjustment',
+        label: 'Menunggu Adjustment PDND',
         color: 'warning',
         description: 'PIC Press sudah request form'
     },
+    'proses_adjustment_pdnd': {
+        class: 'badge-proses',
+        label: 'Proses Adjustment PDND', 
+        color: 'info',
+        description: 'PIC PDND sedang adjustment'
+    },
+    'menunggu_adjustment_design': {
+        class: 'badge-menunggu',
+        label: 'Menunggu Adjustment Design',
+        color: 'warning',
+        description: 'PIC Press sudah request form'
+    },
+    'proses_adjustment_design': {
+        class: 'badge-proses',
+        label: 'Proses Adjustment Design', 
+        color: 'info',
+        description: 'PIC Design sedang adjustment'
+    },        
+    'menunggu_adjustment': {
+        class: 'badge-menunggu',
+        label: 'Menunggu Mounting',
+        color: 'warning',
+        description: 'PIC PDND sudah selesai adjustment'
+    },
     'proses_adjustment': {
         class: 'badge-proses',
-        label: 'Proses Adjustment', 
+        label: 'Proses Mounting', 
         color: 'info',
         description: 'PIC Mounting sedang adjustment'
     },
@@ -40,6 +64,146 @@ const STATUS_BADGE_MAPPING = {
         label: 'Selesai',
         color: 'success',
         description: 'Plate sudah sampai di mesin'
+    },
+    'ditolakmounting': {
+        class: 'badge-danger',
+        label: 'Ditolak Mounting',
+        color: 'danger',
+        description: 'Data Adjustment ditolak'
+    },
+    'ditolakctp': {
+        class: 'badge-danger',
+        label: 'Ditolak CTP',
+        color: 'danger',
+        description: 'Data Adjustment ditolak'
+    },
+    'bondibatalkan': {
+        class: 'badge-danger',
+        label: 'Dibatalkan',
+        color: 'danger',
+        description: 'Bon Plate dibatalkan'
+    },
+    'adjustmentdibatalkan': {
+        class: 'badge-danger',
+        label: 'Dibatalkan',
+        color: 'danger',
+        description: 'Adjustment Plate dibatalkan'
+    }
+};
+
+// Status mapping khusus untuk PDND Division (Workflow: Menunggu → Proses → Selesai)
+const PDND_STATUS_MAPPING = {
+    'menunggu_adjustment_pdnd': {
+        class: 'badge-menunggu',
+        label: 'Menunggu Adjustment PDND',
+        color: 'warning',
+        description: 'PIC Press sudah request form'
+    },
+    'proses_adjustment_pdnd': {
+        class: 'badge-proses',
+        label: 'Proses Adjustment PDND', 
+        color: 'info',
+        description: 'PIC PDND sedang adjustment'
+    },        
+    'menunggu_adjustment': {
+        class: 'badge-selesai',
+        label: 'Selesai',
+        color: 'success',
+        description: 'PIC PDND sudah selesai adjustment'
+    },
+    'proses_adjustment': {
+        class: 'badge-selesai',
+        label: 'Selesai',
+        color: 'success',
+        description: 'PIC Mounting sedang adjustment'
+    },
+    'proses_ctp': {
+        class: 'badge-selesai',
+        label: 'Selesai',
+        color: 'success',
+        description: 'Adjustment selesai, menunggu CTP'
+    },
+    'proses_plate': {
+        class: 'badge-selesai',
+        label: 'Selesai',
+        color: 'success',
+        description: 'PIC CTP sedang buat plate'
+    },
+    'antar_plate': {
+        class: 'badge-selesai',
+        label: 'Selesai',
+        color: 'success',
+        description: 'Plate selesai, sedang diantar'
+    },
+    'selesai': {
+        class: 'badge-selesai',
+        label: 'Selesai',
+        color: 'success',
+        description: 'Plate sudah sampai di mesin'
+    },
+    'ditolakmounting': {
+        class: 'badge-danger',
+        label: 'Ditolak Mounting',
+        color: 'danger',
+        description: 'Data Adjustment ditolak'
+    }
+};
+
+// Status mapping khusus untuk DESIGN Division (Workflow: Menunggu → Proses → Selesai)
+const DESIGN_STATUS_MAPPING = {
+    'menunggu_adjustment_design': {
+        class: 'badge-menunggu',
+        label: 'Menunggu Adjustment Design',
+        color: 'warning',
+        description: 'PIC Press sudah request form'
+    },
+    'proses_adjustment_design': {
+        class: 'badge-proses',
+        label: 'Proses Adjustment Design', 
+        color: 'info',
+        description: 'PIC Design sedang adjustment'
+    },        
+    'menunggu_adjustment': {
+        class: 'badge-selesai',
+        label: 'Selesai',
+        color: 'success',
+        description: 'PIC PDND sudah selesai adjustment'
+    },
+    'proses_adjustment': {
+        class: 'badge-selesai',
+        label: 'Selesai',
+        color: 'success',
+        description: 'PIC Mounting sedang adjustment'
+    },
+    'proses_ctp': {
+        class: 'badge-selesai',
+        label: 'Selesai',
+        color: 'success',
+        description: 'Adjustment selesai, menunggu CTP'
+    },
+    'proses_plate': {
+        class: 'badge-selesai',
+        label: 'Selesai',
+        color: 'success',
+        description: 'PIC CTP sedang buat plate'
+    },
+    'antar_plate': {
+        class: 'badge-selesai',
+        label: 'Selesai',
+        color: 'success',
+        description: 'Plate selesai, sedang diantar'
+    },
+    'selesai': {
+        class: 'badge-selesai',
+        label: 'Selesai',
+        color: 'success',
+        description: 'Plate sudah sampai di mesin'
+    },
+    'ditolakmounting': {
+        class: 'badge-danger',
+        label: 'Ditolak Mounting',
+        color: 'danger',
+        description: 'Data Adjustment ditolak'
     }
 };
 
@@ -47,28 +211,45 @@ const STATUS_BADGE_MAPPING = {
 const MOUNTING_STATUS_MAPPING = {
     'menunggu_adjustment': {
         class: 'badge-menunggu',
-        label: 'Menunggu Adjustment',
+        label: 'Menunggu Mounting',
         color: 'warning',
         description: 'PIC Press sudah request form'
     },
     'proses_adjustment': {
         class: 'badge-proses',
-        label: 'Proses Adjustment', 
+        label: 'Proses Mounting', 
         color: 'info',
         description: 'PIC Mounting sedang adjustment'
+    },
+    'proses_ctp': {
+        class: 'badge-selesai',
+        label: 'Selesai',
+        color: 'success',
+        description: 'Adjustment selesai, menunggu CTP'
+    },
+    'proses_plate': {
+        class: 'badge-selesai',
+        label: 'Selesai',
+        color: 'success',
+        description: 'PIC CTP sedang buat plate'
+    },
+    'antar_plate': {
+        class: 'badge-selesai',
+        label: 'Selesai',
+        color: 'success',
+        description: 'Plate selesai, sedang diantar'
     },
     'selesai': {
         class: 'badge-selesai',
         label: 'Selesai',
         color: 'success',
-        description: 'Adjustment sudah selesai'
+        description: 'Plate sudah sampai di mesin'
     },
-    // Fallback untuk status lain jika ada
-    'proses_ctp': {
-        class: 'badge-selesai',
-        label: 'Selesai',
-        color: 'success',
-        description: 'Adjustment sudah selesai'
+    'ditolakctp': {
+        class: 'badge-danger',
+        label: 'Ditolak CTP',
+        color: 'danger',
+        description: 'Data Adjustment ditolak'
     }
 };
 
@@ -132,12 +313,16 @@ function initializeBadgeSystem() {
  */
 function getStatusInfo(status, division = 'default') {
     switch (division) {
+        case 'pdnd':
+            return PDND_STATUS_MAPPING[status] || PDND_STATUS_MAPPING['menunggu_adjustment_pdnd'];
+        case 'design':
+            return DESIGN_STATUS_MAPPING[status] || DESIGN_STATUS_MAPPING['menunggu_adjustment_design'];
         case 'mounting':
             return MOUNTING_STATUS_MAPPING[status] || MOUNTING_STATUS_MAPPING['menunggu_adjustment'];
         case 'ctp':
             return CTP_STATUS_MAPPING[status] || CTP_STATUS_MAPPING['proses_ctp'];
         default:
-            return STATUS_BADGE_MAPPING[status] || STATUS_BADGE_MAPPING['menunggu_adjustment'];
+            return STATUS_BADGE_MAPPING[status] || STATUS_BADGE_MAPPING['menunggu_adjustment_pdnd'];
     }
 }
 
@@ -216,5 +401,7 @@ window.BadgeSystem = {
     createBadge: createBadgeElement,
     STATUS_MAPPING: STATUS_BADGE_MAPPING,
     MOUNTING_MAPPING: MOUNTING_STATUS_MAPPING,
+    PDND_MAPPING: PDND_STATUS_MAPPING,
+    DESIGN_MAPPING: DESIGN_STATUS_MAPPING,    
     CTP_MAPPING: CTP_STATUS_MAPPING
 };

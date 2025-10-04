@@ -19,7 +19,9 @@ document.addEventListener('DOMContentLoaded', function () {
         '/settings/change-password': { linkId: 'changePasswordLink', parentSelector: '.settings-submenu-parent' },
         '/stock-opname-ctp': { linkId: 'stockOpnameCtpLink', parentSelector: '.ctp-submenu-parent' },
         '/chemical-bon-ctp': { linkId: 'chemicalBonCtpLink', parentSelector: '.ctp-submenu-parent' },
-        '/kartu-stock-ctp': { linkId: 'kartuStockCtpLink', parentSelector: '.ctp-submenu-parent' }
+        '/kartu-stock-ctp': { linkId: 'kartuStockCtpLink', parentSelector: '.ctp-submenu-parent' },
+        '/pdnd-data-adjustment': { linkId: 'pdndDataAdjustmentLink', parentSelector: '.pdnd-submenu-parent' },
+        '/design-data-adjustment': { linkId: 'designDataAdjustmentLink', parentSelector: '.design-submenu-parent' }
     };
     
     // Fungsi untuk mengaktifkan tautan dan parent submenu berdasarkan URL

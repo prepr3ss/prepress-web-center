@@ -105,13 +105,14 @@
             text-shadow: 0 1px 2px rgba(0,0,0,0.2);
             box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
         }
+        
         .badge-danger {
             background: linear-gradient(135deg, #dc3545 0%, #ff4b2b 100%);
             color: white;
             text-shadow: 0 1px 2px rgba(0,0,0,0.2);
             box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
-        }        
-
+        }
+        
         /* Styling untuk kartu yang ditolak */
         .data-card.declined {
             border: 2px solid rgba(220, 53, 69, 0.1);
@@ -126,7 +127,7 @@
             border: none;
             border-left: 4px solid #dc3545;
         }
-
+        
         /* Remarks badges */
         .remarks-badge-clean {
             padding: 0.3rem 0.8rem;
@@ -318,7 +319,7 @@
                     <div class="container-fluid">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h2 class="mb-1 text-white">Mounting - Adjustment Press</h2>
+                                <h2 class="mb-1 text-white">PDND - Adjustment Press</h2>
                                 <p class="mb-0 opacity-75">Kelola seluruh proses request adjustment dari Press</p>
                             </div>
                             <div class="text-end">
@@ -335,10 +336,10 @@
                             <label class="form-label info-label">Filter Status</label>
                             <select class="form-control form-control-clean" id="statusFilter">
                                 <option value="">Semua Status</option>
-                                <option value="menunggu_adjustment">Menunggu Mounting</option>
-                                <option value="proses_adjustment">Proses Mounting</option>
-                                <option value="ditolakctp">Ditolak CTP</option>
-                                <option value="selesai">Selesai Mounting</option>
+                                <option value="menunggu_adjustment_pdnd">Menunggu PDND</option>
+                                <option value="proses_adjustment_pdnd">Proses PDND</option>
+                                <option value="ditolakmounting">Ditolak Mounting</option>
+                                <option value="selesai">Selesai PDND</option>
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -353,8 +354,6 @@
                                 <option value="">Semua Remarks</option>
                                 <option value="ADJUSTMENT FA PROOF">FA Proof</option>
                                 <option value="ADJUSTMENT FA PRODUKSI">FA Produksi</option>
-                                <option value="ADJUSTMENT CURVE PROOF">Curve Proof</option>
-                                <option value="ADJUSTMENT CURVE PRODUKSI">Curve Produksi</option>
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -419,19 +418,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-3 col-md-6 col-sm-6">
-                        <div class="card summary-card">
-                            <div class="card-body text-center">
-                                <div class="summary-icon icon-info">
-                                    <i class="fas fa-bezier-curve text-white"></i>
-                                </div>
-                                <h3 class="mb-1" id="totalCurveCount">-</h3>
-                                <div class="info-label">Total Adjustment Curve</div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
-
                 <!-- Data Cards -->
                 <div class="row" id="adjustmentCards">
                     <!-- Cards will be loaded here -->
@@ -464,7 +451,7 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content" style="border: none; border-radius: 15px; overflow: hidden;">
                 <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
-                    <h5 class="modal-title"><i class="fas fa-play me-2"></i>Mulai Proses Mounting</h5>
+                    <h5 class="modal-title"><i class="fas fa-play me-2"></i>Mulai Proses Adjustment</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
@@ -472,15 +459,15 @@
                         <div class="d-flex align-items-center">
                             <i class="fas fa-info-circle me-2 text-primary"></i>
                             <div>
-                                <strong>Konfirmasi Mulai Mounting</strong>
-                                <div class="small text-muted">Pastikan semua persiapan sudah siap sebelum memulai proses mounting adjustment</div>
+                                <strong>Konfirmasi Mulai Adjustment</strong>
+                                <div class="small text-muted">Pastikan semua persiapan sudah siap sebelum memulai proses adjustment</div>
                             </div>
                         </div>
                     </div>
                     <div id="startAdjustmentInfo" class="info-section mb-3"></div>
                     <div class="mb-3">
                         <label for="adjustmentBy" class="form-label info-label">PIC Adjustment</label>
-                        <input type="text" name="adjustment_by" id="adjustmentBy" class="form-control form-control-clean text-muted" value="{{ current_user.name }}" readonly tabindex="-1" style="background-color: #f8f9fa; opacity: 1; cursor: not-allowed; margin-bottom: 1rem;">
+                        <input type="text" name="pdnd_by" id="adjustmentBy" class="form-control form-control-clean text-muted" value="{{ current_user.name }}" readonly tabindex="-1" style="background-color: #f8f9fa; opacity: 1; cursor: not-allowed; margin-bottom: 1rem;">
                         <div class="form-text">
                             <i class="fas fa-user me-1 text-muted"></i>
                             Nama ini akan tercatat sebagai PIC yang bertanggung jawab
@@ -492,7 +479,7 @@
                         <i class="fas fa-times me-1"></i>Batal
                     </button>
                     <button type="button" class="btn btn-primary-clean btn-clean" id="confirmStartAdjustment">
-                        <i class="fas fa-play me-1"></i>Mulai Mounting
+                        <i class="fas fa-play me-1"></i>Mulai Adjustment
                     </button>
                 </div>
             </div>
@@ -504,7 +491,7 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content" style="border: none; border-radius: 15px; overflow: hidden;">
                 <div class="modal-header" style="background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%); color: white; border: none;">
-                    <h5 class="modal-title"><i class="fas fa-check me-2"></i>Selesai Proses Mounting</h5>
+                    <h5 class="modal-title"><i class="fas fa-check me-2"></i>Selesai Proses Adjustment</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
@@ -512,8 +499,8 @@
                         <div class="d-flex align-items-center">
                             <i class="fas fa-check-circle me-2 text-success"></i>
                             <div>
-                                <strong>Konfirmasi Selesai Mounting</strong>
-                                <div class="small text-muted">Pastikan semua proses mounting sudah selesai dengan baik</div>
+                                <strong>Konfirmasi Selesai Adjustment</strong>
+                                <div class="small text-muted">Pastikan semua proses adjustment sudah selesai dengan baik</div>
                             </div>
                         </div>
                     </div>
@@ -524,48 +511,12 @@
                         <i class="fas fa-times me-1"></i>Batal
                     </button>
                     <button type="button" class="btn btn-success-clean btn-clean" id="confirmFinishAdjustment">
-                        <i class="fas fa-check me-1"></i>Selesai Mounting
+                        <i class="fas fa-check me-1"></i>Selesai Adjustment
                     </button>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Modal Decline Adjustment -->
-    <div class="modal fade" id="declineAdjustmentModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="border: none; border-radius: 15px; overflow: hidden;">
-                <div class="modal-header" style="background: linear-gradient(135deg, #dc3545 0%, #ff4b2b 100%); color: white; border: none;">
-                    <h5 class="modal-title"><i class="fas fa-times-circle me-2"></i>Tolak Adjustment</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="alert" style="background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%); border: none; border-radius: 10px;">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-exclamation-circle me-2 text-danger"></i>
-                            <div>
-                                <strong>Konfirmasi Tolak Adjustment</strong>
-                                <div class="small text-muted">Harap berikan alasan penolakan adjustment ini</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="declineAdjustmentInfo" class="info-section mb-3"></div>
-                    <div class="mb-3">
-                        <label for="declineReason" class="form-label info-label">Alasan Penolakan <span class="text-danger">*</span></label>
-                        <textarea id="declineReason" class="form-control form-control-clean" rows="3" placeholder="Tuliskan alasan penolakan..."></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer border-0 p-4">
-                    <button type="button" class="btn btn-outline-clean btn-clean" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>Batal
-                    </button>
-                    <button type="button" class="btn btn-danger btn-clean" id="confirmDecline">
-                        <i class="fas fa-times-circle me-1"></i>Tolak Adjustment
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>    
 
     <!-- Modal Export Data -->
     <div class="modal fade" id="exportModal" tabindex="-1">
@@ -591,8 +542,8 @@
                             <label class="form-label info-label">Filter Status</label>
                             <select class="form-control form-control-clean" id="exportStatusFilter">
                                 <option value="">Semua Status</option>
-                                <option value="menunggu_adjustment">Menunggu Adjustment</option>
-                                <option value="proses_adjustment">Proses Adjustment</option>
+                                <option value="menunggu_adjustment_pdnd">Menunggu Adjustment</option>
+                                <option value="proses_adjustment_pdnd">Proses Adjustment</option>
                                 <option value="selesai">Selesai</option>
                             </select>
                         </div>
@@ -602,8 +553,6 @@
                                 <option value="">Semua Remarks</option>
                                 <option value="ADJUSTMENT FA PROOF">FA Proof</option>
                                 <option value="ADJUSTMENT FA PRODUKSI">FA Produksi</option>
-                                <option value="ADJUSTMENT CURVE PROOF">Curve Proof</option>
-                                <option value="ADJUSTMENT CURVE PRODUKSI">Curve Produksi</option>
                             </select>
                         </div>
                         <div class="col-md-6">
@@ -730,21 +679,27 @@
 
         // Load data
         async function loadData() {
-            // Request notification permission when loading data
-            await requestNotificationPermission();
             try {
                 document.getElementById('loadingIndicator').style.display = 'block';
                 document.getElementById('noDataMessage').classList.add('d-none');
                 
-                const response = await fetch('/get-mounting-adjustment-data');
+                const response = await fetch('/get-pdnd-adjustment-data');
                 if (!response.ok) throw new Error('Failed to fetch data');
                 
                 const result = await response.json();
-                adjustmentData = result.data || [];
+                // adjustmentData = result.data || []; // Baris ini tidak digunakan karena ada adjustmentData = allData; di bawah
                 const allData = result.all_data || [];
                 
+                // --- LANGKAH PENTING: FILTER DATA HANYA UNTUK PDND (NON-EPSON) ---
+                // Asumsi: item.is_epson bernilai boolean (true/false) atau integer (1/0).
+                // Kita hanya ingin memproses item non-EPSON di laman PDND (is_epson === false atau is_epson === 0)
+                const pdndRelevantData = allData.filter(item => !item.is_epson);
+                
+                // Set adjustmentData untuk pengolahan selanjutnya
+                adjustmentData = pdndRelevantData; 
+                
                 // Check untuk adjustment baru yang menunggu
-                const waitingAdjustments = allData.filter(item => item.status === 'menunggu_adjustment');
+                const waitingAdjustments = pdndRelevantData.filter(item => item.status === 'menunggu_adjustment_pdnd');
                 if (waitingAdjustments.length > 0) {
                     showBrowserNotification('Adjustment Menunggu', {
                         body: `Terdapat ${waitingAdjustments.length} adjustment yang menunggu untuk diproses`,
@@ -752,31 +707,30 @@
                     });
                 }
 
-                // Check untuk adjustment baru yang ditolak 
-                const declinedmountingAdjustments = allData.filter(item => item.status === 'ditolakctp');
+                // Check untuk adjustment baru yang ditolak (HANYA NON-EPSON)
+                // Karena kita sudah memfilter pdndRelevantData, kita hanya perlu mencari statusnya.
+                const declinedmountingAdjustments = pdndRelevantData.filter(item => item.status === 'ditolakmounting');
                 if (declinedmountingAdjustments.length > 0) {
-                    showBrowserNotification('Adjustment Ditolak CTP', {
-                        body: `Terdapat ${declinedmountingAdjustments.length} adjustment yang ditolak CTP`,
+                    showBrowserNotification('Adjustment Ditolak Mounting', {
+                        body: `Terdapat ${declinedmountingAdjustments.length} adjustment yang ditolak mounting dan perlu direvisi`,
                         requireInteraction: false
                     });
-                } 
-
-                // Use allData instead of adjustmentData for filtering to include completed items
-                adjustmentData = allData;
+                }        
                 
-                // Sort data: proses_adjustment first, then menunggu_adjustment (FIFO by created_at), then others
+                // Sort data dengan prioritas baru:
+                // Catatan: Karena adjustmentData sudah difilter (hanya non-EPSON), logika sort ini sudah sesuai untuk PDND.
                 adjustmentData.sort((a, b) => {
-                    // Priority 1: ditolak third
-                    if (a.status === 'ditolakctp' && b.status !== 'ditolakctp') return -1;
-                    if (b.status === 'ditolakctp' && a.status !== 'ditolakctp') return 1; 
-
-                    // Priority 2: proses_adjustment first
-                    if (a.status === 'proses_adjustment' && b.status !== 'proses_adjustment') return -1;
-                    if (b.status === 'proses_adjustment' && a.status !== 'proses_adjustment') return 1;
+                    // Priority 1: ditolakmounting (Paling atas untuk item yang perlu direvisi PDND)
+                    if (a.status === 'ditolakmounting' && b.status !== 'ditolakmounting') return -1;
+                    if (b.status === 'ditolakmounting' && a.status !== 'ditolakmounting') return 1;
+                                            
+                    // Priority 2: proses_adjustment_pdnd first
+                    if (a.status === 'proses_adjustment_pdnd' && b.status !== 'proses_adjustment_pdnd') return -1;
+                    if (b.status === 'proses_adjustment_pdnd' && a.status !== 'proses_adjustment_pdnd') return 1;
                     
-                    // Priority 3: menunggu_adjustment second
-                    if (a.status === 'menunggu_adjustment' && b.status !== 'menunggu_adjustment') return -1;
-                    if (b.status === 'menunggu_adjustment' && a.status !== 'menunggu_adjustment') return 1;                   
+                    // Priority 3: menunggu_adjustment_pdnd second
+                    if (a.status === 'menunggu_adjustment_pdnd' && b.status !== 'menunggu_adjustment_pdnd') return -1;
+                    if (b.status === 'menunggu_adjustment_pdnd' && a.status !== 'menunggu_adjustment_pdnd') return 1;
                     
                     // Special handling for completed items: sort by machine off time in reverse order
                     if (a.status === 'selesai' && b.status === 'selesai') {
@@ -784,22 +738,25 @@
                         const dateB = new Date(b.machine_off_at || 0);
                         return dateB - dateA; // Newest first
                     }
-                    
+
                     // Priority 4: Within same status, sort by created_at (oldest first for FIFO)
                     const dateA = new Date(a.created_at || a.machine_off_at || 0);
                     const dateB = new Date(b.created_at || b.machine_off_at || 0);
                     return dateA - dateB;
                 });
                 
-                // Show waiting and in-progress adjustments on initial load (unless filters are applied)
+                // Tampilkan data yang menunggu, dalam proses, dan yang ditolak
+                // Sekarang initialData HANYA akan berisi item PDND yang relevan (non-EPSON).
                 const initialData = adjustmentData.filter(item => 
-                    item.status === 'menunggu_adjustment' || item.status === 'proses_adjustment' || item.status === 'ditolakctp'
+                    item.status === 'menunggu_adjustment_pdnd' || 
+                    item.status === 'proses_adjustment_pdnd' ||
+                    item.status === 'ditolakmounting'
                 );
+
                 displayData(initialData);
-                updateSummary(allData);
+                updateSummary(allData); // Gunakan allData yang asli untuk summary keseluruhan
                 populateMesinFilter(allData);
                 
-                // Simple success feedback without details
                 showToast('Data berhasil dimuat', 'success', 2000);
                 
             } catch (error) {
@@ -809,6 +766,9 @@
                 showToast('Gagal memuat data', 'error');
             }
         }
+
+// Update juga bagian filter status untuk menampilkan opsi 'Ditolakmounting'
+// Tambahkan di HTML filter section:
 
         // Populate mesin filter
         function populateMesinFilter(data) {
@@ -846,7 +806,7 @@
                 const actionButtons = getActionButtons(item);
                 
                 // Info penolakan jika status ditolak
-                const declineInfo = item.status === 'ditolakctp' ? `
+                const declineInfo = item.status === 'ditolakmounting' ? `
                     <div class="alert alert-danger mt-3">
                         <div class="d-flex">
                             <i class="fas fa-times-circle me-2 mt-1"></i>
@@ -938,64 +898,21 @@
                                         </div>
                                     </div>
                                     ` : ''}
-                                    
-                                    ${!item.is_epson ? `
-                                        ${item.pdnd_start_at ? `
-                                        <div class="col-12">
-                                            <div class="d-flex align-items-center">
-                                                <div class="bg-info rounded-circle me-2" style="width: 8px; height: 8px;"></div>
-                                                <small class="text-muted">Mulai Adjustment:</small>
-                                                <small class="ms-auto fw-bold">${formatDateTimeIndonesia(item.pdnd_start_at)}</small>
-                                            </div>
-                                        </div>
-                                        ` : ''}
-                                        ${item.pdnd_finish_at ? `
-                                        <div class="col-12">
-                                            <div class="d-flex align-items-center">
-                                                <div class="bg-success rounded-circle me-2" style="width: 8px; height: 8px;"></div>
-                                                <small class="text-muted">Selesai Adjustment:</small>
-                                                <small class="ms-auto fw-bold">${formatDateTimeIndonesia(item.pdnd_finish_at)}</small>
-                                            </div>
-                                        </div>
-                                        ` : ''}
-                                    ` : ''}
-                                    
-                                    ${item.is_epson ? `
-                                        ${item.design_start_at ? `
-                                        <div class="col-12">
-                                            <div class="d-flex align-items-center">
-                                                <div class="bg-info rounded-circle me-2" style="width: 8px; height: 8px;"></div>
-                                                <small class="text-muted">Mulai Adjustment:</small>
-                                                <small class="ms-auto fw-bold">${formatDateTimeIndonesia(item.design_start_at)}</small>
-                                            </div>
-                                        </div>
-                                        ` : ''}
-                                        ${item.design_finish_at ? `
-                                        <div class="col-12">
-                                            <div class="d-flex align-items-center">
-                                                <div class="bg-success rounded-circle me-2" style="width: 8px; height: 8px;"></div>
-                                                <small class="text-muted">Selesai Adjustment:</small>
-                                                <small class="ms-auto fw-bold">${formatDateTimeIndonesia(item.design_finish_at)}</small>
-                                            </div>
-                                        </div> 
-                                        ` : ''}
-                                    ` : ''}
-                                    
-                                    ${item.adjustment_start_at ? `
+                                    ${item.pdnd_start_at ? `
                                     <div class="col-12">
                                         <div class="d-flex align-items-center">
                                             <div class="bg-info rounded-circle me-2" style="width: 8px; height: 8px;"></div>
-                                            <small class="text-muted">Mulai Mounting:</small>
-                                            <small class="ms-auto fw-bold">${formatDateTimeIndonesia(item.adjustment_start_at)}</small>
+                                            <small class="text-muted">Mulai Adjustment:</small>
+                                            <small class="ms-auto fw-bold">${formatDateTimeIndonesia(item.pdnd_start_at)}</small>
                                         </div>
                                     </div>
                                     ` : ''}
-                                    ${item.adjustment_finish_at ? `
+                                    ${item.pdnd_finish_at ? `
                                     <div class="col-12">
                                         <div class="d-flex align-items-center">
                                             <div class="bg-success rounded-circle me-2" style="width: 8px; height: 8px;"></div>
-                                            <small class="text-muted">Selesai Mounting:</small>
-                                            <small class="ms-auto fw-bold">${formatDateTimeIndonesia(item.adjustment_finish_at)}</small>
+                                            <small class="text-muted">Selesai Adjustment:</small>
+                                            <small class="ms-auto fw-bold">${formatDateTimeIndonesia(item.pdnd_finish_at)}</small>
                                         </div>
                                     </div>
                                     ` : ''}
@@ -1023,26 +940,24 @@
         // Inject current user name for JS logic
         window.currentUserName = "{{ current_user.name }}";
         
-        // Get status badge - Using Mounting Division Badge System
+        // Get status badge - Using pdnd Division Badge System
         function getStatusBadge(status) {
             if (window.BadgeSystem) {
-                const statusInfo = window.BadgeSystem.getStatusInfo(status, 'mounting');
+                const statusInfo = window.BadgeSystem.getStatusInfo(status, 'pdnd');
                 if (statusInfo) {
                     return `<span class="badge status-badge ${statusInfo.class}" data-status="${status}">${statusInfo.label}</span>`;
                 }
             }
             
-            // Fallback untuk mounting division
-            const mountingBadges = {
-                'menunggu_adjustment': '<span class="badge status-badge badge-menunggu" data-status="menunggu_adjustment">Menunggu Adjustment</span>',
-                'proses_adjustment': '<span class="badge status-badge badge-proses" data-status="proses_adjustment">Proses Adjustment</span>',
-                'proses_ctp': '<span class="badge status-badge badge-selesai" data-status="selesai">Selesai</span>',
-                'proses_plate': '<span class="badge status-badge badge-selesai" data-status="selesai">Selesai</span>',
-                'antar_plate': '<span class="badge status-badge badge-selesai" data-status="selesai">Selesai</span>',                                                                
+            // Fallback untuk pdnd division
+            const pdndBadges = {
+                'menunggu_adjustment_pdnd': '<span class="badge status-badge badge-menunggu" data-status="menunggu_adjustment">Menunggu Adjustment</span>',
+                'proses_adjustment_pdnd': '<span class="badge status-badge badge-proses" data-status="proses_adjustment">Proses Adjustment</span>',
+                'menunggu_adjustment': '<span class="badge status-badge badge-selesai" data-status="selesai">Selesai</span>',
                 'selesai': '<span class="badge status-badge badge-selesai" data-status="selesai">Selesai</span>',
-                'ditolakctp': '<span class="badge status-badge badge-danger" data-status="ditolakctp">Ditolak CTP</span>'
+                'ditolakmounting': '<span class="badge status-badge badge-danger" data-status="ditolakmounting">Ditolak Mounting</span>'
             };
-            return mountingBadges[status] || '<span class="badge status-badge badge-menunggu">Unknown</span>';
+            return pdndBadges[status] || '<span class="badge status-badge badge-menunggu">Unknown</span>';
         }
 
         // Get remarks badge
@@ -1055,10 +970,6 @@
                 return '<span class="badge remarks-badge-clean badge-fa-proof">FA Proof</span>';
             } else if (remarksLower.includes('adjustment fa produksi')) {
                 return '<span class="badge remarks-badge-clean badge-fa-produksi">FA Produksi</span>';
-            } else if (remarksLower.includes('adjustment curve proof')) {
-                return '<span class="badge remarks-badge-clean badge-curve-proof">Curve Proof</span>';
-            } else if (remarksLower.includes('adjustment curve produksi')) {
-                return '<span class="badge remarks-badge-clean badge-curve-produksi">Curve Produksi</span>';
             } else {
                 // For other remarks, show truncated version
                 const shortRemarks = remarks.length > 15 ? remarks.substring(0, 15) + '...' : remarks;
@@ -1068,135 +979,50 @@
 
         // Get action buttons
         function getActionButtons(item) {
-            if (item.status === 'menunggu_adjustment' || item.status === 'ditolakctp') {
-                return `
-                    <div class="d-flex gap-2 w-100">
-                        <button class="btn btn-primary-clean btn-clean flex-grow-1" onclick="startAdjustment(${item.id})">
-                            <i class="fas fa-play me-1"></i>${item.status === 'ditolakctp' ? 'Proses Ulang' : 'Mulai Mounting'}
-                        </button>
-                        <button class="btn btn-danger btn-clean" onclick="declineAdjustment(${item.id})">
-                            <i class="fas fa-times me-1"></i>Tolak
-                        </button>
-                    </div>`;
-            } else if (item.status === 'proses_adjustment') {
-                if (window.currentUserName && item.adjustment_by && window.currentUserName === item.adjustment_by) {
+            if (item.status === 'menunggu_adjustment_pdnd' || item.status === 'ditolakmounting') {
+                return `<button class="btn btn-primary-clean btn-clean flex-grow-1" onclick="startAdjustment(${item.id})">
+                    <i class="fas fa-play me-1"></i>${item.status === 'ditolakmounting' ? 'Proses Ulang' : 'Mulai Adjustment'}
+                </button>`;
+            } else if (item.status === 'proses_adjustment_pdnd') {
+                if (window.currentUserName && item.pdnd_by && window.currentUserName === item.pdnd_by) {
                     return `<button class="btn btn-success-clean btn-clean flex-grow-1" onclick="finishAdjustment(${item.id})">
-                        <i class="fas fa-check me-1"></i>Selesai Mounting
+                        <i class="fas fa-check me-1"></i>Selesai Adjustment
+                    </button>`;
+                } else {
+                    return `<button class="btn btn-success-clean btn-clean flex-grow-1" hidden title="Hanya operator yang memulai yang bisa menyelesaikan">
+                        <i class="fas fa-check me-1"></i>Selesai Adjustment
                     </button>`;
                 }
             }
-            return '';
+            return ''; // Empty string instead of "Tidak ada aksi tersedia"
         }
-
-        // Fungsi untuk menampilkan modal decline
-        function declineAdjustment(id) {
-            const item = adjustmentData.find(item => item.id === id);
-            if (!item) return;
-            
-            currentAdjustmentId = id;
-            
-            document.getElementById('declineAdjustmentInfo').innerHTML = `
-                <div class="row g-3">
-                    <div class="col-12">
-                        <div class="info-label">Item Name</div>
-                        <div class="info-value">
-                            <i class="fas fa-box me-1 text-danger"></i>
-                            ${item.item_name}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="info-label">WO Number</div>
-                        <div class="info-value">${item.wo_number}</div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="info-label">MC Number</div>
-                        <div class="info-value">${item.mc_number}</div>
-                    </div>
-                    <div class="col-12">
-                        <div class="info-label">Remarks</div>
-                        <div class="info-value">${item.remarks || '-'}</div>
-                    </div>
-                </div>
-            `;
-            
-            new bootstrap.Modal(document.getElementById('declineAdjustmentModal')).show();
-        }
-
-        // Event listener untuk konfirmasi decline
-        document.getElementById('confirmDecline').addEventListener('click', async function() {
-            const reason = document.getElementById('declineReason').value.trim();
-            
-            if (!reason) {
-                showToast('Harap isi alasan penolakan', 'error');
-                return;
-            }
-            
-            try {
-                const response = await fetch('/decline-adjustment', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        id: currentAdjustmentId,
-                        reason: reason,
-                        declined_by: window.currentUserName
-                    })
-                });
-                
-                if (response.ok) {
-                    bootstrap.Modal.getInstance(document.getElementById('declineAdjustmentModal')).hide();
-                    showToast('Adjustment berhasil ditolak', 'success');
-                    loadData();
-                } else {
-                    showToast('Gagal menolak adjustment', 'error');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showToast('Terjadi kesalahan saat menolak adjustment', 'error');
-            }
-        });
 
         // Update summary
         function updateSummary(data) {
             const today = new Date().toISOString().split('T')[0];
             
             const summary = {
-                waiting: data.filter(item => item.status === 'menunggu_adjustment').length,
+                waiting: data.filter(item => item.status === 'menunggu_adjustment_pdnd').length,
                 completedToday: data.filter(item => 
-                    (item.status === 'proses_ctp' || item.status === 'selesai') && 
-                    item.adjustment_finish_at && item.adjustment_finish_at.startsWith(today)
+                    (item.status === 'menunggu_adjustment' || item.status === 'selesai') && 
+                    item.pdnd_finish_at && item.pdnd_finish_at.startsWith(today)
                 ).length,
-                // Gabungkan FA Proof dan FA Produksi (hanya untuk status yang relevan)
+                // Gabungkan FA Proof dan FA Produksi DAN hanya hitung jika is_epson adalah true
                 totalFa: data.filter(item => 
-                    item.remarks && 
-                    (item.status === 'menunggu_adjustment' || 
-                     item.status === 'proses_adjustment' || 
-                     item.status === 'ditolakctp' ||
-                     item.status === 'proses_ctp' ||
-                     item.status === 'proses_plate' ||
-                     item.status === 'antar_plate' ||
-                     item.status === 'selesai') &&
-                    (item.remarks.toLowerCase().includes('adjustment fa proof') ||
-                     item.remarks.toLowerCase().includes('adjustment fa produksi'))
-                ).length,
-                // Gabungkan Curve Proof dan Curve Produksi (hanya untuk status yang relevan)
-                totalCurve: data.filter(item => 
-                    item.remarks && 
-                    (item.status === 'menunggu_adjustment' || 
-                     item.status === 'proses_adjustment' || 
-                     item.status === 'ditolakctp' ||
-                     item.status === 'proses_ctp' ||
-                     item.status === 'proses_plate' ||
-                     item.status === 'antar_plate' ||
-                     item.status === 'selesai') &&
-                    (item.remarks.toLowerCase().includes('adjustment curve proof') ||
-                     item.remarks.toLowerCase().includes('adjustment curve produksi'))
+                    // 1. Cek apakah ini item EPSON (is_epson == true)
+                    item.is_epson === false && 
+                    
+                    // 2. Cek apakah remarks adalah FA
+                    item.remarks && (
+                        item.remarks.toLowerCase().includes('adjustment fa proof') ||
+                        item.remarks.toLowerCase().includes('adjustment fa produksi')
+                    )
                 ).length
             };
 
             document.getElementById('waitingCount').textContent = summary.waiting;
             document.getElementById('completedTodayCount').textContent = summary.completedToday;
             document.getElementById('totalFaCount').textContent = summary.totalFa;
-            document.getElementById('totalCurveCount').textContent = summary.totalCurve;
         }
 
         // Start adjustment
@@ -1334,11 +1160,11 @@
                     </div>
                     ` : ''}
                     <div class="col-12 mt-3">
-                        <div class="info-label">Waktu Dimulai Mounting</div>
+                        <div class="info-label">Waktu Dimulai Adjustment</div>
                         <div class="info-value">
                             <i class="fas fa-clock me-1 text-info"></i>
-                            ${formatDateTimeIndonesia(item.adjustment_start_at)}
-                            ${item.adjustment_by ? '<span class="text-muted ms-2">[PIC: ' + item.adjustment_by + ']</span>' : ''}
+                            ${formatDateTimeIndonesia(item.pdnd_start_at)}
+                            ${item.pdnd_by ? '<span class="text-muted ms-2">[PIC: ' + item.pdnd_by + ']</span>' : ''}
                         </div>
                     </div>
                 </div>
@@ -1351,6 +1177,7 @@
         document.addEventListener('DOMContentLoaded', async function() {
             // Request notification permission when page loads
             await requestNotificationPermission();
+            
             loadData();
             
             // Filter functions
@@ -1360,8 +1187,8 @@
                 const remarksFilter = document.getElementById('remarksFilter').value;
                 const searchInput = document.getElementById('searchInput').value.toLowerCase().trim();
                 
-                let filteredData = adjustmentData;
-                
+                let filteredData = [...adjustmentData]; // Create a copy to avoid modifying original array
+
                 // If viewing completed items, sort by completion date (newest first)
                 if (statusFilter === 'selesai') {
                     filteredData.sort((a, b) => {
@@ -1370,21 +1197,21 @@
                         return dateB - dateA;
                     });
                 }
-                
+
                 // If no filters are applied, show waiting and in-progress adjustments
                 const hasActiveFilters = statusFilter || mesinFilter || remarksFilter || searchInput;
                 if (!hasActiveFilters) {
                     filteredData = adjustmentData.filter(item => 
-                        item.status === 'menunggu_adjustment' || item.status === 'proses_adjustment'
+                        item.status === 'menunggu_adjustment_pdnd' || item.status === 'proses_adjustment_pdnd' || item.status === 'ditolakmounting'
                     );
                 } else {
                     // Apply filters when user actively uses them
                     if (statusFilter) {
-                        // Handle special cases for mounting division status filtering
+                        // Handle special cases for pdnd division status filtering
                         if (statusFilter === 'selesai') {
-                            // Include both 'selesai' and 'proses_ctp' for completed mounting items
+                            // Show only items that have both pdnd_start_at and pdnd_finish_at timestamps
                             filteredData = filteredData.filter(item => 
-                                item.status === 'selesai' || item.status === 'proses_ctp'
+                                item.pdnd_start_at && item.pdnd_finish_at
                             );
                         } else {
                             filteredData = filteredData.filter(item => item.status === statusFilter);
@@ -1448,39 +1275,39 @@
                     showToast('Harap isi nama PIC adjustment', 'error');
                     return;
                 }
-
+                
                 // Get the current item to check if it's a reprocess
                 const currentItem = adjustmentData.find(item => item.id === currentAdjustmentId);
-                const isReprocess = currentItem?.status === 'ditolakctp';                
+                const isReprocess = currentItem?.status === 'ditolakmounting';
                 
                 try {
-                    const response = await fetch('/start-adjustment', {
+                    const response = await fetch('/start-adjustment-pdnd', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             id: currentAdjustmentId,
-                            adjustment_by: adjustmentBy,
+                            pdnd_by: adjustmentBy,
                             is_reprocess: isReprocess // Add flag for reprocess
                         })
                     });
                     
                     if (response.ok) {
                         bootstrap.Modal.getInstance(document.getElementById('startAdjustmentModal')).hide();
-                        showToast('Proses mounting adjustment berhasil dimulai', 'success');
+                        showToast('Proses adjustment berhasil dimulai', 'success');
                         loadData();
                     } else {
-                        showToast('Gagal memulai mounting adjustment', 'error');
+                        showToast('Gagal memulai adjustment', 'error');
                     }
                 } catch (error) {
                     console.error('Error:', error);
-                    showToast('Terjadi kesalahan saat memulai mounting adjustment', 'error');
+                    showToast('Terjadi kesalahan saat memulai adjustment', 'error');
                 }
             });
             
             // Confirm finish adjustment
             document.getElementById('confirmFinishAdjustment').addEventListener('click', async function() {
                 try {
-                    const response = await fetch('/finish-adjustment', {
+                    const response = await fetch('/finish-adjustment-pdnd', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -1492,7 +1319,7 @@
                         bootstrap.Modal.getInstance(document.getElementById('finishAdjustmentModal')).hide();
                         loadData();
                     } else {
-                        alert('Gagal menyelesaikan adjustment');
+                        showToast('Gagal menyelesaikan adjustment', 'error');
                     }
                 } catch (error) {
                     console.error('Error:', error);
@@ -1502,11 +1329,11 @@
             
             // Confirm export
             document.getElementById('confirmExport').addEventListener('click', function() {
-                exportMountingData();
+                exportPdndData();
             });
         });
         
-        // MOUNTING ENHANCEMENTS - Professional Features
+        // PDND ENHANCEMENTS - Professional Features
         
         // Auto-refresh functionality
         let autoRefreshInterval;
@@ -1546,7 +1373,7 @@
             new bootstrap.Modal(document.getElementById('exportModal')).show();
         }
         
-        function exportMountingData() {
+        function exportPdndData() {
             try {
                 showToast('Mempersiapkan export data...', 'info');
                 
@@ -1563,7 +1390,7 @@
                 if (dateFrom) params.append('date_from', dateFrom);
                 if (dateTo) params.append('date_to', dateTo);
                 
-                const exportUrl = '/export-mounting-adjustment?' + params.toString();
+                const exportUrl = '/export-pdnd-adjustment?' + params.toString();
                 
                 // Create temporary link and trigger download
                 const link = document.createElement('a');
@@ -1593,9 +1420,6 @@
             return '';
         }
         
-        // Add audio element for notification sound
-        const notificationSound = new Audio('/static/sounds/adjustment.mp3');
-
         // Browser Notification System
         async function requestNotificationPermission() {
             if (!('Notification' in window)) {
@@ -1615,6 +1439,9 @@
             return false;
         }
 
+        // Add audio element for notification sound
+        const notificationSound = new Audio('/static/sounds/adjustment.mp3');
+
         // Function to show browser notification
         function showBrowserNotification(title, options = {}) {
             if (Notification.permission === 'granted') {
@@ -1624,7 +1451,7 @@
                     vibrate: [200, 100, 200],
                     silent: false,
                     requireInteraction: false,
-                    sound: '/static/sounds/adjustment.mp3'
+                    sound: '/static/sounds/adjustment.mp3'  // Add sound URL
                 };
 
                 // Create and show notification
@@ -1692,7 +1519,7 @@
             // Ctrl+E: Export
             if (e.ctrlKey && e.key === 'e') {
                 e.preventDefault();
-                exportMountingData(); // Export function already has its own notifications
+                exportPdndData(); // Export function already has its own notifications
             }
             
             // Escape: Close modals
