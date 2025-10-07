@@ -211,7 +211,7 @@
         .cancelled-info {
             position: absolute;
             right: -290px;
-            top: 50%;
+            top: 140%;
             transform: translateY(-50%);
             padding: 15px;
             border-radius: 8px;
@@ -934,6 +934,10 @@
             // Setup auto-refresh
             setupAutoRefresh();
         }
+
+        // Inject current user name for JS logic
+        window.currentUserName = "{{ current_user.name | default('Unknown User') }}"; 
+
         
         function setupTooltips() {
             const markers = document.querySelectorAll('.timeline-marker[data-tooltip]');
@@ -1105,7 +1109,7 @@
                             </div>
                             <div class="cancelled-reason">
                                 <i class="fas fa-info-circle me-2"></i>Alasan:
-                                <p class="mb-0 mt-1">{{ data.cancelled_reason }}</p>
+                                <p class="mb-0 mt-1">{{ data.cancellation_reason }}</p>
                             </div>
                         `;
                         item.classList.add('has-cancelled-info');

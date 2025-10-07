@@ -135,7 +135,12 @@ window.currentUserName = document.querySelector('meta[name="current-user-name"]'
 
 // Cancel adjustment function
 function cancelAdjustmentPlate(adjustmentId, reason) {
-    const currentUserName = window.currentUserName || 'Unknown User'; 
+    const currentUserName = document.querySelector('meta[name="current-user-name"]')?.content;
+    
+    if (!currentUserName) {
+        showToast('Tidak dapat mengidentifikasi user yang membatalkan', 'error');
+        return;
+    }
     
     // Send cancel request
     fetch('/cancel-adjustment-plate', { 
@@ -144,7 +149,7 @@ function cancelAdjustmentPlate(adjustmentId, reason) {
         body: JSON.stringify({ 
             id: adjustmentId, 
             reason: reason,
-            cancelled_by: currentUserName 
+            cancelled_by: window.currentUserName 
         })
     })
     .then(res => {
@@ -200,7 +205,7 @@ function showContextMenu(rowElement, x, y, row) {
 
     // --- Opsional: Cegah menu keluar dari layar ---
     const menuWidth = 180; // atau sesuai minWidth menu Anda
-    const menuHeight = row.status === 'menunggu_adjustment_pdnd' ? 90 : 50; // kira-kira tinggi menu (1/2 tombol)
+    const menuHeight = row.status === 'menunggu_adjustment_pdnd' || row.status === 'menunggu_adjustment_design' ? 90 : 50; // kira-kira tinggi menu (1/2 tombol)
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     if (left + menuWidth > viewportWidth + window.scrollX) {
@@ -224,7 +229,7 @@ function showContextMenu(rowElement, x, y, row) {
         <button type="button" class="list-group-item list-group-item-action" data-action="detail">
             <i class="fas fa-search me-2"></i> Detail Adjustment
         </button>
-        ${row.status === 'menunggu_adjustment_pdnd' || row.status === 'menunggu_adjustment' ? `
+        ${row.status === 'menunggu_adjustment_pdnd' || row.status === 'menunggu_adjustment_design' ? `
         <button type="button" class="list-group-item list-group-item-action text-danger" data-action="cancel">
             <i class="fas fa-ban me-2"></i> Cancel Adjustment
         </button>

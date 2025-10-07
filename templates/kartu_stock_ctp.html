@@ -73,14 +73,48 @@
         
         /* Table styling */
         .table-responsive-kartu-stock {
-            width: 48%;
+            width: 49.5%;
             border-radius: 15px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.08);
             overflow: hidden;
             background: white;
-            padding: 20px;
+            padding: 15px;
             margin-bottom: 20px;
         }
+        
+        /* Ensure first column has enough space for item name + warning icon */
+        .stock-table td:first-child {
+            min-width: 180px;
+            padding-right: 8px; 
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            
+            /* PENTING: Gunakan Flexbox untuk centering dan tata letak */
+            display: flex;
+            align-items: center; /* Konten center secara vertikal (sudah benar) */
+            justify-content: center; /* GANTI KE 'center' untuk center secara horizontal */
+        }
+        
+        /* Atur Ikon Peringatan */
+        .stock-table td:first-child .fa-exclamation-triangle {
+            margin-left: 4px; /* Jarak antara teks dan ikon */
+            color: #ffc107;
+            font-size: 1.1em;
+        }
+
+        /* CSS KUSTOM UNTUK MEMBESARKAN BADGE DI ALERT */
+        .alert .badge-lg {
+            font-size: 0.95em; /* Sedikit lebih besar dari default badge */
+            padding: 0.4em 0.8em; /* Padding yang lebih tebal */
+            transform: scale(1.05); /* Sedikit efek pop-out */
+        }
+
+        /* Kustomisasi Judul Alert agar lebih menonjol */
+        #stockAlertInfo .alert-title {
+            font-size: 1.25em; /* Judul lebih besar */
+            font-weight: 700;
+        }        
         
         .stock-table {
             margin-bottom: 0;
@@ -241,6 +275,23 @@
             border-color: #ff9500;
             color: white;
         }
+
+        /* Low Stock Alert Styling */
+        .low-stock {
+            background-color: #fff3cd !important;
+            animation: lowStockPulse 2s infinite;
+        }
+
+        #stockAlertInfo li {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        @keyframes lowStockPulse {
+            0% { background-color: #fff3cd !important; }
+            50% { background-color: #ffe5d0 !important; }
+            100% { background-color: #fff3cd !important; }
+        }
     </style>
 </head>
 <body>
@@ -262,9 +313,6 @@
                                     <i class="fas fa-clipboard-check me-1"></i> Input Stok Awal
                                 </button>
                                 {% endif %}
-                                    <button onclick="showExportModal()" class="btn btn-success me-2">
-                                    <i class="fas fa-file-excel me-1"></i> Export Data
-                                </button>
                                 <button onclick="showInputIncomingModal()" class="btn btn-light">
                                     <i class="fas fa-plus-circle me-1"></i> Input Incoming Stock
                                 </button>
@@ -288,6 +336,35 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Stock Alert Info -->
+                <div class="alert alert-success mb-4" id="stockAlertInfo">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-check-circle me-2"></i> 
+                        <strong class="alert-title">Status Stock Aman</strong>
+                    </div>
+                    
+                    <div class="row" id="lowStockItems" style="display: none;"> 
+                        <div class="col-md-6">
+                            <strong class="d-block mb-2">FUJI:</strong>
+                            <ul class="list-unstyled mb-0 small" id="fujiLowStockList">
+                                </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <strong class="d-block mb-2">SAPHIRA:</strong>
+                            <ul class="list-unstyled mb-0 small" id="saphiraLowStockList">
+                                </ul>
+                        </div>
+                    </div>
+                    
+                    <div id="noLowStockMessage"> 
+                        <p class="mb-0 text-success">
+                            <i class="fas fa-check-circle me-1"></i>
+                            Semua item stok dalam batas aman
+                        </p>
+                    </div>
+                </div>
+
                 <!-- Tables Container -->
                 <div class="d-flex justify-content-between">
                     <div class="table-responsive-kartu-stock">
@@ -683,13 +760,14 @@
 </div>
 
 <!-- Modal Input Incoming Stock -->
-<div class="modal fade" id="incomingStockModal" tabindex="-1">
+<div class="modal fade" id="incomingStockModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="incomingStockModalLabel" aria-hidden="true"> 
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Input Incoming Stock</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title" id="incomingStockModalLabel">Input Incoming Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+            
             <div class="modal-body">
                 <div class="row g-3 mb-3">
                     <div class="col-md-4">
@@ -844,7 +922,59 @@
                     </div>
                 </div>
 
+                
+                <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-md"> 
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white"> <h5 class="modal-title" id="confirmationModalLabel"><i class="bi bi-patch-check-fill me-2"></i> Konfirmasi Data Masuk</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="lead text-center">Mohon periksa kembali data di bawah sebelum menyimpan.</p>
+                                
+                                <ul class="list-group list-group-flush mb-4 shadow-sm">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
+                                        <strong>Tanggal:</strong> 
+                                        <span id="confirmDate" class="fw-bold text-primary"></span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <strong>Shift:</strong> 
+                                        <span id="confirmShift" class="fw-bold"></span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
+                                        <strong>Brand:</strong> 
+                                        <span id="confirmBrand" class="fw-bold text-uppercase badge bg-dark"></span>
+                                    </li>
+                                </ul>
+
+                                <h6 class="text-secondary mb-3"><i class="bi bi-box-seam me-1"></i> Rincian Item yang Akan Disimpan:</h6>
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-striped table-hover" id="konfirmasiTable">
+                                        <thead>
+                                            <tr class="table-dark">
+                                                <th>Item</th>
+                                                <th class="text-end">Jumlah</th>
+                                                <th>Unit</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="confirmationTableBody">
+                                            </tbody>
+                                    </table>
+                                </div>
+                                
+                            </div>
+                            <div class="modal-footer justify-content-between">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal / Revisi</button>
+                                <button type="button" class="btn btn-success" id="confirmSaveButton">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Ya, Simpan Data
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
+
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
                 <button type="button" class="btn btn-primary" onclick="submitIncomingStock()">Simpan</button>
@@ -852,6 +982,15 @@
         </div>
     </div>
 </div>
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="liveToast" class="toast border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-body bg-success text-white rounded">
+                <span class="message-text"></span>
+                <button type="button" class="btn-close btn-close-white float-end" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
 
 <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -887,7 +1026,7 @@
     function submitInitialStock() {
         const date = document.getElementById('initialStockDate').value;
         if (!date) {
-            showToast('error', 'Tanggal harus diisi');
+            showToast('Tanggal harus diisi', 'error');
             return;
         }
 
@@ -993,16 +1132,16 @@
         })
         .then(response => {
             if (response.ok) {
-                showToast('success', 'Stok awal berhasil disimpan');
+                showToast('Stok awal berhasil disimpan', 'success');
                 initialStockModal.hide();
                 updateData(); // Refresh the main table
             } else {
-                throw new Error('Failed to save initial stock');
+                throw new Error('Failed to save initial stock', 'danger');
             }
         })
         .catch(error => {
             console.error('Error saving initial stock:', error);
-            showToast('error', 'Gagal menyimpan stok awal');
+            showToast('Gagal menyimpan stok awal', 'error');
         });
     }
 
@@ -1011,8 +1150,9 @@
         const fujiContent = document.getElementById('fujiContent');
         const saphiraContent = document.getElementById('saphiraContent');
 
-        // This is the new, crucial part of the code.
-        // It listens for a change on the brand dropdown.
+        let currentStockData = {}; 
+
+        // Event Listener untuk Brand Dropdown (show/hide)
         brandSelect.addEventListener('change', function() {
             if (this.value === 'fuji') {
                 fujiContent.style.display = 'block';
@@ -1023,34 +1163,74 @@
             }
         });
 
-        // Your existing submitIncomingStock function, which is already correct.
+        // =======================================================
+        // FUNGSI 1: MENGIRIM DATA KE SERVER (Dipanggil setelah konfirmasi)
+        // =======================================================
+        window.processSave = function() {
+            const stockData = currentStockData;
+            
+            // Ambil instance modal konfirmasi
+            const confirmationModalInstance = bootstrap.Modal.getInstance(document.getElementById('confirmationModal'));
+            // Ambil instance modal input utama
+            const inputModalInstance = bootstrap.Modal.getInstance(document.getElementById('incomingStockModal'));
+
+            // Kirim ke server
+            fetch('/api/input-incoming-stock', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(stockData)
+            })
+            .then(response => {
+                if (response.ok) {
+                    showToast('Stock incoming berhasil disimpan', 'success');
+                    
+                    // Tutup kedua modal
+                    if (confirmationModalInstance) confirmationModalInstance.hide();
+                    if (inputModalInstance) inputModalInstance.hide();
+                    
+                    updateData(); // Refresh main table
+                } else {
+                    throw new Error('Failed to save incoming stock', 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error saving incoming stock:', error);
+                showToast('Gagal menyimpan stock incoming', 'error');
+                // Tutup hanya modal konfirmasi jika gagal, biarkan modal input tetap terbuka untuk perbaikan
+                if (confirmationModalInstance) confirmationModalInstance.hide(); 
+            });
+        }
+
+        // Pasang listener pada tombol 'Ya, Simpan Data' di Modal Konfirmasi
+        document.getElementById('confirmSaveButton').addEventListener('click', processSave);
+
+
+        // =======================================================
+        // FUNGSI 2: MEMPROSES INPUT & MENAMPILKAN MODAL KONFIRMASI
+        // =======================================================
         window.submitIncomingStock = function() {
             const date = document.getElementById('incomingStockDate').value;
             const shift = document.getElementById('shiftSelect').value;
             const brand = document.getElementById('brandSelect').value;
             
             if (!date) {
-                showToast('error', 'Tanggal harus diisi');
+                showToast('Tanggal harus diisi', 'error');
                 return;
             }
 
             const stockData = {
                 date: date,
                 shift: shift,
-                fuji: {
-                    plates: [],
-                    chemicals: []
-                },
-                saphira: {
-                    plates: [],
-                    chemicals: []
-                }
+                fuji: { plates: [], chemicals: [] },
+                saphira: { plates: [], chemicals: [] }
             };
 
             let hasData = false;
-            let confirmationMessage = `Tanggal: ${date}\nShift: ${shift}\nBrand: ${brand}\n\nData Incoming:\n`;
+            const confirmationItems = []; 
 
-            // Process Plates based on selected brand
+            // --- 1. PROSES PLATES ---
             const platesTableId = (brand === 'fuji') ? '#fujiPlateIncomingTable' : '#saphiraPlateIncomingTable';
             document.querySelectorAll(`${platesTableId} tr[data-item-code]`).forEach(row => {
                 const itemCode = row.dataset.itemCode;
@@ -1062,28 +1242,25 @@
                     if (boxValue > 0) {
                         hasData = true;
                         const itemName = row.querySelector('td:first-child').textContent.trim();
+                        const dataObj = {
+                            item_code: itemCode,
+                            item_name: itemName,
+                            jumlah_incoming: boxValue * pcsPerBox,
+                            jumlah_per_box: pcsPerBox
+                        };
                         
                         if (brand === 'fuji') {
-                            stockData.fuji.plates.push({
-                                item_code: itemCode,
-                                item_name: itemName,
-                                jumlah_incoming: boxValue * pcsPerBox,
-                                jumlah_per_box: pcsPerBox
-                            });
+                            stockData.fuji.plates.push(dataObj);
                         } else {
-                            stockData.saphira.plates.push({
-                                item_code: itemCode,
-                                item_name: itemName,
-                                jumlah_incoming: boxValue * pcsPerBox,
-                                jumlah_per_box: pcsPerBox
-                            });
+                            stockData.saphira.plates.push(dataObj);
                         }
-                        confirmationMessage += `- ${itemName}: ${boxValue} Box\n`;
+                        
+                        confirmationItems.push({ name: itemName, amount: boxValue, unit: 'Box' });
                     }
                 }
             });
 
-            // Process Chemicals based on selected brand
+            // --- 2. PROSES CHEMICALS ---
             const chemicalsTableId = (brand === 'fuji') ? '#fujiChemicalIncomingTable' : '#saphiraChemicalIncomingTable';
             document.querySelectorAll(`${chemicalsTableId} tr[data-item-code]`).forEach(row => {
                 const itemCode = row.dataset.itemCode;
@@ -1094,57 +1271,53 @@
                     if (value > 0) {
                         hasData = true;
                         const itemName = row.querySelector('td:first-child').textContent.trim();
+                        const dataObj = {
+                            item_code: itemCode,
+                            item_name: itemName,
+                            jumlah_incoming: value
+                        };
                         
                         if (brand === 'fuji') {
-                            stockData.fuji.chemicals.push({
-                                item_code: itemCode,
-                                item_name: itemName,
-                                jumlah_incoming: value
-                            });
+                            stockData.fuji.chemicals.push(dataObj);
                         } else {
-                            stockData.saphira.chemicals.push({
-                                item_code: itemCode,
-                                item_name: itemName,
-                                jumlah_incoming: value
-                            });
+                            stockData.saphira.chemicals.push(dataObj);
                         }
-                        confirmationMessage += `- ${itemName}: ${value} GLN\n`;
+                        
+                        confirmationItems.push({ name: itemName, amount: value, unit: 'GLN' });
                     }
                 }
             });
 
             if (!hasData) {
-                alert("Tidak ada data yang diinput. Mohon isi minimal satu kolom.");
+                showToast("Tidak ada data yang diinput. Mohon isi minimal satu kolom.", 'error');
                 return;
             }
 
-            if (confirm(confirmationMessage)) {
-                // Send to server
-                fetch('/api/input-incoming-stock', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(stockData)
-                })
-                .then(response => {
-                    if (response.ok) {
-                        showToast('success', 'Stock incoming berhasil disimpan');
-                        // Use Bootstrap's native method to hide the modal
-                        const modal = bootstrap.Modal.getInstance(document.getElementById('incomingStockModal'));
-                        if (modal) {
-                            modal.hide();
-                        }
-                        updateData(); // Refresh the main table
-                    } else {
-                        throw new Error('Failed to save incoming stock');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error saving incoming stock:', error);
-                    showToast('error', 'Gagal menyimpan stock incoming');
-                });
-            }
+            // Simpan data ke variabel global
+            currentStockData = stockData;
+            
+            // --- 3. TAMPILKAN MODAL KONFIRMASI (SEKARANG BERADA DI DALAM MODAL UTAMA) ---
+            
+            // Isi detail header
+            document.getElementById('confirmDate').textContent = date;
+            document.getElementById('confirmShift').textContent = shift;
+            document.getElementById('confirmBrand').textContent = brand.toUpperCase();
+
+            // Isi detail tabel
+            const tableBody = document.getElementById('confirmationTableBody');
+            tableBody.innerHTML = ''; 
+            
+            confirmationItems.forEach(item => {
+                const row = tableBody.insertRow();
+                row.insertCell().textContent = item.name;
+                row.insertCell().textContent = item.amount;
+                row.insertCell().textContent = item.unit;
+            });
+
+            // Tampilkan modal
+            // Karena modal konfirmasi berada di dalam modal input, ia akan muncul di atas modal input.
+            const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+            confirmationModal.show();
         }
     });
 
@@ -1233,9 +1406,9 @@
             console.error('Error fetching stock data:', error);
             if (error instanceof TypeError) {
                 // Handle specific type errors more gracefully
-                showToast('error', 'Struktur data stok tidak sesuai. Mohon hubungi administrator.');
+                showToast('Struktur data stok tidak sesuai. Mohon hubungi administrator.', 'error');
             } else {
-                showToast('error', 'Gagal mengambil data stok: ' + (error.message || 'Unknown error'));
+                showToast('Gagal mengambil data stok: ' + (error.message || 'Unknown error', 'error'));
             }
             
             // Set default empty state for tables
@@ -1260,11 +1433,136 @@
 
     // Update tabel dengan data dari server
     function updateTables(data) {
+        // Update all tables
         updateTableData('kartuStockPlateFujiTable', data.fuji.plate.data);
         updateTableData('kartuStockChemicalFujiTable', data.fuji.chemical.data);
         updateTableData('kartuStockPlateSaphiraTable', data.saphira.plate.data);
         updateTableData('kartuStockChemicalSaphiraTable', data.saphira.chemical.data);
+        
+        // Update stock alert info
+        updateStockAlertInfo();
     }
+
+    // Function to update the stock alert info section
+    function updateStockAlertInfo() {
+        const fujiLowStockList = document.getElementById('fujiLowStockList');
+        const saphiraLowStockList = document.getElementById('saphiraLowStockList');
+        const noLowStockMessage = document.getElementById('noLowStockMessage');
+        const alertDiv = document.getElementById('stockAlertInfo');
+        
+        // PENTING: Mengosongkan UL list
+        fujiLowStockList.innerHTML = '';
+        saphiraLowStockList.innerHTML = '';
+        let hasLowStock = false;
+
+        // Fungsi helper untuk membuat Badge
+        const createLowStockBadge = (itemName, listElement) => {
+            hasLowStock = true;
+            const badge = document.createElement('span'); 
+            
+            // GANTI: me-2 mb-1 p-2 fw-bold 
+            // DENGAN: me-2 mb-1 p-2 fw-bolder badge-lg 
+            // (Tambahkan p-2 untuk padding yang lebih tebal dan fw-bolder)
+            badge.className = 'badge text-bg-danger me-2 mb-1 p-2 fw-bolder badge-lg'; 
+            badge.textContent = itemName;
+
+            listElement.appendChild(badge);
+            listElement.appendChild(document.createTextNode(' ')); 
+        };
+
+        // Check FUJI plates
+        document.querySelectorAll('#kartuStockPlateFujiTable tbody tr').forEach(row => {
+            const itemName = row.querySelector('td').textContent.trim();
+            const stockBox = parseInt(row.querySelector('[data-field="jumlah_stock_akhir_box"]').textContent);
+            if (minimumStock[itemName] && stockBox <= minimumStock[itemName].box) {
+                createLowStockBadge(itemName, fujiLowStockList);
+            }
+        });
+
+        // Check FUJI chemicals
+        document.querySelectorAll('#kartuStockChemicalFujiTable tbody tr').forEach(row => {
+            const itemName = row.querySelector('td').textContent.trim();
+            const stockGln = parseInt(row.querySelector('[data-field="jumlah_stock_akhir"]').textContent);
+            if (minimumStock[itemName] && stockGln <= minimumStock[itemName].amount) {
+                createLowStockBadge(itemName, fujiLowStockList);
+            }
+        });
+
+        // Check SAPHIRA plates
+        document.querySelectorAll('#kartuStockPlateSaphiraTable tbody tr').forEach(row => {
+            const itemName = row.querySelector('td').textContent.trim();
+            const stockBox = parseInt(row.querySelector('[data-field="jumlah_stock_akhir_box"]').textContent);
+            if (minimumStock[itemName] && stockBox <= minimumStock[itemName].box) {
+                createLowStockBadge(itemName, saphiraLowStockList);
+            }
+        });
+
+        // Check SAPHIRA chemicals
+        document.querySelectorAll('#kartuStockChemicalSaphiraTable tbody tr').forEach(row => {
+            const itemName = row.querySelector('td').textContent.trim();
+            const stockGln = parseInt(row.querySelector('[data-field="jumlah_stock_akhir"]').textContent);
+            if (minimumStock[itemName] && stockGln <= minimumStock[itemName].amount) {
+                createLowStockBadge(itemName, saphiraLowStockList);
+            }
+        });
+
+        // Show/hide elements based on stock status
+        if (hasLowStock) {
+            // KONDISI KRITIS (LOW STOCK)
+            alertDiv.classList.remove('alert-success', 'alert-warning'); // Pastikan menghapus semua yang 'aman'
+            alertDiv.classList.add('alert-danger'); 
+            document.getElementById('lowStockItems').style.display = 'flex';
+            noLowStockMessage.style.display = 'none';
+            
+            // ... (kode yang sudah ada untuk title dan icon)
+            const alertTitle = document.querySelector('#stockAlertInfo .alert-title');
+            const alertIcon = document.querySelector('#stockAlertInfo i'); 
+            
+            if (alertTitle) {
+                alertTitle.textContent = 'PERHATIAN! Stok Item Kritis';
+            }
+            if (alertIcon) {
+                alertIcon.className = 'fas fa-exclamation-circle me-2'; // Menggunakan lingkaran untuk Danger
+            }
+            
+        } else {
+            // KONDISI AMAN (TIDAK ADA LOW STOCK)
+            alertDiv.classList.remove('alert-danger', 'alert-warning'); // Hapus kedua kelas kritis
+            alertDiv.classList.add('alert-success'); // Terapkan Success
+            
+            document.getElementById('lowStockItems').style.display = 'none';
+            noLowStockMessage.style.display = 'block';
+
+            const alertTitle = document.querySelector('#stockAlertInfo .alert-title');
+            const alertIcon = document.querySelector('#stockAlertInfo i');
+
+            if (alertTitle) {
+                alertTitle.textContent = 'Status Stock Aman';
+            }
+            if (alertIcon) {
+                alertIcon.className = 'fas fa-check-circle me-2'; // Tanda centang untuk Aman
+            }
+        }
+    }
+
+    // Define minimum stock levels and their exact table names
+    const minimumStock = {
+        'FUJI 1030': { box: 9, type: 'plate' },
+        'FUJI 1030 UV': { box: 2, type: 'plate' },
+        'FUJI 1055': { box: 9, type: 'plate' },
+        'FUJI 1055 UV': { box: 2, type: 'plate' },
+        'FUJI 1055 LHPL': { box: 2, type: 'plate' },
+        'FUJI 1630': { box: 12, type: 'plate' },
+        'FUJI DEVELOPER': { amount: 8, type: 'chemical' },
+        'FUJI REPLENISHER': { amount: 8, type: 'chemical' },
+        'SAPHIRA 1030': { box: 7, type: 'plate' },
+        'SAPHIRA 1055': { box: 7, type: 'plate' },
+        'SAPHIRA 1055 PN': { box: 4, type: 'plate' },
+        'SAPHIRA 1630': { box: 6, type: 'plate' },
+        'SAPHIRA DEVELOPER': { amount: 8, type: 'chemical' },
+        'SAPHIRA REPLENISHER': { amount: 8, type: 'chemical' },
+        'SAPHIRA GUM': { amount: 10, type: 'chemical' }
+    };
 
     function updateTableData(tableId, data) {
         const table = document.getElementById(tableId);
@@ -1275,51 +1573,70 @@
             const itemData = data.find(item => item.item_code === itemCode);
             
             if (itemData) {
+                const firstCell = row.querySelector('td');
+                const itemName = firstCell.textContent.trim();
+                
+                // 1. Bersihkan ikon peringatan yang sudah ada (untuk mencegah duplikasi)
+                const existingIcon = firstCell.querySelector('.fa-exclamation-triangle');
+                if (existingIcon) {
+                    existingIcon.remove();
+                }
+
+                // Hapus kelas low-stock yang sudah ada
+                row.classList.remove('low-stock');
+
+                // =======================================================
+                // 2. KONSISTENSI PENGECUALIAN STOCK DAN PENAMBAHAN IKON
+                // =======================================================
+                let isLowStock = false;
+                
+                if (minimumStock[itemName]) {
+                    if (minimumStock[itemName].type === 'plate') {
+                        const stockBox = parseInt(itemData.jumlah_stock_akhir_box) || 0;
+                        if (stockBox <= minimumStock[itemName].box) {
+                            isLowStock = true;
+                        }
+                    } else if (minimumStock[itemName].type === 'chemical') {
+                        const stockGln = parseInt(itemData.jumlah_stock_akhir) || 0;
+                        if (stockGln <= minimumStock[itemName].amount) {
+                            isLowStock = true;
+                        }
+                    }
+                }
+                
+                // =======================================================
+                // 3. RESTRUKTURISASI firstCell UNTUK PENEMPATAN IKON YANG LEBIH BAIK
+                // =======================================================
+                // Kosongkan firstCell dan tambahkan teks itemname kembali
+                firstCell.innerHTML = itemName; 
+                
+                if (isLowStock) {
+                    const warningIcon = document.createElement('i');
+                    warningIcon.className = 'fas fa-exclamation-triangle text-warning'; // Tetap tanpa ms-2
+                    warningIcon.title = 'Stock di bawah level minimum!';
+                    
+                    // Tambahkan ikon langsung setelah teks dalam firstCell
+                    firstCell.appendChild(warningIcon);
+                    row.classList.add('low-stock');
+                }
+                // =======================================================
+                // 4. UPDATE DATA TABEL (sisanya sama)
+                // =======================================================
+
                 // Handle plate tables
                 if (tableId === 'kartuStockPlateFujiTable' || tableId === 'kartuStockPlateSaphiraTable') {
-                    // Stock Awal - Menggunakan nilai yang sudah dikonversi dari backend
-                    if (itemData.jumlah_stock_awal_box !== undefined && itemData.jumlah_stock_awal_pcs !== undefined) {
-                        row.querySelector('[data-field="jumlah_stock_awal_box"]').textContent = 
-                            itemData.jumlah_stock_awal_box || 0;
-                        row.querySelector('[data-field="jumlah_stock_awal_pcs"]').textContent = 
-                            itemData.jumlah_stock_awal_pcs || 0;
-                    } else {
-                        row.querySelector('[data-field="jumlah_stock_awal_box"]').textContent = '0';
-                        row.querySelector('[data-field="jumlah_stock_awal_pcs"]').textContent = '0';
-                    }
-
-                    // Stock Akhir - Menggunakan nilai yang sudah dikonversi dari backend
-                    if (itemData.jumlah_stock_akhir_box !== undefined && itemData.jumlah_stock_akhir_pcs !== undefined) {
-                        row.querySelector('[data-field="jumlah_stock_akhir_box"]').textContent = 
-                            itemData.jumlah_stock_akhir_box || 0;
-                        row.querySelector('[data-field="jumlah_stock_akhir_pcs"]').textContent = 
-                            itemData.jumlah_stock_akhir_pcs || 0;
-                    } else {
-                        row.querySelector('[data-field="jumlah_stock_akhir_box"]').textContent = '0';
-                        row.querySelector('[data-field="jumlah_stock_akhir_pcs"]').textContent = '0';
-                    }
-
-                    // Pemakaian (dalam pcs) dan Incoming (dalam box)
-                    if (itemData.jumlah_pemakaian !== undefined && itemData.jumlah_pemakaian !== null) {
-                        row.querySelector('[data-field="jumlah_pemakaian"]').textContent = 
-                            parseInt(itemData.jumlah_pemakaian) || 0;
-                    } else {
-                        row.querySelector('[data-field="jumlah_pemakaian"]').textContent = '0';
-                    }
-                    
-                    if (itemData.jumlah_incoming !== undefined && itemData.jumlah_incoming !== null) {
-                        row.querySelector('[data-field="jumlah_incoming"]').textContent = 
-                            parseInt(itemData.jumlah_incoming) || 0;
-                    } else {
-                        row.querySelector('[data-field="jumlah_incoming"]').textContent = '0';
-                    }
+                    row.querySelector('[data-field="jumlah_stock_awal_box"]').textContent = itemData.jumlah_stock_awal_box || '0';
+                    row.querySelector('[data-field="jumlah_stock_awal_pcs"]').textContent = itemData.jumlah_stock_awal_pcs || '0';
+                    row.querySelector('[data-field="jumlah_pemakaian"]').textContent = parseInt(itemData.jumlah_pemakaian) || '0';
+                    row.querySelector('[data-field="jumlah_incoming"]').textContent = parseInt(itemData.jumlah_incoming) || '0';
+                    row.querySelector('[data-field="jumlah_stock_akhir_box"]').textContent = itemData.jumlah_stock_akhir_box || '0';
+                    row.querySelector('[data-field="jumlah_stock_akhir_pcs"]').textContent = itemData.jumlah_stock_akhir_pcs || '0';
                 } 
-                // Handle chemical tables (straight values)
                 else if (tableId === 'kartuStockChemicalFujiTable' || tableId === 'kartuStockChemicalSaphiraTable') {
                     for (let cell of row.getElementsByTagName('td')) {
                         const field = cell.getAttribute('data-field');
                         if (field && itemData[field] !== undefined) {
-                            cell.textContent = itemData[field];
+                            cell.textContent = parseInt(itemData[field]) || 0;
                         }
                     }
                 }
@@ -1327,11 +1644,35 @@
         }
     }
 
-    // Fungsi untuk menampilkan toast notification
-    function showToast(type, message) {
-        // Implementasi toast notification sesuai kebutuhan
-        alert(message); // Sementara menggunakan alert biasa
-    }   
+    // Toast notification function
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('liveToast');
+            const messageText = toast.querySelector('.message-text');
+            const toastBody = toast.querySelector('.toast-body');
+            
+            messageText.textContent = message;
+            
+    // Reset classes
+            toastBody.className = 'toast-body rounded';
+            
+    // Apply type-specific styling
+            switch(type) {
+                case 'success':
+                    toastBody.classList.add('bg-success', 'text-white');
+                    break;
+                case 'warning':
+                    toastBody.classList.add('bg-warning', 'text-dark');
+                    break;
+                case 'error':
+                    toastBody.classList.add('bg-danger', 'text-white');
+                    break;
+                default:
+                    toastBody.classList.add('bg-info', 'text-white');
+            }
+            
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+        }   
 
     // Fungsi untuk menampilkan modal export
     function showExportModal() {

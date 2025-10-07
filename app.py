@@ -2693,7 +2693,7 @@ def request_plate_bon_page():
 @login_required
 @require_press_access
 def data_adjustment_page():
-    return render_template('data_adjustment.html')
+    return render_template('data_adjustment.html', current_user=current_user)
 
 # NEW: Rute untuk halaman Data Bon
 @app.route('/data-bon')
@@ -3097,7 +3097,7 @@ def cancel_bon_plate():
         if not bon_request:
             return jsonify({'success': False, 'message': f'Bon Plate ID {bon_id} tidak ditemukan.'}), 404
             
-        cancellable_statuses = ['menunggu_plate', 'proses_plate', 'proses_ctp']
+        cancellable_statuses = ['proses_ctp']
         if bon_request.status not in cancellable_statuses:
              return jsonify({
                  'success': False,
@@ -3144,7 +3144,7 @@ def cancel_adjustment_plate():
         if not adjustment_request:
             return jsonify({'success': False, 'message': f'Adjustment Plate ID {adjustment_id} tidak ditemukan.'}), 404
 
-        cancellable_statuses = ['menunggu_adjustment_pdnd', 'menunggu_adjustment']
+        cancellable_statuses = ['menunggu_adjustment_pdnd', 'menunggu_adjustment_design']
         if adjustment_request.status not in cancellable_statuses:
              return jsonify({
                  'success': False,

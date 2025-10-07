@@ -365,6 +365,20 @@ h2 {
     border: 1px solid var(--table-border-color); /* Tambah border pada wrapper */
 }
 
+#konfirmasiTable {
+    table-layout: auto !important;
+    width: auto !important;
+}
+#konfirmasiTable th,
+#konfirmasiTable td {
+    white-space: nowrap;
+    font-size: 0.95rem;
+    vertical-align: middle;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 #adjustmentDataTable {
     table-layout: auto !important;
     width: auto !important;
@@ -659,6 +673,14 @@ h2 {
     overflow-y: hidden; /* Hanya scroll horizontal */
     /* Opsional: Jika ingin scroll bar muncul walaupun tabel belum melebihi lebar */
     /* padding-bottom: 1px; agar scroll bar muncul tanpa mengganggu tata letak */
+}
+
+/* Memastikan tabel memiliki lebar yang cukup untuk memicu scroll */
+#konfirmasiTable {
+    min-width: 100%; /* Pertahankan ini untuk pengujian, sesuaikan jika sudah berhasil */
+    width: max-content; /* Ini akan membuat tabel selebar kontennya */
+    /* Atau bisa juga: width: 100%; jika ingin tabel mengisi lebar container-nya,
+       tetapi min-width akan memaksa scroll jika melebihi */
 }
 
 /* Memastikan tabel memiliki lebar yang cukup untuk memicu scroll */
