@@ -28,7 +28,19 @@ const STATUS_BADGE_MAPPING = {
         label: 'Proses Adjustment Design', 
         color: 'info',
         description: 'PIC Design sedang adjustment'
-    },        
+    },
+    'menunggu_adjustment_curve': {
+        class: 'badge-menunggu',
+        label: 'Menunggu Adjustment Curve',
+        color: 'warning',
+        description: 'PIC Press sudah request form'
+    },
+    'proses_adjustment_curve': {
+        class: 'badge-proses',
+        label: 'Proses Adjustment Curve', 
+        color: 'info',
+        description: 'PIC Curve sedang adjustment'
+    },             
     'menunggu_adjustment': {
         class: 'badge-menunggu',
         label: 'Menunggu Mounting',
@@ -104,6 +116,64 @@ const PDND_STATUS_MAPPING = {
         label: 'Proses Adjustment PDND', 
         color: 'info',
         description: 'PIC PDND sedang adjustment'
+    },        
+    'menunggu_adjustment': {
+        class: 'badge-selesai',
+        label: 'Selesai',
+        color: 'success',
+        description: 'PIC PDND sudah selesai adjustment'
+    },
+    'proses_adjustment': {
+        class: 'badge-selesai',
+        label: 'Selesai',
+        color: 'success',
+        description: 'PIC Mounting sedang adjustment'
+    },
+    'proses_ctp': {
+        class: 'badge-selesai',
+        label: 'Selesai',
+        color: 'success',
+        description: 'Adjustment selesai, menunggu CTP'
+    },
+    'proses_plate': {
+        class: 'badge-selesai',
+        label: 'Selesai',
+        color: 'success',
+        description: 'PIC CTP sedang buat plate'
+    },
+    'antar_plate': {
+        class: 'badge-selesai',
+        label: 'Selesai',
+        color: 'success',
+        description: 'Plate selesai, sedang diantar'
+    },
+    'selesai': {
+        class: 'badge-selesai',
+        label: 'Selesai',
+        color: 'success',
+        description: 'Plate sudah sampai di mesin'
+    },
+    'ditolakmounting': {
+        class: 'badge-danger',
+        label: 'Ditolak Mounting',
+        color: 'danger',
+        description: 'Data Adjustment ditolak'
+    }
+};
+
+// Status mapping khusus untuk CURVE Division (Workflow: Menunggu → Proses → Selesai)
+const CURVE_STATUS_MAPPING = {
+    'menunggu_adjustment_curve': {
+        class: 'badge-menunggu',
+        label: 'Menunggu Adjustment Curve',
+        color: 'warning',
+        description: 'PIC Press sudah request form'
+    },
+    'proses_adjustment_curve': {
+        class: 'badge-proses',
+        label: 'Proses Adjustment Curve', 
+        color: 'info',
+        description: 'PIC CURVE sedang adjustment'
     },        
     'menunggu_adjustment': {
         class: 'badge-selesai',
@@ -319,6 +389,8 @@ function getStatusInfo(status, division = 'default') {
             return DESIGN_STATUS_MAPPING[status] || DESIGN_STATUS_MAPPING['menunggu_adjustment_design'];
         case 'mounting':
             return MOUNTING_STATUS_MAPPING[status] || MOUNTING_STATUS_MAPPING['menunggu_adjustment'];
+        case 'curve':
+            return CURVE_STATUS_MAPPING[status] || CURVE_STATUS_MAPPING['menunggu_adjustment_curve'];            
         case 'ctp':
             return CTP_STATUS_MAPPING[status] || CTP_STATUS_MAPPING['proses_ctp'];
         default:
@@ -402,6 +474,7 @@ window.BadgeSystem = {
     STATUS_MAPPING: STATUS_BADGE_MAPPING,
     MOUNTING_MAPPING: MOUNTING_STATUS_MAPPING,
     PDND_MAPPING: PDND_STATUS_MAPPING,
+    CURVE_MAPPING: CURVE_STATUS_MAPPING,
     DESIGN_MAPPING: DESIGN_STATUS_MAPPING,    
     CTP_MAPPING: CTP_STATUS_MAPPING
 };

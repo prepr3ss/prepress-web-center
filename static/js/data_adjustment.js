@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const filterRemarks = document.getElementById('filterRemarks');
     const dataMessage = document.getElementById('dataMessage');
     const adjustmentDataTable = document.getElementById('adjustmentDataTable');
+    const CAN_ACCESS_PRESS = JSON.parse(document.body.dataset.canAccessPress);
 
     let currentPage = 1;
     let totalPages = 1;
@@ -229,11 +230,21 @@ function showContextMenu(rowElement, x, y, row) {
         <button type="button" class="list-group-item list-group-item-action" data-action="detail">
             <i class="fas fa-search me-2"></i> Detail Adjustment
         </button>
-        ${row.status === 'menunggu_adjustment_pdnd' || row.status === 'menunggu_adjustment_design' ? `
-        <button type="button" class="list-group-item list-group-item-action text-danger" data-action="cancel">
-            <i class="fas fa-ban me-2"></i> Cancel Adjustment
-        </button>
-        ` : ''}
+        
+        ${
+            // Tambahkan kondisi ganda:
+            // 1. Status baris harus sesuai untuk pembatalan (menunggu_adjustment_pdnd atau menunggu_adjustment_design)
+            // 2. Variabel global CAN_ACCESS_PRESS harus bernilai true
+            (row.status === 'menunggu_adjustment_pdnd' || row.status === 'menunggu_adjustment_design') && CAN_ACCESS_PRESS 
+            ? 
+            `
+            <button type="button" class="list-group-item list-group-item-action text-danger" data-action="cancel">
+                <i class="fas fa-ban me-2"></i> Cancel Adjustment
+            </button>
+            ` 
+            : 
+            ''
+        }
     `;
 
     document.body.appendChild(contextMenu);

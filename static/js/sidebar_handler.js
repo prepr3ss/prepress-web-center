@@ -21,7 +21,9 @@ document.addEventListener('DOMContentLoaded', function () {
         '/chemical-bon-ctp': { linkId: 'chemicalBonCtpLink', parentSelector: '.ctp-submenu-parent' },
         '/kartu-stock-ctp': { linkId: 'kartuStockCtpLink', parentSelector: '.ctp-submenu-parent' },
         '/pdnd-data-adjustment': { linkId: 'pdndDataAdjustmentLink', parentSelector: '.pdnd-submenu-parent' },
-        '/design-data-adjustment': { linkId: 'designDataAdjustmentLink', parentSelector: '.design-submenu-parent' }
+        '/design-data-adjustment': { linkId: 'designDataAdjustmentLink', parentSelector: '.design-submenu-parent' },
+        '/dashboard-mounting': { linkId: 'dashboardMountingLink', parentSelector: '.mounting-submenu-parent' },
+        '/curve-data-adjustment': { linkId: 'curveDataAdjustmentLink', parentSelector: '.mounting-submenu-parent' }
     };
     
     // Fungsi untuk mengaktifkan tautan dan parent submenu berdasarkan URL

@@ -103,15 +103,23 @@ async function loadKpiData() {
             // Karena tidak ada lagi toast 'Memuat data...' yang dipanggil di awal fungsi ini
 
             if (data.length > 0) {
-                data.forEach(item => {
+                data.forEach((item, index) => {
                     const row = kpiTableBody.insertRow();
                     row.setAttribute('data-id', item.id);
 
+                    // Calculate reversed index for No. column
+                    const totalItems = result.total || (totalPages * perPage);
+                    const itemsPerPage = perPage;
+                    const reversedIndex = totalItems - ((currentPage - 1) * itemsPerPage) - index;
+                    // First cell: No.
+                    let cellNo = row.insertCell();
+                    cellNo.textContent = reversedIndex;
+
                     const columns = [
-                        'id', 'log_date', 'start_time', 'finish_time',
+                        'log_date', 'start_time', 'finish_time',
                         'ctp_group', 'ctp_shift', 'ctp_pic', 'ctp_machine',
                         'wo_number', 'mc_number',
-                        'run_length_sheet', 'print_machine', 'remarks_job', 'note', 'item_name', 'plate_type_material', 'raster',
+                        'run_length_sheet', 'print_machine', 'remarks_job', 'note', 'item_name', 'plate_type_material', 'paper_type', 'raster',
                         'num_plate_good', 'num_plate_not_good', 'not_good_reason',
                         'cyan_25_percent', 'cyan_50_percent', 'cyan_75_percent',
                         'magenta_25_percent', 'magenta_50_percent', 'magenta_75_percent',
@@ -121,6 +129,10 @@ async function loadKpiData() {
                         'z_25_percent', 'z_50_percent', 'z_75_percent',
                         'u_25_percent', 'u_50_percent', 'u_75_percent',
                         'v_25_percent', 'v_50_percent', 'v_75_percent',
+                        'f_25_percent', 'f_50_percent', 'f_75_percent',
+                        'g_25_percent', 'g_50_percent', 'g_75_percent',
+                        'h_25_percent', 'h_50_percent', 'h_75_percent',
+                        'j_25_percent', 'j_50_percent', 'j_75_percent',
                         'created_at', 'updated_at'
                     ];
 
@@ -169,7 +181,6 @@ async function loadKpiData() {
 
                         cell.textContent = value !== null && value !== undefined ? value : '';
                     });
-
                 });
                 // Setelah render, baru assign ke global
                 if (Array.isArray(data)) {
@@ -392,11 +403,23 @@ function showDeleteConfirmation(id) {
     // Set global variable currentDeleteId dengan ID yang akan dihapus
     currentDeleteId = id; 
 
-    // Update modal body dengan ID yang benar
+    // Update modal body dengan nama item yang benar
     const deleteModalEl = document.getElementById('deleteConfirmationModal');
     const modalBody = deleteModalEl ? deleteModalEl.querySelector('.modal-body') : null;
+    let itemName = '';
+    // Cari nama item dari data tabel jika tersedia
+    if (window.kpiTableData && Array.isArray(window.kpiTableData)) {
+        const found = window.kpiTableData.find(row => row.id == id);
+        if (found && found.item_name) {
+            itemName = found.item_name;
+        }
+    }
     if (modalBody) {
-        modalBody.innerHTML = `Apakah Anda yakin ingin menghapus data dengan ID <strong>${id}</strong>? Tindakan ini tidak dapat dibatalkan.`;
+        if (itemName) {
+            modalBody.innerHTML = `Apakah Anda yakin ingin menghapus data <strong>${itemName}</strong>? Tindakan ini tidak dapat dibatalkan.`;
+        } else {
+            modalBody.innerHTML = `Apakah Anda yakin ingin menghapus data? Tindakan ini tidak dapat dibatalkan.`;
+        }
     }
 
     // Tampilkan modal
@@ -498,6 +521,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('dwell_time').value = data.dwell_time || '';
             document.getElementById('raster').value = data.raster || '';
             document.getElementById('plate_type_material').value = data.plate_type_material || '';
+            document.getElementById('paper_type').value = data.paper_type || '';
             document.getElementById('num_plate_good').value = data.num_plate_good || '0';
             document.getElementById('num_plate_not_good').value = data.num_plate_not_good || '0';
             document.getElementById('not_good_reason').value = data.not_good_reason || '';
@@ -517,7 +541,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 'x_25_percent', 'x_50_percent', 'x_75_percent',
                 'z_25_percent', 'z_50_percent', 'z_75_percent',
                 'u_25_percent', 'u_50_percent', 'u_75_percent',
-                'v_25_percent', 'v_50_percent', 'v_75_percent'
+                'v_25_percent', 'v_50_percent', 'v_75_percent',
+                'f_25_percent', 'f_50_percent', 'f_75_percent',
+                'g_25_percent', 'g_50_percent', 'g_75_percent',
+                'h_25_percent', 'h_50_percent', 'h_75_percent',
+                'j_25_percent', 'j_50_percent', 'j_75_percent'              
+
             ];
             rasterFields.forEach(field => {
                 const element = document.getElementById(field);
@@ -575,7 +604,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 'x_25_percent', 'x_50_percent', 'x_75_percent',
                 'z_25_percent', 'z_50_percent', 'z_75_percent',
                 'u_25_percent', 'u_50_percent', 'u_75_percent',
-                'v_25_percent', 'v_50_percent', 'v_75_percent'
+                'v_25_percent', 'v_50_percent', 'v_75_percent',
+                'f_25_percent', 'f_50_percent', 'f_75_percent',
+                'g_25_percent', 'g_50_percent', 'g_75_percent',
+                'h_25_percent', 'h_50_percent', 'h_75_percent',
+                'j_25_percent', 'j_50_percent', 'j_75_percent'               
             ];
             floatFields.forEach(field => {
                 data[field] = data[field] ? parseFloat(data[field]) : null;

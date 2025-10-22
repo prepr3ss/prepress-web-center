@@ -537,8 +537,12 @@
                                             {{ data.run_length }}
                                         </div>
                                     </div>
+                                    <div class="col-md-6">
+                                        <div class="text-muted">Jenis Kertas</div>
+                                        <div class="fw-bold">{{ data.paper_type }}</div>
+                                    </div>                                    
                                     {% if data.note %}
-                                    <div class="col-12">
+                                    <div class="col-6">
                                         <div class="text-muted">Catatan</div>
                                         <div class="alert alert-light border border-warning" style="background: linear-gradient(135deg, #fff8e1 0%, #fffde7 100%); border-radius: 8px; margin-bottom: 0;">
                                             <i class="fas fa-sticky-note me-1 text-warning"></i>
@@ -592,7 +596,7 @@
                                     <div class="timeline-item" data-step="pdnd_start">
                                         <div class="timeline-marker bg-{% if data.pdnd_start_at %}info{% else %}secondary{% endif %}" data-tooltip="Mulai proses penyesuaian"></div>
                                         <div class="timeline-content">
-                                            <div class="fw-bold mb-1">Mulai Adjustment</div>
+                                            <div class="fw-bold mb-1">Mulai Adjustment PDND</div>
                                             <div class="text-dark">
                                                 {% if data.pdnd_start_at %}
                                                     <span data-datetime="{{ data.pdnd_start_at }}" data-pic="{{ data.pdnd_by }}">
@@ -608,7 +612,7 @@
                                     <div class="timeline-item" data-step="pdnd_finish">
                                         <div class="timeline-marker bg-{% if data.pdnd_finish_at %}info{% else %}secondary{% endif %}" data-tooltip="Selesai proses penyesuaian"></div>
                                         <div class="timeline-content">
-                                            <div class="fw-bold mb-1">Selesai Adjustment</div>
+                                            <div class="fw-bold mb-1">Selesai Adjustment PDND</div>
                                             <div class="text-dark">
                                                 {% if data.pdnd_finish_at %}
                                                     <span data-datetime="{{ data.pdnd_finish_at }}" data-pic="{{ data.pdnd_by }}">
@@ -627,7 +631,7 @@
                                     <div class="timeline-item" data-step="design_start">
                                         <div class="timeline-marker bg-{% if data.design_start_at %}info{% else %}secondary{% endif %}" data-tooltip="Mulai proses penyesuaian"></div>
                                         <div class="timeline-content">
-                                            <div class="fw-bold mb-1">Mulai Adjustment</div>
+                                            <div class="fw-bold mb-1">Mulai Adjustment EPSON</div>
                                             <div class="text-dark">
                                                 {% if data.design_start_at %}
                                                     <span data-datetime="{{ data.design_start_at }}" data-pic="{{ data.design_by }}">
@@ -643,12 +647,47 @@
                                     <div class="timeline-item" data-step="design_finish">
                                         <div class="timeline-marker bg-{% if data.design_finish_at %}info{% else %}secondary{% endif %}" data-tooltip="Selesai proses penyesuaian"></div>
                                         <div class="timeline-content">
-                                            <div class="fw-bold mb-1">Selesai Adjustment</div>
+                                            <div class="fw-bold mb-1">Selesai Adjustment EPSON</div>
                                             <div class="text-dark">
                                                 {% if data.design_finish_at %}
                                                     <span data-datetime="{{ data.design_finish_at }}" data-pic="{{ data.design_by }}">
                                                         {{ data.design_finish_at }}
                                                         {% if data.design_by %}<span class="text-muted">[{{ data.design_by }}]</span>{% endif %}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-muted">Belum selesai</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    {% if data.remarks in ['ADJUSTMENT CURVE PROOF', 'ADJUSTMENT CURVE PRODUKSI'] %}
+                                    <div class="timeline-item" data-step="curve_start">
+                                        <div class="timeline-marker bg-{% if data.curve_start_at %}info{% else %}secondary{% endif %}" data-tooltip="Mulai proses penyesuaian curve"></div>
+                                        <div class="timeline-content">
+                                            <div class="fw-bold mb-1">Mulai Adjustment Curve</div>
+                                            <div class="text-dark">
+                                                {% if data.curve_start_at %}
+                                                    <span data-datetime="{{ data.curve_start_at }}" data-pic="{{ data.curve_by }}">
+                                                        {{ data.curve_start_at }}
+                                                        {% if data.curve_by %}<span class="text-muted">[{{ data.curve_by }}]</span>{% endif %}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-muted">Belum dimulai</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="timeline-item" data-step="curve_finish">
+                                        <div class="timeline-marker bg-{% if data.curve_finish_at %}info{% else %}secondary{% endif %}" data-tooltip="Selesai proses penyesuaian curve"></div>
+                                        <div class="timeline-content">
+                                            <div class="fw-bold mb-1">Selesai Adjustment Curve</div>
+                                            <div class="text-dark">
+                                                {% if data.curve_finish_at %}
+                                                    <span data-datetime="{{ data.curve_finish_at }}" data-pic="{{ data.curve_by }}">
+                                                        {{ data.curve_finish_at }}
+                                                        {% if data.curve_by %}<span class="text-muted">[{{ data.curve_by }}]</span>{% endif %}
                                                     </span>
                                                 {% else %}
                                                     <span class="text-muted">Belum selesai</span>
@@ -750,6 +789,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
     <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
     <script src="{{ url_for('static', filename='js/badge_system.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/auto_refresh_handler.js') }}"></script>
     <script>
         // Konversi tanggal ke format Indonesia
         function formatTanggalIndonesia(dateString) {
@@ -914,6 +954,8 @@
             design_finish_at: '{{ data.design_finish_at}}',
             pdnd_start_at: '{{ data.pdnd_start_at }}',
             pdnd_finish_at: '{{ data.pdnd_finish_at }}',
+            curve_start_at: '{{ data.curve_start_at }}',
+            curve_finish_at: '{{ data.curve_finish_at }}',
             adjustment_start_at: '{{ data.adjustment_start_at }}',
             adjustment_finish_at: '{{ data.adjustment_finish_at }}',
             plate_start_at: '{{ data.plate_start_at }}',
@@ -965,18 +1007,22 @@
             // VARIABEL BARU: Ambil status is_epson
             const isEpson = '{{ data.is_epson | tojson }}' === 'true'; // Konversi ke boolean JS
             
-            // Fungsi isRequirePDND menentukan apakah adjustment diperlukan (FA/Curve)
-            // Asumsi: isRequirePDND sudah menangani Remarks FA/Curve
-            const requireAdjustment = isRequirePDND(remarks); 
+            // Fungsi isRequirePDND menentukan apakah adjustment FA diperlukan
+            const requireAdjustment = isRequirePDND(remarks);
+            // Fungsi isRequireCurve menentukan apakah adjustment Curve diperlukan
+            const requireCurve = isRequireCurve(remarks);
             
             let steps = ['machine_off'];
 
-            if (requireAdjustment) {
+            if (requireCurve) {
+                // Option 3: ADJUSTMENT CURVE PROOF/PRODUKSI (regardless of is_epson)
+                steps.push('curve_start', 'curve_finish');
+            } else if (requireAdjustment) {
                 if (isEpson) {
-                    // Jika EPSON: Gunakan langkah Design
+                    // Option 2: ADJUSTMENT FA PROOF/PRODUKSI with is_epson TRUE
                     steps.push('design_start', 'design_finish');
                 } else {
-                    // Jika BUKAN EPSON: Gunakan langkah PDND
+                    // Option 1: ADJUSTMENT FA PROOF/PRODUKSI with is_epson FALSE
                     steps.push('pdnd_start', 'pdnd_finish');
                 }
             }
@@ -1033,16 +1079,22 @@
             const status = '{{ data.status }}';
             const isEpson = '{{ data.is_epson | tojson }}' === 'true'; // Ambil status EPSON
             const requireAdjustment = isRequirePDND(remarks);
+            const requireCurve = isRequireCurve(remarks);
             const isCancelled = status === 'adjustmentdibatalkan';
             const isDeclined = status === 'ditolakmounting' || status === 'ditolakctp';
             
             // --- Perubahan Utama di sini ---
-            // Definisikan langkah-langkah berdasarkan kebutuhan Adjustment (requireAdjustment) dan jenisnya (isEpson)
+            // Definisikan langkah-langkah berdasarkan kebutuhan Adjustment (requireAdjustment/requireCurve) dan jenisnya (isEpson)
             let adjustmentSteps = [];
-            if (requireAdjustment) {
+            if (requireCurve) {
+                // Option 3: ADJUSTMENT CURVE PROOF/PRODUKSI (regardless of is_epson)
+                adjustmentSteps = ['curve_start', 'curve_finish'];
+            } else if (requireAdjustment) {
                 if (isEpson) {
+                    // Option 2: ADJUSTMENT FA PROOF/PRODUKSI with is_epson TRUE
                     adjustmentSteps = ['design_start', 'design_finish'];
                 } else {
+                    // Option 1: ADJUSTMENT FA PROOF/PRODUKSI with is_epson FALSE
                     adjustmentSteps = ['pdnd_start', 'pdnd_finish'];
                 }
             }
@@ -1051,10 +1103,10 @@
             const steps = [
                 'machine_off',
                 ...adjustmentSteps,
-                'adjustment_start', 
-                'adjustment_finish', 
-                'plate_start', 
-                'plate_finish', 
+                'adjustment_start',
+                'adjustment_finish',
+                'plate_start',
+                'plate_finish',
                 'plate_delivered'
             ];
             // --------------------------------
@@ -1248,53 +1300,257 @@
             const faRemarks = ['ADJUSTMENT FA PROOF', 'ADJUSTMENT FA PRODUKSI'];
             return faRemarks.includes(remarks.toUpperCase());
         }
+        
+        function isRequireCurve(remarks) {
+            const curveRemarks = ['ADJUSTMENT CURVE PROOF', 'ADJUSTMENT CURVE PRODUKSI'];
+            return curveRemarks.includes(remarks.toUpperCase());
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
             const remarks = '{{ data.remarks }}';
             const timelineContainer = document.getElementById('timelineContainer');
             const requirePDND = isRequirePDND(remarks);
+            const requireCurve = isRequireCurve(remarks);
 
             // Sembunyikan elemen PDND jika tidak diperlukan
             if (!requirePDND) {
                 const pdndElements = document.querySelectorAll('[data-step="pdnd_start"], [data-step="pdnd_finish"]');
                 pdndElements.forEach(el => el.style.display = 'none');
-                
-                // Sembunyikan segment timeline yang terkait
-                document.getElementById('segment-5').style.display = 'none';
-                document.getElementById('segment-6').style.display = 'none';
-
-                // Sesuaikan tinggi segment lainnya
-                const segments = document.querySelectorAll('.timeline-segment');
-                segments.forEach(segment => {
-                    if (segment.style.display !== 'none') {
-                        segment.style.height = '65px';
-                    }
-                });
             }
+            
+            // Sembunyikan elemen Design jika tidak diperlukan
+            if (!requirePDND || requireCurve) {
+                const designElements = document.querySelectorAll('[data-step="design_start"], [data-step="design_finish"]');
+                designElements.forEach(el => el.style.display = 'none');
+            }
+            
+            // Sembunyikan elemen Curve jika tidak diperlukan
+            if (!requireCurve) {
+                const curveElements = document.querySelectorAll('[data-step="curve_start"], [data-step="curve_finish"]');
+                curveElements.forEach(el => el.style.display = 'none');
+            }
+
+            // Sesuaikan tinggi segment lainnya
+            const segments = document.querySelectorAll('.timeline-segment');
+            segments.forEach(segment => {
+                if (segment.style.display !== 'none') {
+                    segment.style.height = '65px';
+                }
+            });
         });
         
+        // Global auto-refresh handler instance using singleton pattern
+        let autoRefreshHandler = null;
+
         function setupAutoRefresh() {
-            // Auto refresh every 30 seconds
-            setInterval(async function() {
-                try {
-                    const response = await fetch(window.location.href);
-                    if (response.ok) {
-                        // Show update indicator
-                        const indicator = document.getElementById('updateIndicator');
-                        indicator.style.display = 'block';
-                        
-                        setTimeout(() => {
-                            indicator.style.display = 'none';
-                        }, 2000);
-                        
-                        // Here you would typically update the data
-                        // For now, we'll just show the indicator
-                    }
-                } catch (error) {
-                    console.log('Auto-refresh failed:', error);
-                }
-            }, 30000);
+            // Extract adjustment ID from URL path
+            const pathParts = window.location.pathname.split('/');
+            const adjustmentId = pathParts[pathParts.length - 1];
+            
+            // Validate that adjustmentId is a number
+            if (!adjustmentId || isNaN(parseInt(adjustmentId))) {
+                console.error('Valid adjustment ID not found in URL, auto-refresh disabled');
+                return;
+            }
+            
+            // Use singleton pattern to prevent multiple instances
+            autoRefreshHandler = AutoRefreshHandler.getInstance({
+                refreshInterval: 15000,        // 15 seconds
+                inactivityDelay: 3000,         // 3 seconds of inactivity before pause
+                errorRetryInterval: 60000,     // 1 minute on error
+                maxRetries: 3,                 // Maximum retry attempts
+                loadingIndicatorSelector: '#updateIndicator',
+                enableLogging: true,           // Enable console logging for debugging
+                apiEndpoint: `/api/check-detail-adjustment/${adjustmentId}`,  // Use new API endpoint
+                dataType: 'adjustment'         // Specify data type
+            });
         }
+
+        // Function to update timeline data (called by auto-refresh handler)
+        window.updateTimelineData = function() {
+            // Update timeline data object with fresh values from the page
+            // This function is now safe to call multiple times
+            if (typeof timelineData !== 'undefined') {
+                timelineData.machine_off_at = document.querySelector('[data-step="machine_off"] [data-datetime]')?.getAttribute('data-datetime') || '';
+                timelineData.design_start_at = document.querySelector('[data-step="design_start"] [data-datetime]')?.getAttribute('data-datetime') || '';
+                timelineData.design_finish_at = document.querySelector('[data-step="design_finish"] [data-datetime]')?.getAttribute('data-datetime') || '';
+                timelineData.pdnd_start_at = document.querySelector('[data-step="pdnd_start"] [data-datetime]')?.getAttribute('data-datetime') || '';
+                timelineData.pdnd_finish_at = document.querySelector('[data-step="pdnd_finish"] [data-datetime]')?.getAttribute('data-datetime') || '';
+                timelineData.curve_start_at = document.querySelector('[data-step="curve_start"] [data-datetime]')?.getAttribute('data-datetime') || '';
+                timelineData.curve_finish_at = document.querySelector('[data-step="curve_finish"] [data-datetime]')?.getAttribute('data-datetime') || '';
+                timelineData.adjustment_start_at = document.querySelector('[data-step="adjustment_start"] [data-datetime]')?.getAttribute('data-datetime') || '';
+                timelineData.adjustment_finish_at = document.querySelector('[data-step="adjustment_finish"] [data-datetime]')?.getAttribute('data-datetime') || '';
+                timelineData.plate_start_at = document.querySelector('[data-step="plate_start"] [data-datetime]')?.getAttribute('data-datetime') || '';
+                timelineData.plate_finish_at = document.querySelector('[data-step="plate_finish"] [data-datetime]')?.getAttribute('data-datetime') || '';
+                timelineData.plate_delivered_at = document.querySelector('[data-step="plate_delivered"] [data-datetime]')?.getAttribute('data-datetime') || '';
+            }
+        };
+
+        // Function to update timeline visual state without re-initializing
+        window.updateTimelineVisualState = function(data) {
+            console.log('Updating adjustment timeline visual state with data:', data);
+            
+            // Update timeline data object first
+            if (typeof timelineData !== 'undefined') {
+                timelineData.machine_off_at = data.machine_off_at || '';
+                timelineData.design_start_at = data.design_start_at || '';
+                timelineData.design_finish_at = data.design_finish_at || '';
+                timelineData.pdnd_start_at = data.pdnd_start_at || '';
+                timelineData.pdnd_finish_at = data.pdnd_finish_at || '';
+                timelineData.curve_start_at = data.curve_start_at || '';
+                timelineData.curve_finish_at = data.curve_finish_at || '';
+                timelineData.adjustment_start_at = data.adjustment_start_at || '';
+                timelineData.adjustment_finish_at = data.adjustment_finish_at || '';
+                timelineData.plate_start_at = data.plate_start_at || '';
+                timelineData.plate_finish_at = data.plate_finish_at || '';
+                timelineData.plate_delivered_at = data.plate_delivered_at || '';
+            }
+            
+            // Determine which steps to show based on data
+            const remarks = data.remarks || '';
+            const isEpson = data.is_epson || false;
+            const requireAdjustment = isRequirePDND(remarks);
+            const requireCurve = isRequireCurve(remarks);
+            
+            let steps = ['machine_off'];
+            
+            if (requireCurve) {
+                // Option 3: ADJUSTMENT CURVE PROOF/PRODUKSI (regardless of is_epson)
+                steps.push('curve_start', 'curve_finish');
+            } else if (requireAdjustment) {
+                if (isEpson) {
+                    // Option 2: ADJUSTMENT FA PROOF/PRODUKSI with is_epson TRUE
+                    steps.push('design_start', 'design_finish');
+                } else {
+                    // Option 1: ADJUSTMENT FA PROOF/PRODUKSI with is_epson FALSE
+                    steps.push('pdnd_start', 'pdnd_finish');
+                }
+            }
+            
+            steps.push('adjustment_start', 'adjustment_finish', 'plate_start', 'plate_finish', 'plate_delivered');
+            
+            // Update timeline markers and segments based on new data
+            steps.forEach((step, index) => {
+                const stepData = data[step + '_at'];
+                const item = document.querySelector(`[data-step="${step}"]`);
+                const marker = item?.querySelector('.timeline-marker');
+                const segment = document.getElementById(`segment-${index}`);
+                const textElement = item?.querySelector('.text-dark');
+                
+                if (item && marker) {
+                    // Remove existing states
+                    marker.classList.remove('active', 'completed', 'pulse');
+                    item.classList.remove('active');
+                    
+                    if (stepData && stepData !== '' && stepData !== '-' && stepData !== 'None') {
+                        // Mark as completed
+                        marker.classList.add('completed');
+                        
+                        // Update segment
+                        if (segment) {
+                            segment.classList.add('completed');
+                            segment.classList.remove('cancelled', 'declined');
+                        }
+                        
+                        // Update timeline text content with actual data
+                        if (textElement) {
+                            const picField = {
+                                'machine_off': 'pic',
+                                'design_start': 'design_by',
+                                'design_finish': 'design_by',
+                                'pdnd_start': 'pdnd_by',
+                                'pdnd_finish': 'pdnd_by',
+                                'curve_start': 'curve_by',
+                                'curve_finish': 'curve_by',
+                                'adjustment_start': 'adjustment_by',
+                                'adjustment_finish': 'adjustment_by',
+                                'plate_start': 'ctp_by',
+                                'plate_finish': 'ctp_by',
+                                'plate_delivered': 'ctp_by'
+                            };
+                            
+                            const pic = data[picField[step]] || '';
+                            if (pic) {
+                                textElement.innerHTML = `${stepData} <span class="text-muted">[${pic}]</span>`;
+                            } else {
+                                textElement.textContent = stepData;
+                            }
+                        }
+                    } else {
+                        // Check if this is the first incomplete step (active)
+                        const isPreviousStepCompleted = index === 0 ||
+                            (data[steps[index-1] + '_at'] && data[steps[index-1] + '_at'] !== '' && data[steps[index-1] + '_at'] !== '-' && data[steps[index-1] + '_at'] !== 'None');
+                        
+                        if (isPreviousStepCompleted) {
+                            marker.classList.add('active', 'pulse');
+                            item.classList.add('active');
+                        }
+                        
+                        // Update segment
+                        if (segment) {
+                            segment.classList.remove('completed', 'cancelled', 'declined');
+                        }
+                        
+                        // Set default text for incomplete steps
+                        if (textElement) {
+                            const defaultTexts = {
+                                'machine_off': 'Mesin Off',
+                                'design_start': 'Belum dimulai',
+                                'design_finish': 'Belum selesai',
+                                'pdnd_start': 'Belum dimulai',
+                                'pdnd_finish': 'Belum selesai',
+                                'curve_start': 'Belum dimulai',
+                                'curve_finish': 'Belum selesai',
+                                'adjustment_start': 'Belum dimulai',
+                                'adjustment_finish': 'Belum selesai',
+                                'plate_start': 'Belum dimulai',
+                                'plate_finish': 'Belum selesai',
+                                'plate_delivered': 'Belum sampai'
+                            };
+                            
+                            if (step === 'machine_off') {
+                                // For machine_off, show the actual data if available
+                                if (data.machine_off_at) {
+                                    const pic = data.pic || '';
+                                    if (pic) {
+                                        textElement.innerHTML = `${data.machine_off_at} <span class="text-muted">[${pic}]</span>`;
+                                    } else {
+                                        textElement.textContent = data.machine_off_at;
+                                    }
+                                }
+                            } else {
+                                // For other steps, keep the default text
+                                textElement.innerHTML = `<span class="text-muted">${defaultTexts[step]}</span>`;
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Handle special statuses (cancelled/declined)
+            if (data.status === 'adjustmentdibatalkan' || data.status === 'ditolakmounting' || data.status === 'ditolakctp') {
+                // Mark all segments and markers as cancelled/declined
+                document.querySelectorAll('.timeline-segment').forEach(seg => {
+                    seg.classList.add(data.status === 'adjustmentdibatalkan' ? 'cancelled' : 'declined');
+                    seg.classList.remove('completed');
+                });
+                
+                document.querySelectorAll('.timeline-marker').forEach(mark => {
+                    mark.classList.add(data.status === 'adjustmentdibatalkan' ? 'cancelled' : 'declined');
+                    mark.classList.remove('completed', 'active', 'pulse');
+                });
+            }
+            
+            console.log('Adjustment timeline visual state updated');
+        };
+
+        // Cleanup function to destroy auto-refresh handler when page unloads
+        window.addEventListener('beforeunload', function() {
+            AutoRefreshHandler.destroyInstance();
+        });
+
+        // No need for visibility change handling anymore
+        // Auto-refresh continues regardless of page visibility
         
         function capitalizeFirst(str) {
             return str.charAt(0).toUpperCase() + str.slice(1);

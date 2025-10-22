@@ -8,22 +8,119 @@ import os
 import random
 import pymysql
 from plate_mappings import PlateTypeMapping
+
+# Import required modules
 from io import BytesIO
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill
 from openpyxl.utils import get_column_letter
 from urllib.parse import quote_plus
-from sqlalchemy import and_, or_, cast, String, extract, func
-from bon_routes import init_bon_routes, PLATE_DETAILS
+from sqlalchemy import and_, or_, cast, String, extract, func, literal_column, text
 from flask_migrate import Migrate
+
+# Plate details dictionary moved from bon_routes.py
+PLATE_DETAILS = {
+    'SAPHIRA': {
+        '1030': {
+            'size': '1030 X 790 MM',
+            'code': '02-049-000-0000002',
+            'name': '(SUT1.PAO1SX1) SAPHIRA PA.27 27x1030x790 PKT50 (BOX 50PCS)'
+        },
+        '1055': {
+            'size': '1055 X 811 MM',
+            'code': '02-049-000-0000003',
+            'name': '(SUT1.PAO1SY3) SAPHIRA PA.27 27X1055X811 PKT50 (BOX 50PCS)'
+        },
+        '1055 PN': {
+            'size': '1055 X 811 MM',
+            'code': '02-049-000-0000011',
+            'name': '(SUT1.PNO7U8C) SAPHIRA PN 30 1055 X 811 MM PKT40 (BOX 40PCS)'
+        },
+        '1630': {
+            'size': '1630 X 1325 MM',
+            'code': '02-049-000-0000001',
+            'name': '(SUT1.PNOQXG8) SAPHIRA PN 40 1630 1325 PKT 30 (BOX 30PCS)'
+        }
+    },
+    'FUJI': {
+        '1030': {
+            'size': '1030 X 790 MM',
+            'code': '02-049-000-0000008',
+            'name': 'PLATE FUJI LH-PK 1030x790x0.3 (BOX 30PCS)'
+        },
+        '1030 UV': {
+            'size': '1030 X 790 MM',
+            'code': '02-023-000-0000007',
+            'name': 'PLATE FUJI LH-PJ2 1030x790x0.3 (BOX 30PCS)'
+        },
+        '1055': {
+            'size': '1055 X 811 MM',
+            'code': '02-049-000-0000010',
+            'name': 'PLATE FUJI LH-PK 1055x811x0.3 (BOX 30PCS)'
+        },
+        '1055 LHPL': {
+            'size': '1055 X 811 MM',
+            'code': '02-049-000-0000013',
+            'name': 'PLATE FUJI LH-PL 1055x811x0.3 (BOX 30PCS)'
+        },
+        '1055 UV': {
+            'size': '1055 X 811 MM',
+            'code': '02-049-000-0000012',
+            'name': 'PLATE FUJI LH-PJ2 1055x811x0.3 (BOX 30PCS)'
+        },
+        '1630': {
+            'size': '1630 X 1325 MM',
+            'code': '02-049-000-0000009',
+            'name': 'PLATE FUJI LH-PJ2 1630x1325x0.4 (BOX 15PCS)'
+        }
+    }
+}
 import pytz
 from flask import jsonify, flash
 import locale
 
+# Timezone untuk Jakarta
+jakarta_tz = pytz.timezone('Asia/Jakarta')
+now_jakarta = datetime.now(jakarta_tz)
 
 # Impor konfigurasi database Anda dari config.py
 from config import DB_CONFIG
 from datetime import datetime, time, timedelta
+
+# Helper function to format datetime in Indonesian
+def format_datetime_indonesia(dt):
+    """Format datetime to Indonesian format"""
+    if not dt:
+        return ''
+    
+    bulan_indonesia = [
+        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ]
+    
+    day = dt.day
+    month = bulan_indonesia[dt.month - 1]
+    year = dt.year
+    hour = str(dt.hour).zfill(2)
+    minute = str(dt.minute).zfill(2)
+    
+    return f"{day} {month} {year} - {hour}:{minute}"
+
+def format_tanggal_indonesia(dt):
+    """Format date to Indonesian format"""
+    if not dt:
+        return ''
+    
+    bulan_indonesia = [
+        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ]
+    
+    day = dt.day
+    month = bulan_indonesia[dt.month - 1]
+    year = dt.year
+    
+    return f"{day} {month} {year}"
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here-change-in-production'  # Ganti dengan key yang aman
@@ -59,11 +156,12 @@ from datetime import datetime, timedelta
 def check_notifications():
     notifications = {
         # Ganti 'ctp' dengan 'ctp_adjustment' dan 'ctp_bon'
-        'ctp_adjustment': [], 
+        'ctp_adjustment': [],
         'ctp_bon': [],
         'pdnd': [],
         'design': [],
         'mounting': [],
+        'curve': [],
     }
     
     try:
@@ -102,15 +200,25 @@ def check_notifications():
             PlateAdjustmentRequest.status.in_(mounting_states)
         ).all()
 
+        # Curve notifications (non-EPSON items)
+        curve_states = ['menunggu_adjustment_curve', 'proses_adjustment_curve', 'ditolakmounting']
+        curve_q = PlateAdjustmentRequest.query.filter(
+            PlateAdjustmentRequest.status.in_(curve_states),
+            
+        )
+        notifications['curve'] = curve_q.all()
 
         # Pastikan data yang dikirim ke frontend hanyalah list status
-        return jsonify({
+        result = {
             'ctp_adjustment': [{'status': item.status} for item in notifications['ctp_adjustment']],
             'ctp_bon': [{'status': item.status} for item in notifications['ctp_bon']],
             'pdnd': [{'status': item.status} for item in notifications['pdnd']],
             'design': [{'status': item.status} for item in notifications['design']],
-            'mounting': [{'status': item.status} for item in notifications['mounting']]
-        })
+            'mounting': [{'status': item.status} for item in notifications['mounting']],
+            'curve': [{'status': item.status} for item in notifications['curve']]
+        }
+        
+        return jsonify(result)
 
     except Exception as e:
         print(f"Error checking notifications: {str(e)}")
@@ -554,6 +662,7 @@ class CTPProductionLog(db.Model):
     item_name = db.Column(db.String(255), nullable=False)
     note = db.Column(db.String(255))
     plate_type_material = db.Column(db.String(100), nullable=False)
+    paper_type = db.Column(db.String(100), nullable=False)    
     raster = db.Column(db.String(50), nullable=False)
     num_plate_good = db.Column(db.Integer)
     num_plate_not_good = db.Column(db.Integer)
@@ -582,6 +691,18 @@ class CTPProductionLog(db.Model):
     v_25_percent = db.Column(db.Float)
     v_50_percent = db.Column(db.Float)
     v_75_percent = db.Column(db.Float)
+    f_25_percent = db.Column(db.Float)
+    f_50_percent = db.Column(db.Float)
+    f_75_percent = db.Column(db.Float)
+    g_25_percent = db.Column(db.Float)
+    g_50_percent = db.Column(db.Float)
+    g_75_percent = db.Column(db.Float)
+    h_25_percent = db.Column(db.Float)
+    h_50_percent = db.Column(db.Float)
+    h_75_percent = db.Column(db.Float)
+    j_25_percent = db.Column(db.Float)
+    j_50_percent = db.Column(db.Float)
+    j_75_percent = db.Column(db.Float)    
     start_time = db.Column(db.Time)   # UBAH INI: dari db.String menjadi db.Time
     finish_time = db.Column(db.Time)  # UBAH INI: dari db.String menjadi db.Time
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -605,6 +726,7 @@ class CTPProductionLog(db.Model):
             'item_name': self.item_name,
             'note': self.note,
             'plate_type_material': self.plate_type_material,
+            'paper_type': self.paper_type,
             'raster': self.raster,
             'num_plate_good': self.num_plate_good,
             'num_plate_not_good': self.num_plate_not_good,
@@ -633,6 +755,18 @@ class CTPProductionLog(db.Model):
             'v_25_percent': self.v_25_percent,
             'v_50_percent': self.v_50_percent,
             'v_75_percent': self.v_75_percent,
+            'f_25_percent': self.f_25_percent,
+            'f_50_percent': self.f_50_percent,
+            'f_75_percent': self.f_75_percent,
+            'g_25_percent': self.g_25_percent,
+            'g_50_percent': self.g_50_percent,
+            'g_75_percent': self.g_75_percent,
+            'h_25_percent': self.h_25_percent,
+            'h_50_percent': self.h_50_percent,
+            'h_75_percent': self.h_75_percent,
+            'j_25_percent': self.j_25_percent,
+            'j_50_percent': self.j_50_percent,
+            'j_75_percent': self.j_75_percent,
             'start_time': self.start_time.strftime('%H:%M') if self.start_time else None, # UBAH INI
             'finish_time': self.finish_time.strftime('%H:%M') if self.finish_time else None, # UBAH INI
             'created_at': self.created_at.isoformat() if self.created_at else None,
@@ -651,6 +785,7 @@ class PlateAdjustmentRequest(db.Model):
     mc_number = db.Column(db.String(100), nullable=False)
     run_length = db.Column(db.Integer, nullable=True)
     item_name = db.Column(db.String(255), nullable=False)
+    paper_type = db.Column(db.String(100), nullable=False)  # Kolom baru untuk jenis kertas
     ctp_group = db.Column(db.String(50), nullable=True)  # Kolom baru untuk grup CTP
     jumlah_plate = db.Column(db.Integer, nullable=False)
     note = db.Column(db.String(255), nullable=True)
@@ -662,6 +797,10 @@ class PlateAdjustmentRequest(db.Model):
     pdnd_start_at = db.Column(db.DateTime, nullable=True)
     pdnd_finish_at = db.Column(db.DateTime, nullable=True)
     pdnd_by = db.Column(db.String(100), nullable=True)
+
+    curve_start_at = db.Column(db.DateTime, nullable=True)
+    curve_finish_at = db.Column(db.DateTime, nullable=True)
+    curve_by = db.Column(db.String(100), nullable=True)
 
     design_start_at = db.Column(db.DateTime, nullable=True)
     design_finish_at = db.Column(db.DateTime, nullable=True)
@@ -701,7 +840,7 @@ class PlateAdjustmentRequest(db.Model):
         # 1. Prioritas Tertinggi: Cek Remarks CURVE
         # Jika Remarks adalah CURVE, abaikan is_epson, langsung ke 'menunggu_adjustment'
         if self.remarks and self.remarks.upper() in curve_remarks:
-            self.status = 'menunggu_adjustment' 
+            self.status = 'menunggu_adjustment_curve' 
             
         # 2. Prioritas Kedua: Cek Item EPSON (Hanya berlaku untuk FA)
         # Jika Remarks adalah FA DAN is_epson = True, kirim ke 'design'
@@ -728,6 +867,7 @@ class PlateAdjustmentRequest(db.Model):
             'mc_number': self.mc_number,
             'run_length': self.run_length,
             'item_name': self.item_name,
+            'paper_type': self.paper_type,
             'jumlah_plate': self.jumlah_plate,
             'note': self.note,
             'machine_off_at': self.machine_off_at.isoformat() if self.machine_off_at else None,
@@ -738,6 +878,9 @@ class PlateAdjustmentRequest(db.Model):
             'pdnd_start_at': self.pdnd_start_at.isoformat() if self.pdnd_start_at else None,
             'pdnd_finish_at': self.pdnd_finish_at.isoformat() if self.pdnd_finish_at else None,
             'pdnd_by': self.pdnd_by,
+            'curve_start_at': self.curve_start_at.isoformat() if self.curve_start_at else None,
+            'curve_finish_at': self.curve_finish_at.isoformat() if self.curve_finish_at else None,
+            'curve_by': self.curve_by,
             'adjustment_start_at': self.adjustment_start_at.isoformat() if self.adjustment_start_at else None,
             'adjustment_finish_at': self.adjustment_finish_at.isoformat() if self.adjustment_finish_at else None,
             'adjustment_by': self.adjustment_by,
@@ -1408,6 +1551,7 @@ class PlateBonRequest(db.Model):
     mc_number = db.Column(db.String(100), nullable=False)
     run_length = db.Column(db.Integer, nullable=True)
     item_name = db.Column(db.String(255), nullable=False)
+    paper_type = db.Column(db.String(100), nullable=False)  # Kolom baru untuk jenis kertas
     jumlah_plate = db.Column(db.Integer, nullable=False)
     note = db.Column(db.String(255), nullable=True)
     machine_off_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -1438,6 +1582,7 @@ class PlateBonRequest(db.Model):
             'mc_number': self.mc_number,
             'run_length': self.run_length,
             'item_name': self.item_name,
+            'paper_type': self.paper_type,
             'jumlah_plate': self.jumlah_plate,
             'note': self.note,
             'machine_off_at': self.machine_off_at.isoformat() if self.machine_off_at else None,
@@ -1746,7 +1891,7 @@ def get_kartu_stock():
         
         all_confirmed = all(stock.get('confirmed', False) for stock in brand_stocks)
         if all_confirmed:
-            confirmed_by = User.query.get(brand_stocks[0].get('confirmed_by'))
+            confirmed_by = db.session.get(User, brand_stocks[0].get('confirmed_by'))
             return {
                 "confirmed": True,
                 "confirmedBy": confirmed_by.name if confirmed_by else "Unknown"
@@ -1816,7 +1961,7 @@ def confirm_stock():
         
         for stock in stocks:
             stock.update_stock()  # Pastikan data terbaru
-            stock.confirmed_at = datetime.utcnow()
+            stock.confirmed_at = now_jakarta
             stock.confirmed_by = current_user.id
             stocks_updated = True
 
@@ -2233,7 +2378,7 @@ def save_monthly_work_hours():
             # Update existing record
             existing_record.total_work_hours_proof = float(data['total_work_hours_proof'])
             existing_record.total_work_hours_produksi = float(data['total_work_hours_produksi'])
-            existing_record.updated_at = datetime.utcnow()
+            existing_record.updated_at = now_jakarta
         else:
             # Create new record
             new_record = MonthlyWorkHours(
@@ -2241,8 +2386,8 @@ def save_monthly_work_hours():
                 month=data['month'],
                 total_work_hours_proof=float(data['total_work_hours_proof']),
                 total_work_hours_produksi=float(data['total_work_hours_produksi']),
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow()
+                created_at=now_jakarta,
+                updated_at=now_jakarta
             )
             db.session.add(new_record)
             
@@ -2666,7 +2811,7 @@ def edit_kpi_ctp_page(data_id):
         return render_template('edit_kpi_ctp.html', data_id=data_id)
 
     # Non-admin: cek apakah data <24 jam
-    now = datetime.utcnow()
+    now = now_jakarta
     if kpi_entry.created_at:
         age = now - kpi_entry.created_at
         if age.total_seconds() <= 24 * 3600:
@@ -2688,17 +2833,61 @@ def request_plate_adjustment_page():
 def request_plate_bon_page():
     return render_template('request_plate_bon.html')
 
+def require_any_press_submenu_access(f):
+    """
+    Memastikan pengguna memiliki setidaknya salah satu dari hak akses berikut:
+    Press, CTP, Mounting, atau PDND.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Periksa apakah user memiliki SALAH SATU dari hak akses
+        has_access = (
+            current_user.can_access_press() or
+            current_user.can_access_ctp() or
+            current_user.can_access_mounting() or
+            current_user.can_access_pdnd() or
+            current_user.can_access_design()
+        )
+        
+        if not has_access:
+            # Jika tidak ada akses, batalkan permintaan (Unauthorized)
+            abort(403) 
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
+def require_press_bon_access(f):
+    """
+    Memastikan pengguna memiliki setidaknya salah satu dari hak akses berikut:
+    Press, CTP, Mounting, atau PDND.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Periksa apakah user memiliki SALAH SATU dari hak akses
+        has_access = (
+            current_user.can_access_press() or
+            current_user.can_access_ctp()
+        )
+        
+        if not has_access:
+            # Jika tidak ada akses, batalkan permintaan (Unauthorized)
+            abort(403) 
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 # NEW: Rute untuk halaman Data Adjustment
 @app.route('/data-adjustment')
 @login_required
-@require_press_access
+@require_any_press_submenu_access
 def data_adjustment_page():
     return render_template('data_adjustment.html', current_user=current_user)
 
 # NEW: Rute untuk halaman Data Bon
 @app.route('/data-bon')
 @login_required
-@require_press_access
+@require_press_bon_access
 def data_bon_page():
     return render_template('data_bon.html')
 
@@ -2838,6 +3027,7 @@ def submit_plate_adjustment():
             mc_number=data['mc_number'],
             run_length=data.get('run_length'),
             item_name=data['item_name'],
+            paper_type=data['paper_type'],
             jumlah_plate=data['jumlah_plate'],
             note=data.get('note'),
             machine_off_at=now_jakarta,  # waktu mesin off otomatis
@@ -2869,6 +3059,7 @@ def submit_plate_bon():
             mc_number=data['mc_number'],
             run_length=data.get('run_length'),
             item_name=data['item_name'],
+            paper_type=data['paper_type'],
             jumlah_plate=data['jumlah_plate'],
             note=data.get('note'),
             machine_off_at=now_jakarta  # waktu mesin off otomatis
@@ -2879,6 +3070,177 @@ def submit_plate_bon():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 400
+
+# --- Mounting Dashboard Routes ---
+@app.route('/dashboard-mounting')
+@login_required
+@require_mounting_access
+def dashboard_mounting():
+    return render_template('dashboard_mounting.html')
+
+@app.route('/get-mounting-dashboard-data')
+@login_required
+@require_mounting_access
+def get_mounting_dashboard_data():
+    try:
+        # Ambil year dan month. Jika month kosong (""), request.args.get dengan type=int akan menghasilkan None.
+        year = request.args.get('year', type=int)
+        month = request.args.get('month', type=int)
+
+        # Jika tidak ada tahun yang ditentukan, gunakan tahun dan bulan saat ini
+        if not year:
+            current_date = datetime.now()
+            year = current_date.year
+            month = current_date.month
+
+        # Remarks lists
+        fa_remarks = ['ADJUSTMENT FA PROOF', 'ADJUSTMENT FA PRODUKSI']
+        curve_remarks = ['ADJUSTMENT CURVE PROOF', 'ADJUSTMENT CURVE PRODUKSI']
+        fa_upper = [r.upper() for r in fa_remarks]
+        curve_upper = [r.upper() for r in curve_remarks]
+        combined_upper = fa_upper + curve_upper
+
+        # --- Base Filters Dibuat Sekali ---
+        # Filters umum: status 'selesai', adjustment_start_at ada, tahun sesuai, dan remarks sesuai.
+        base_filters = [
+            PlateAdjustmentRequest.status == 'selesai',
+            PlateAdjustmentRequest.adjustment_start_at != None,
+            extract('year', PlateAdjustmentRequest.adjustment_start_at) == year,
+            func.upper(PlateAdjustmentRequest.remarks).in_(combined_upper)
+        ]
+
+        # Tambahkan filter bulan hanya jika bulan ditentukan (month != None)
+        month_filter = [
+            extract('month', PlateAdjustmentRequest.adjustment_start_at) == month
+        ] if month else []
+        
+        # Filters lengkap (base_filters + month_filter)
+        full_filters = base_filters + month_filter
+        
+        # Filters untuk total FA
+        fa_filters = base_filters + month_filter + [func.upper(PlateAdjustmentRequest.remarks).in_(fa_upper)]
+        
+        # Filters untuk total Curve
+        curve_filters = base_filters + month_filter + [func.upper(PlateAdjustmentRequest.remarks).in_(curve_upper)]
+        
+        # Filters untuk Minutes (membutuhkan adjustment_finish_at)
+        minutes_condition = PlateAdjustmentRequest.adjustment_finish_at != None
+        minutes_filters = full_filters + [minutes_condition]
+        
+        fa_minutes_filters = fa_filters + [minutes_condition]
+        curve_minutes_filters = curve_filters + [minutes_condition]
+
+        # --- Totals (counts) ---
+        total_adjustments = PlateAdjustmentRequest.query.filter(*full_filters).count()
+        
+        # Menggunakan filter yang telah dibuat
+        total_fa = PlateAdjustmentRequest.query.filter(*fa_filters).count()
+        total_curve = PlateAdjustmentRequest.query.filter(*curve_filters).count()
+
+        # --- Minutes Calculations ---
+        total_minutes = db.session.query(
+            func.coalesce(func.sum(
+                func.timestampdiff(
+                    literal_column('MINUTE'),
+                    PlateAdjustmentRequest.adjustment_start_at,
+                    PlateAdjustmentRequest.adjustment_finish_at
+                )
+            ), 0)
+        ).filter(*minutes_filters).scalar() or 0
+
+        # Minutes for FA and Curve separately
+        fa_minutes = db.session.query(
+            func.coalesce(func.sum(
+                func.timestampdiff(
+                    literal_column('MINUTE'),
+                    PlateAdjustmentRequest.adjustment_start_at,
+                    PlateAdjustmentRequest.adjustment_finish_at
+                )
+            ), 0)
+        ).filter(*fa_minutes_filters).scalar() or 0
+
+        curve_minutes = db.session.query(
+            func.coalesce(func.sum(
+                func.timestampdiff(
+                    literal_column('MINUTE'),
+                    PlateAdjustmentRequest.adjustment_start_at,
+                    PlateAdjustmentRequest.adjustment_finish_at
+                )
+            ), 0)
+        ).filter(*curve_minutes_filters).scalar() or 0
+
+        avg_minutes_per_job = total_minutes / total_adjustments if total_adjustments > 0 else 0
+        avg_minutes_fa = fa_minutes / total_fa if total_fa > 0 else 0
+        avg_minutes_curve = curve_minutes / total_curve if total_curve > 0 else 0
+
+        # --- Per-Adjuster Cards ---
+        adjuster_filters = full_filters + [
+            PlateAdjustmentRequest.adjustment_by != None,
+            PlateAdjustmentRequest.adjustment_by != '',
+        ]
+        
+        # Dapatkan daftar adjusters unik
+        adjuster_rows = db.session.query(PlateAdjustmentRequest.adjustment_by).filter(*adjuster_filters).distinct().all()
+        adjusters = [r[0] for r in adjuster_rows if r and r[0]]
+
+        adjusters_data = []
+        for name in adjusters:
+            # Reusable name filter base
+            name_base_filters = [
+                PlateAdjustmentRequest.adjustment_by == name,
+            ]
+            
+            # Combine filters
+            name_filters_full = full_filters + name_base_filters
+            name_filters_fa = fa_filters + name_base_filters
+            name_filters_curve = curve_filters + name_base_filters
+            name_filters_minutes = minutes_filters + name_base_filters
+
+            name_count = PlateAdjustmentRequest.query.filter(*name_filters_full).count()
+            name_fa_count = PlateAdjustmentRequest.query.filter(*name_filters_fa).count()
+            name_curve_count = PlateAdjustmentRequest.query.filter(*name_filters_curve).count()
+
+            name_minutes = db.session.query(
+                func.coalesce(func.sum(
+                    func.timestampdiff(
+                        literal_column('MINUTE'),
+                        PlateAdjustmentRequest.adjustment_start_at,
+                        PlateAdjustmentRequest.adjustment_finish_at
+                    )
+                ), 0)
+            ).filter(*name_filters_minutes).scalar() or 0
+
+            name_avg = name_minutes / name_count if name_count > 0 else 0
+
+            adjusters_data.append({
+                'name': name,
+                'total_adjustments': name_count,
+                'total_fa': name_fa_count,
+                'total_curve': name_curve_count,
+                'total_minutes': name_minutes,
+                'avg_minutes_per_job': name_avg
+            })
+
+        # Provide both 'adjusters' (new) and 'users' (back-compat) keys
+        return jsonify({
+            'overall': {
+                'total_adjustments': total_adjustments,
+                'total_fa': total_fa,
+                'total_curve': total_curve,
+                'total_minutes': total_minutes,
+                'avg_minutes_per_job': avg_minutes_per_job,
+                'fa_minutes': fa_minutes,
+                'curve_minutes': curve_minutes,
+                'avg_minutes_fa': avg_minutes_fa,
+                'avg_minutes_curve': avg_minutes_curve
+            },
+            'adjusters': adjusters_data,
+            'users': adjusters_data
+        })
+    except Exception as e:
+        # log error Anda
+        app.logger.error(f"Error in get_mounting_dashboard_data: {str(e)}")
+        return jsonify({'error': 'Internal server error', 'message': str(e)}), 500
 
 # API untuk mengambil data users dengan fitur search dan sort
 @app.route('/get-users-data', methods=['GET'])
@@ -2942,7 +3304,7 @@ def get_users_data():
 # NEW: API untuk mengambil data adjustment (tabel)
 @app.route('/get-adjustment-data', methods=['GET'])
 @login_required
-@require_press_access
+@require_any_press_submenu_access
 def get_adjustment_data():
     search_query = request.args.get('search', '').strip()
     sort_by = request.args.get('sort_by', 'tanggal')
@@ -3009,7 +3371,7 @@ def get_adjustment_data():
 # NEW: API untuk mengambil data bon (tabel)
 @app.route('/get-bon-data', methods=['GET'])
 @login_required
-@require_press_access
+@require_press_bon_access
 def get_bon_data():
     search_query = request.args.get('search', '').strip()
     sort_by = request.args.get('sort_by', 'tanggal')
@@ -3092,7 +3454,7 @@ def cancel_bon_plate():
         if not reason.strip():
              return jsonify({'success': False, 'message': 'Alasan pembatalan tidak boleh kosong.'}), 400
 
-        bon_request = PlateBonRequest.query.get(bon_id)
+        bon_request = db.session.get(PlateBonRequest, bon_id)
 
         if not bon_request:
             return jsonify({'success': False, 'message': f'Bon Plate ID {bon_id} tidak ditemukan.'}), 404
@@ -3139,7 +3501,7 @@ def cancel_adjustment_plate():
         if not reason.strip():
              return jsonify({'success': False, 'message': 'Alasan pembatalan tidak boleh kosong.'}), 400
 
-        adjustment_request = PlateAdjustmentRequest.query.get(adjustment_id)
+        adjustment_request = db.session.get(PlateAdjustmentRequest, adjustment_id)
 
         if not adjustment_request:
             return jsonify({'success': False, 'message': f'Adjustment Plate ID {adjustment_id} tidak ditemukan.'}), 404
@@ -3173,6 +3535,9 @@ def cancel_adjustment_plate():
 def submit_kpi():
     data = request.json
     try:
+        import pytz
+        jakarta_tz = pytz.timezone('Asia/Jakarta')
+        now_jakarta = datetime.now(jakarta_tz)
         # Konversi string waktu dari frontend ke objek time Python
         start_time_obj = datetime.strptime(data['start_time'], '%H:%M').time() if data.get('start_time') else None
         finish_time_obj = datetime.strptime(data['finish_time'], '%H:%M').time() if data.get('finish_time') else None
@@ -3193,6 +3558,7 @@ def submit_kpi():
             item_name=data['item_name'],
             note=data['note'],
             plate_type_material=data.get('plate_type_material'),
+            paper_type=data.get('paper_type'),
             raster=data.get('raster'),
             num_plate_good=data['num_plate_good'],
             num_plate_not_good=data.get('num_plate_not_good'),
@@ -3221,8 +3587,22 @@ def submit_kpi():
             v_25_percent=data.get('v_25_percent'),
             v_50_percent=data.get('v_50_percent'),
             v_75_percent=data.get('v_75_percent'),
+            f_25_percent=data.get('f_25_percent'),
+            f_50_percent=data.get('f_50_percent'),
+            f_75_percent=data.get('f_75_percent'),
+            g_25_percent=data.get('g_25_percent'),
+            g_50_percent=data.get('g_50_percent'),
+            g_75_percent=data.get('g_75_percent'),
+            h_25_percent=data.get('h_25_percent'),
+            h_50_percent=data.get('h_50_percent'),
+            h_75_percent=data.get('h_75_percent'),
+            j_25_percent=data.get('j_25_percent'),
+            j_50_percent=data.get('j_50_percent'),
+            j_75_percent=data.get('j_75_percent'),
             start_time=start_time_obj,  # Gunakan objek time
-            finish_time=finish_time_obj # Gunakan objek time
+            finish_time=finish_time_obj, # Gunakan objek time
+            created_at=now_jakarta,
+            updated_at=now_jakarta
         )
         db.session.add(new_entry)
         db.session.commit()
@@ -3258,6 +3638,7 @@ def get_kpi_data():
                     CTPProductionLog.remarks_job.ilike(f"%{search_query}%"),
                     CTPProductionLog.item_name.ilike(f"%{search_query}%"),
                     CTPProductionLog.plate_type_material.ilike(f"%{search_query}%"),
+                    CTPProductionLog.paper_type.ilike(f"%{search_query}%"),
                     CTPProductionLog.raster.ilike(f"%{search_query}%"),
                     CTPProductionLog.not_good_reason.ilike(f"%{search_query}%"),
                     CTPProductionLog.note.ilike(f"%{search_query}%"),
@@ -3349,6 +3730,7 @@ def update_kpi_ctp(data_id):
         kpi_entry.item_name = data.get('item_name', kpi_entry.item_name)
         kpi_entry.note = data.get('note')
         kpi_entry.plate_type_material = data.get('plate_type_material', kpi_entry.plate_type_material)
+        kpi_entry.paper_type = data.get('paper_type', kpi_entry.paper_type)
         kpi_entry.raster = data.get('raster', kpi_entry.raster)
         kpi_entry.num_plate_good = data.get('num_plate_good')
         kpi_entry.num_plate_not_good = data.get('num_plate_not_good')
@@ -3377,6 +3759,21 @@ def update_kpi_ctp(data_id):
         kpi_entry.v_25_percent = data.get('v_25_percent')
         kpi_entry.v_50_percent = data.get('v_50_percent')
         kpi_entry.v_75_percent = data.get('v_75_percent')
+        kpi_entry.f_25_percent = data.get('f_25_percent')
+        kpi_entry.f_50_percent = data.get('f_50_percent')
+        kpi_entry.f_75_percent = data.get('f_75_percent')
+        kpi_entry.g_25_percent = data.get('g_25_percent')
+        kpi_entry.g_50_percent = data.get('g_50_percent')
+        kpi_entry.g_75_percent = data.get('g_75_percent')
+        kpi_entry.h_25_percent = data.get('h_25_percent')
+        kpi_entry.h_50_percent = data.get('h_50_percent')
+        kpi_entry.h_75_percent = data.get('h_75_percent')
+        kpi_entry.j_25_percent = data.get('j_25_percent')
+        kpi_entry.j_50_percent = data.get('j_50_percent')
+        kpi_entry.j_75_percent = data.get('j_75_percent')
+        
+        # Update timestamp
+        kpi_entry.updated_at = now_jakarta
         
         db.session.commit()
         return jsonify({'message': f'Data KPI CTP dengan ID {data_id} berhasil diperbarui!'}), 200
@@ -3387,6 +3784,38 @@ def update_kpi_ctp(data_id):
 
 # NEW: API untuk Menghapus Data KPI
 @app.route('/api/kpi_ctp/<int:data_id>', methods=['DELETE'])
+def delete_kpi_ctp(data_id):
+    """
+    Menghapus data KPI CTP berdasarkan data_id yang diberikan.
+    Rute ini dipanggil oleh fungsi JavaScript deleteKpiData.
+    """
+    try:
+        # 1. Cari data berdasarkan ID
+        # Asumsi CTPProductionLog adalah model SQLAlchemy Anda
+        kpi_entry = db.session.get(CTPProductionLog, data_id)
+
+        # 2. Cek apakah data ditemukan
+        if not kpi_entry:
+            # Jika tidak ditemukan, kembalikan status 404
+            # Frontend akan menerima JSON error ini
+            return jsonify({'error': f'Data KPI CTP dengan ID {data_id} tidak ditemukan'}), 404
+
+        # 3. Hapus data dari sesi database
+        db.session.delete(kpi_entry)
+        
+        # 4. Terapkan perubahan ke database
+        db.session.commit()
+        
+        # 5. Kembalikan respons sukses (penting untuk mencocokkan harapan JavaScript)
+        # JavaScript mengharapkan respons JSON dengan 'message'
+        return jsonify({'message': f'Data KPI CTP dengan ID {data_id} berhasil dihapus.'}), 200
+
+    except Exception as e:
+        # Jika terjadi kesalahan, lakukan rollback dan kembalikan status 500
+        db.session.rollback()
+        print(f"Error deleting KPI CTP data (ID: {data_id}): {e}")
+        # Kembalikan 500 Internal Server Error dengan pesan JSON
+        return jsonify({'error': f'Internal server error: Gagal menghapus data. {str(e)}'}), 500
 
 # Route untuk menyimpan nomor request bon
 @app.route('/save-bon-request', methods=['POST'])
@@ -3727,7 +4156,7 @@ def decline_adjustment():
         reason = data.get('reason')
         declined_by = data.get('declined_by')
         
-        adjustment = PlateAdjustmentRequest.query.get(adjustment_id)
+        adjustment = db.session.get(PlateAdjustmentRequest, adjustment_id)
         if not adjustment:
             return jsonify({'success': False, 'message': 'Adjustment tidak ditemukan'}), 404
             
@@ -3994,8 +4423,7 @@ def export_pdnd_adjustment():
             'ID', 'Tanggal', 'Mesin Cetak', 'PIC', 'Remarks', 'WO Number', 'MC Number', 
             'Run Length', 'Item Name', 'Jumlah Plate', 'Note', 'Machine Off At',
             'PDND Start At', 'PDND Finish At', 'PDND By',
-            'Design Start At', 'Design Finish At', 'Design By',
-            'Adjustment Start At', 'Adjustment Finish At', 'Adjustment By', 
+            'Mounting Start At', 'Mounting Finish At', 'Mounting By',
             'Plate Start At', 'Plate Finish At', 'Plate Delivered At', 'CTP By', 'Status'
         ]
         worksheet.append(headers)
@@ -4018,9 +4446,6 @@ def export_pdnd_adjustment():
                 adj.pdnd_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.pdnd_start_at else '',
                 adj.pdnd_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.pdnd_finish_at else '',
                 str(adj.pdnd_by or ''),
-                adj.design_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.design_start_at else '',
-                adj.design_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.design_finish_at else '',
-                str(adj.design_by or ''),
                 adj.adjustment_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_start_at else '',
                 adj.adjustment_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_finish_at else '',
                 str(adj.adjustment_by or ''),
@@ -4048,6 +4473,203 @@ def export_pdnd_adjustment():
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# --- Curve Data Adjustment Routes ---
+@app.route('/curve-data-adjustment')
+@login_required
+@require_mounting_access
+def curve_data_adjustment_page():
+    return render_template('curve_data_adjustment.html')
+
+@app.route('/get-curve-adjustment-data', methods=['GET'])
+@login_required
+@require_mounting_access
+def get_curve_adjustment_data():
+    try:
+        # Filter untuk curve: menunggu_adjustment, proses_adjustment
+        # Juga termasuk data yang sudah selesai untuk menghitung summary
+        adjustments = PlateAdjustmentRequest.query.order_by(PlateAdjustmentRequest.id.desc()).all()
+
+        # Filter hanya yang relevan untuk curve (status menunggu dan proses)
+        curve_data = [
+            adjustment.to_dict() for adjustment in adjustments 
+            if adjustment.status in ['menunggu_adjustment_curve', 'proses_adjustment_curve']
+        ]
+        
+        # Semua data untuk summary calculation
+        all_data = [adjustment.to_dict() for adjustment in adjustments]
+        
+        return jsonify({
+            'success': True,
+            'data': curve_data,
+            'all_data': all_data,  # Untuk summary calculation
+            'total': len(curve_data)
+        })
+    except Exception as e:
+        print(f"Error fetching curve adjustment data: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/start-adjustment-curve', methods=['POST'])
+def start_adjustment_curve():
+    try:
+        data = request.get_json()
+        adjustment_id = data.get('id')
+        curve_by = data.get('curve_by')
+
+        if not adjustment_id or not curve_by:
+            return jsonify({'success': False, 'error': 'Missing required data'}), 400
+        
+        adjustment = db.session.get(PlateAdjustmentRequest, adjustment_id) # Menggunakan db.session.get
+        if adjustment is None:
+            abort(404, description="Plate Adjustment Request not found")
+        
+        # Check if this is a reprocess
+        is_reprocess = data.get('is_reprocess', False)
+        
+        # Update status
+        adjustment.status = 'proses_adjustment_curve'
+        adjustment.curve_by = curve_by
+
+        # Jika bukan proses ulang (first time), set curve_start_at
+        if not is_reprocess:
+            adjustment.curve_start_at = datetime.now()
+        # Jika ini adalah proses ulang, reset field terkait penolakan
+        else:
+            adjustment.curve_finish_at = None
+            adjustment.declined_at = None
+            adjustment.declined_by = None
+            adjustment.decline_reason = None
+        
+        db.session.commit()
+
+        return jsonify({'success': True, 'message': 'Adjustment Curve started successfully'})
+    except Exception as e:
+        print(f"Error starting Curve adjustment: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/finish-adjustment-curve', methods=['POST'])
+def finish_adjustment_curve():
+    try:
+        data = request.get_json()
+        adjustment_id = data.get('id')
+        
+        if not adjustment_id:
+            return jsonify({'success': False, 'error': 'Missing adjustment ID'}), 400
+        
+        adjustment = db.session.get(PlateAdjustmentRequest, adjustment_id) # Menggunakan db.session.get
+        if adjustment is None:
+            abort(404, description="Plate Adjustment Request not found")
+        
+        # Update status dan waktu selesai adjustment
+        adjustment.status = 'menunggu_adjustment'
+        adjustment.curve_finish_at = datetime.now()
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Adjustment Curve finished successfully'})
+    except Exception as e:
+        print(f"Error finishing adjustment: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/export-curve-adjustment', methods=['GET'])
+def export_curve_adjustment():
+    try:
+        from flask import make_response, request, jsonify
+        import io
+        import openpyxl
+        from datetime import datetime
+        
+        # Get filter parameters
+        status_filter = request.args.get('status', '')
+        remarks_filter = request.args.get('remarks', '')
+        date_from = request.args.get('date_from', '')
+        date_to = request.args.get('date_to', '')
+        
+        # Build query
+        query = PlateAdjustmentRequest.query
+        
+        # Apply filters
+        if status_filter:
+            if status_filter == 'selesai':
+                query = query.filter(PlateAdjustmentRequest.status.in_(['selesai', 'menunggu_adjustment_curve']))
+            else:
+                query = query.filter(PlateAdjustmentRequest.status == status_filter)
+        
+        if remarks_filter:
+            query = query.filter(PlateAdjustmentRequest.remarks.ilike(f'%{remarks_filter}%'))
+        
+        if date_from:
+            query = query.filter(PlateAdjustmentRequest.tanggal >= date_from)
+        if date_to:
+            query = query.filter(PlateAdjustmentRequest.tanggal <= date_to)
+        
+        # Get data sorted by date (newest first)
+        adjustments = query.order_by(PlateAdjustmentRequest.tanggal.desc(), PlateAdjustmentRequest.id.desc()).all()
+        
+        # Create an in-memory Excel workbook and worksheet
+        workbook = openpyxl.Workbook()
+        worksheet = workbook.active
+        worksheet.title = "Curve Adjustment Data"
+        
+        # Write headers
+        headers = [
+            'ID', 'Tanggal', 'Mesin Cetak', 'PIC', 'Remarks', 'WO Number', 'MC Number', 
+            'Run Length', 'Item Name', 'Jumlah Plate', 'Note', 'Machine Off At',
+            'Curve Start At', 'Curve Finish At', 'Curve By',
+            'Mounting Start At', 'Mounting Finish At', 'Mounting By', 
+            'Plate Start At', 'Plate Finish At', 'Plate Delivered At', 'CTP By', 'Status'
+        ]
+        worksheet.append(headers)
+        
+        # Write data rows
+        for adj in adjustments:
+            row_data = [
+                str(adj.id or ''),
+                adj.tanggal.strftime('%Y-%m-%d') if adj.tanggal else '',
+                str(adj.mesin_cetak or ''),
+                str(adj.pic or ''),
+                str(adj.remarks or ''),
+                str(adj.wo_number or ''),
+                str(adj.mc_number or ''),
+                str(adj.run_length or ''),
+                str(adj.item_name or ''),
+                str(adj.jumlah_plate or ''),
+                str(adj.note or ''),
+                adj.machine_off_at.strftime('%Y-%m-%d %H:%M:%S') if adj.machine_off_at else '',
+                adj.curve_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.curve_start_at else '',
+                adj.curve_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.curve_finish_at else '',
+                str(adj.curve_by or ''),
+                adj.adjustment_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_start_at else '',
+                adj.adjustment_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_finish_at else '',
+                str(adj.adjustment_by or ''),
+                adj.plate_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_start_at else '',
+                adj.plate_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_finish_at else '',
+                adj.plate_delivered_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_delivered_at else '',
+                str(adj.ctp_by or ''),
+                str(adj.status or '')
+            ]
+            worksheet.append(row_data)
+        
+        # Create response with proper Excel headers
+        output = io.BytesIO()
+        workbook.save(output)
+        output.seek(0)
+        
+        response = make_response(output.getvalue())
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response.headers['Content-Disposition'] = f'attachment; filename=curve_adjustment_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        
+        return response
+        
+    except Exception as e:
+        print(f"Error exporting data: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500    
 
 # --- Design Production Routes ---
 @app.route('/design-data-adjustment')
@@ -4261,7 +4883,7 @@ def decline_ctp():
         reason = data.get('reason')
         declined_by = data.get('declined_by')
         
-        adjustment = PlateAdjustmentRequest.query.get(adjustment_id)
+        adjustment = db.session.get(PlateAdjustmentRequest, adjustment_id)
         if not adjustment:
             return jsonify({'success': False, 'message': 'Adjustment tidak ditemukan'}), 404
             
@@ -4292,7 +4914,7 @@ def decline_ctp_bon():
         reason = data.get('reason')
         declined_by = data.get('declined_by')
         
-        bon = PlateBonRequest.query.get(bon_id)
+        bon = db.session.get(PlateBonRequest, bon_id)
         if not bon:
             return jsonify({'success': False, 'message': 'Bon tidak ditemukan'}), 404
 
@@ -5991,6 +6613,10 @@ def export_kpi_ctp():
             'Spot Color 2 25%', 'Spot Color 2 50%', 'Spot Color 2 75%',
             'Spot Color 3 25%', 'Spot Color 3 50%', 'Spot Color 3 75%',
             'Spot Color 4 25%', 'Spot Color 4 50%', 'Spot Color 4 75%',
+            'Spot Color 5 25%', 'Spot Color 5 50%', 'Spot Color 5 75%',
+            'Spot Color 6 25%', 'Spot Color 6 50%', 'Spot Color 6 75%',
+            'Spot Color 7 25%', 'Spot Color 7 50%', 'Spot Color 7 75%',
+            'Spot Color 8 25%', 'Spot Color 8 50%', 'Spot Color 8 75%',
             'Start Time', 'Finish Time'
         ]
         worksheet.append(headers)
@@ -6013,6 +6639,7 @@ def export_kpi_ctp():
                 str(kpi.item_name or ''),
                 str(kpi.note or ''),
                 str(kpi.plate_type_material or ''),
+                str(kpi.paper_type or ''),
                 str(kpi.raster or ''),
                 str(kpi.num_plate_good or ''),
                 str(kpi.num_plate_not_good or ''),
@@ -6041,6 +6668,18 @@ def export_kpi_ctp():
                 str(kpi.v_25_percent or ''),
                 str(kpi.v_50_percent or ''),
                 str(kpi.v_75_percent or ''),
+                str(kpi.f_25_percent or ''),
+                str(kpi.f_50_percent or ''),
+                str(kpi.f_75_percent or ''),
+                str(kpi.g_25_percent or ''),
+                str(kpi.g_50_percent or ''),
+                str(kpi.g_75_percent or ''),
+                str(kpi.h_25_percent or ''),
+                str(kpi.h_50_percent or ''),
+                str(kpi.h_75_percent or ''),
+                str(kpi.j_25_percent or ''),
+                str(kpi.j_50_percent or ''),
+                str(kpi.j_75_percent or ''),
                 kpi.start_time.strftime('%H:%M') if kpi.start_time else '',
                 kpi.finish_time.strftime('%H:%M') if kpi.finish_time else ''
             ]
@@ -6238,6 +6877,300 @@ def export_ctp_bon_data():
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/get-plate-data')
+def get_plate_data():
+    try:
+        date = request.args.get('date')
+        plate_type = request.args.get('plate_type')
+        
+        if not date or not plate_type:
+            return jsonify({'success': False, 'error': 'Missing parameters'})
+        
+        # Query plate usage data
+        plate_data = db.session.execute(
+            text("""
+            SELECT plate_size, COUNT(*) as quantity
+            FROM stock_opname_ctp
+            WHERE DATE(tanggal) = :date
+            AND jenis_plate = :type
+            GROUP BY plate_size
+            """),
+            {'date': date, 'type': plate_type}
+        ).fetchall()
+        
+        return jsonify({
+            'success': True,
+            'plateData': [{'size': row.plate_size, 'quantity': row.quantity} for row in plate_data]
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/get-next-bon-number')
+def get_next_bon_number():
+    try:
+        # Get current date
+        today = datetime.now()
+        year = today.year
+        month = today.month
+        
+        # Get last bon number for current month
+        result = db.session.execute(
+            text("""
+            SELECT MAX(CAST(SUBSTRING_INDEX(bon_number, '/', 1) AS UNSIGNED)) as last_number
+            FROM bon_plate
+            WHERE MONTH(tanggal) = :month
+            AND YEAR(tanggal) = :year
+            """),
+            {'month': month, 'year': year}
+        ).fetchone()
+        
+        last_number = result.last_number if result.last_number else 0
+        next_number = str(last_number + 1).zfill(3)
+        
+        return jsonify({
+            'success': True,
+            'bonNumber': next_number
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/check-detail-bon/<int:bon_id>')
+def check_detail_bon(bon_id):
+    """API endpoint for auto-refresh to get latest bon data"""
+    try:
+        # Query bon data with all related information
+        bon_query = text("""
+            SELECT
+                pbr.id,
+                pbr.tanggal,
+                pbr.mesin_cetak,
+                pbr.pic,
+                pbr.remarks,
+                pbr.status,
+                pbr.machine_off_at,
+                pbr.plate_start_at,
+                pbr.plate_finish_at,
+                pbr.plate_delivered_at,
+                pbr.ctp_by,
+                pbr.note,
+                pbr.item_name,
+                pbr.wo_number,
+                pbr.mc_number,
+                pbr.jumlah_plate,
+                pbr.run_length,
+                pbr.cancelled_at,
+                pbr.cancelled_by,
+                pbr.cancellation_reason,
+                pbr.declined_at,
+                pbr.decline_reason,
+                pbr.declined_by
+            FROM plate_bon_requests pbr
+            WHERE pbr.id = :bon_id
+        """)
+        
+        bon_result = db.session.execute(bon_query, {'bon_id': bon_id}).fetchone()
+        
+        if not bon_result:
+            return jsonify({'success': False, 'error': 'Bon not found'})
+        
+        # Convert to dictionary and format datetime properly
+        bon_data = {
+            'id': bon_result.id,
+            'tanggal': format_tanggal_indonesia(bon_result.tanggal) if bon_result.tanggal else '',
+            'mesin_cetak': bon_result.mesin_cetak or '',
+            'pic': bon_result.pic or '',
+            'remarks': bon_result.remarks or '',
+            'status': bon_result.status or '',
+            'machine_off_at': format_datetime_indonesia(bon_result.machine_off_at) if bon_result.machine_off_at else '',
+            'plate_start_at': format_datetime_indonesia(bon_result.plate_start_at) if bon_result.plate_start_at else '',
+            'plate_finish_at': format_datetime_indonesia(bon_result.plate_finish_at) if bon_result.plate_finish_at else '',
+            'plate_delivered_at': format_datetime_indonesia(bon_result.plate_delivered_at) if bon_result.plate_delivered_at else '',
+            'ctp_by': bon_result.ctp_by or '',
+            'note': bon_result.note or '',
+            'item_name': bon_result.item_name or '',
+            'wo_number': bon_result.wo_number or '',
+            'mc_number': bon_result.mc_number or '',
+            'jumlah_plate': bon_result.jumlah_plate or 0,
+            'run_length': bon_result.run_length or '',
+            'cancelled_at': bon_result.cancelled_at.strftime('%d %B %Y - %H:%M') if bon_result.cancelled_at else '',
+            'cancelled_by': bon_result.cancelled_by or '',
+            'cancellation_reason': bon_result.cancellation_reason or '',
+            'declined_at': bon_result.declined_at.strftime('%d %B %Y - %H:%M') if bon_result.declined_at else '',
+            'decline_reason': bon_result.decline_reason or '',
+            'declined_by': bon_result.declined_by or ''
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': bon_data,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error in check_detail_bon: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/check-detail-adjustment/<int:adjustment_id>')
+def check_detail_adjustment(adjustment_id):
+    """API endpoint for auto-refresh to get latest adjustment data"""
+    try:
+        # Query the adjustment request using Session.get() to avoid legacy warning
+        adjustment = db.session.get(PlateAdjustmentRequest, adjustment_id)
+        if not adjustment:
+            return jsonify({'success': False, 'message': f'Adjustment ID {adjustment_id} tidak ditemukan.'}), 404
+
+        # Format all datetime fields to Indonesian format
+        data = {
+            'id': adjustment.id,
+            'status': adjustment.status,
+            'tanggal': format_tanggal_indonesia(adjustment.tanggal) if adjustment.tanggal else '',
+            'mesin_cetak': adjustment.mesin_cetak or '',
+            'pic': adjustment.pic or '',
+            'remarks': adjustment.remarks or '',
+            'item_name': adjustment.item_name or '',
+            'wo_number': adjustment.wo_number or '',
+            'mc_number': adjustment.mc_number or '',
+            'jumlah_plate': adjustment.jumlah_plate or 0,
+            'run_length': adjustment.run_length or 0,
+            'note': adjustment.note or '',
+            'is_epson': adjustment.is_epson or False,
+            
+            # Timeline fields with Indonesian formatting
+            'machine_off_at': format_datetime_indonesia(adjustment.machine_off_at) if adjustment.machine_off_at else '',
+            'design_start_at': format_datetime_indonesia(adjustment.design_start_at) if adjustment.design_start_at else '',
+            'design_finish_at': format_datetime_indonesia(adjustment.design_finish_at) if adjustment.design_finish_at else '',
+            'pdnd_start_at': format_datetime_indonesia(adjustment.pdnd_start_at) if adjustment.pdnd_start_at else '',
+            'pdnd_finish_at': format_datetime_indonesia(adjustment.pdnd_finish_at) if adjustment.pdnd_finish_at else '',
+            'curve_start_at': format_datetime_indonesia(adjustment.curve_start_at) if adjustment.curve_start_at else '',
+            'curve_finish_at': format_datetime_indonesia(adjustment.curve_finish_at) if adjustment.curve_finish_at else '',
+            'adjustment_start_at': format_datetime_indonesia(adjustment.adjustment_start_at) if adjustment.adjustment_start_at else '',
+            'adjustment_finish_at': format_datetime_indonesia(adjustment.adjustment_finish_at) if adjustment.adjustment_finish_at else '',
+            'plate_start_at': format_datetime_indonesia(adjustment.plate_start_at) if adjustment.plate_start_at else '',
+            'plate_finish_at': format_datetime_indonesia(adjustment.plate_finish_at) if adjustment.plate_finish_at else '',
+            'plate_delivered_at': format_datetime_indonesia(adjustment.plate_delivered_at) if adjustment.plate_delivered_at else '',
+            
+            # PIC fields
+            'design_by': adjustment.design_by or '',
+            'pdnd_by': adjustment.pdnd_by or '',
+            'curve_by': adjustment.curve_by or '',
+            'adjustment_by': adjustment.adjustment_by or '',
+            'ctp_by': adjustment.ctp_by or '',
+            
+            # Cancellation/Decline fields
+            'cancelled_at': format_datetime_indonesia(adjustment.cancelled_at) if adjustment.cancelled_at else '',
+            'cancelled_by': adjustment.cancelled_by or '',
+            'cancellation_reason': adjustment.cancellation_reason or '',
+            'declined_at': format_datetime_indonesia(adjustment.declined_at) if adjustment.declined_at else '',
+            'declined_by': adjustment.declined_by or '',
+            'decline_reason': adjustment.decline_reason or ''
+        }
+        
+        return jsonify({'success': True, 'data': data})
+        
+    except Exception as e:
+        print(f"Error in check_detail_adjustment: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+    try:
+        # Query adjustment data with all related information
+        adj_query = text("""
+            SELECT
+                pa.id,
+                pa.tanggal,
+                pa.mesin_cetak,
+                pa.pic,
+                pa.remarks,
+                pa.status,
+                pa.machine_off_at,
+                pa.design_start_at,
+                pa.design_finish_at,
+                pa.design_by,
+                pa.pdnd_start_at,
+                pa.pdnd_finish_at,
+                pa.pdnd_by,
+                pa.curve_start_at,
+                pa.curve_finish_at,
+                pa.curve_by,
+                pa.adjustment_start_at,
+                pa.adjustment_finish_at,
+                pa.adjustment_by,
+                pa.plate_start_at,
+                pa.plate_finish_at,
+                pa.plate_delivered_at,
+                pa.ctp_by,
+                pa.note,
+                pa.item_name,
+                pa.wo_number,
+                pa.mc_number,
+                pa.jumlah_plate,
+                pa.run_length,
+                pa.is_epson,
+                pa.cancelled_at,
+                pa.cancelled_by,
+                pa.cancellation_reason,
+                pa.declined_at,
+                pa.decline_reason,
+                pa.declined_by
+            FROM plate_adjustment pa
+            WHERE pa.id = :adjustment_id
+        """)
+        
+        adj_result = db.session.execute(adj_query, {'adjustment_id': adjustment_id}).fetchone()
+        
+        if not adj_result:
+            return jsonify({'success': False, 'error': 'Adjustment not found'})
+        
+        # Convert to dictionary and format datetime properly
+        adj_data = {
+            'id': adj_result.id,
+            'tanggal': adj_result.tanggal.strftime('%Y-%m-%d') if adj_result.tanggal else '',
+            'mesin_cetak': adj_result.mesin_cetak or '',
+            'pic': adj_result.pic or '',
+            'remarks': adj_result.remarks or '',
+            'status': adj_result.status or '',
+            'machine_off_at': adj_result.machine_off_at.strftime('%d %B %Y - %H:%M') if adj_result.machine_off_at else '',
+            'design_start_at': adj_result.design_start_at.strftime('%d %B %Y - %H:%M') if adj_result.design_start_at else '',
+            'design_finish_at': adj_result.design_finish_at.strftime('%d %B %Y - %H:%M') if adj_result.design_finish_at else '',
+            'design_by': adj_result.design_by or '',
+            'pdnd_start_at': adj_result.pdnd_start_at.strftime('%d %B %Y - %H:%M') if adj_result.pdnd_start_at else '',
+            'pdnd_finish_at': adj_result.pdnd_finish_at.strftime('%d %B %Y - %H:%M') if adj_result.pdnd_finish_at else '',
+            'pdnd_by': adj_result.pdnd_by or '',
+            'curve_start_at': adj_result.curve_start_at.strftime('%d %B %Y - %H:%M') if adj_result.curve_start_at else '',
+            'curve_finish_at': adj_result.curve_finish_at.strftime('%d %B %Y - %H:%M') if adj_result.curve_finish_at else '',
+            'curve_by': adj_result.curve_by or '',
+            'adjustment_start_at': adj_result.adjustment_start_at.strftime('%d %B %Y - %H:%M') if adj_result.adjustment_start_at else '',
+            'adjustment_finish_at': adj_result.adjustment_finish_at.strftime('%d %B %Y - %H:%M') if adj_result.adjustment_finish_at else '',
+            'adjustment_by': adj_result.adjustment_by or '',
+            'plate_start_at': adj_result.plate_start_at.strftime('%d %B %Y - %H:%M') if adj_result.plate_start_at else '',
+            'plate_finish_at': adj_result.plate_finish_at.strftime('%d %B %Y - %H:%M') if adj_result.plate_finish_at else '',
+            'plate_delivered_at': adj_result.plate_delivered_at.strftime('%d %B %Y - %H:%M') if adj_result.plate_delivered_at else '',
+            'ctp_by': adj_result.ctp_by or '',
+            'note': adj_result.note or '',
+            'item_name': adj_result.item_name or '',
+            'wo_number': adj_result.wo_number or '',
+            'mc_number': adj_result.mc_number or '',
+            'jumlah_plate': adj_result.jumlah_plate or 0,
+            'run_length': adj_result.run_length or '',
+            'is_epson': bool(adj_result.is_epson) if adj_result.is_epson is not None else False,
+            'cancelled_at': adj_result.cancelled_at.strftime('%d %B %Y - %H:%M') if adj_result.cancelled_at else '',
+            'cancelled_by': adj_result.cancelled_by or '',
+            'cancellation_reason': adj_result.cancellation_reason or '',
+            'declined_at': adj_result.declined_at.strftime('%d %B %Y - %H:%M') if adj_result.declined_at else '',
+            'decline_reason': adj_result.decline_reason or '',
+            'declined_by': adj_result.declined_by or ''
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': adj_data,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error in check_detail_adjustment: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5021, debug=True)

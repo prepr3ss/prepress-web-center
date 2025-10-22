@@ -174,6 +174,10 @@
         .color-spot2 { background: linear-gradient(135deg, #0059ff 0%, #0041cc 100%); color: white; }
         .color-spot3 { background: linear-gradient(135deg, #892eff 0%, #6a1bcc 100%); color: white; }
         .color-spot4 { background: linear-gradient(135deg, #8dff1c 0%, #76e016 100%); color: #333; }
+        .color-spot5 { background: linear-gradient(135deg, #ff0077 0%, #cc005f 100%); color: white; }
+        .color-spot6 { background: linear-gradient(135deg, #00fff2 0%, #00c6bb 100%); color: #333; }
+        .color-spot7 { background: linear-gradient(135deg, #ffdc1c 0%, #e0c10a 100%); color: #333; }
+        .color-spot8 { background: linear-gradient(135deg, #3300ff 0%, #2200cc 100%); color: white; }        
         
         /* Form validation states - tanpa icon checklist */
         .form-control-clean.is-valid, .form-select-clean.is-valid {
@@ -432,8 +436,8 @@
                             <input type="text" class="form-control form-control-clean" id="mc_number" name="mc_number" placeholder="e.g. OFS125901111" required>
                         </div>
                         <div class="col-md-2">
-                            <label class="info-label">Run Length Sheet</label>
-                            <input type="number" class="form-control form-control-clean" id="run_length_sheet" name="run_length_sheet" min="0" placeholder="">
+                            <label class="info-label">Jenis Kertas</label>
+                            <input type="text" class="form-control form-control-clean" id="paper_type" name="paper_type" placeholder="e.g. HANSOL, CMI" required>
                         </div>
                     </div>
                     
@@ -442,7 +446,11 @@
                             <label class="info-label">Nama Item</label>
                             <input type="text" class="form-control form-control-clean" id="item_name" name="item_name" placeholder="e.g. 516586200 CONTOH JFL" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-2">
+                            <label class="info-label">Run Length Sheet</label>
+                            <input type="number" class="form-control form-control-clean" id="run_length_sheet" name="run_length_sheet" min="0" placeholder="">
+                        </div>                        
+                        <div class="col-md-4">
                             <label class="info-label">Note</label>
                             <textarea class="form-control form-control-clean" id="note" name="note" rows="3" placeholder="Tambahkan catatan jika ada"></textarea>
                         </div>
@@ -535,7 +543,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="row py-3 g-4 mb-4">
                         <!-- SPOT COLOR 1 -->
                         <div class="col-lg-3 col-md-6 d-flex flex-column align-items-center mb-4">
@@ -618,6 +626,90 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="row py-3 g-4 mb-4">
+                        <!-- SPOT COLOR 5 -->
+                        <div class="col-lg-3 col-md-6 d-flex flex-column align-items-center mb-4">
+                            <div class="color-header color-spot5">
+                                SPOT COLOR 5
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-4">
+                                    <label for="f_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="f_25_percent" name="f_25_percent" style="min-height: 45px;">
+                                </div>
+                                <div class="col-4">
+                                    <label for="f_50_percent" class="form-label-small">50%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="f_50_percent" name="f_50_percent" style="min-height: 45px;">
+                                </div>                                  
+                                <div class="col-4">
+                                    <label for="f_75_percent" class="form-label-small">75%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="f_75_percent" name="f_75_percent" style="min-height: 45px;">
+                                </div> 
+                            </div>
+                        </div>
+                        <!-- SPOT COLOR 6 -->
+                        <div class="col-lg-3 col-md-6 d-flex flex-column align-items-center mb-4">
+                            <div class="color-header color-spot6">
+                                SPOT COLOR 6
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-4">
+                                    <label for="g_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="g_25_percent" name="g_25_percent" style="min-height: 45px;">
+                                </div>
+                                <div class="col-4">
+                                    <label for="g_50_percent" class="form-label-small">50%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="g_50_percent" name="g_50_percent" style="min-height: 45px;">
+                                </div>                                  
+                                <div class="col-4">
+                                    <label for="g_75_percent" class="form-label-small">75%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="g_75_percent" name="g_75_percent" style="min-height: 45px;">
+                                </div> 
+                            </div> 
+                        </div> 
+                        <!-- SPOT COLOR 7 -->
+                        <div class="col-lg-3 col-md-6 d-flex flex-column align-items-center mb-4">
+                            <div class="color-header color-spot7">
+                                SPOT COLOR 7
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-4">
+                                    <label for="h_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="h_25_percent" name="h_25_percent" style="min-height: 45px;">
+                                </div>
+                                <div class="col-4">
+                                    <label for="h_50_percent" class="form-label-small">50%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="h_50_percent" name="h_50_percent" style="min-height: 45px;">
+                                </div>                                  
+                                <div class="col-4">
+                                    <label for="h_75_percent" class="form-label-small">75%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="h_75_percent" name="h_75_percent" style="min-height: 45px;">
+                                </div> 
+                            </div>
+                        </div>
+                        <!-- SPOT COLOR 8 -->
+                        <div class="col-lg-3 col-md-6 d-flex flex-column align-items-center mb-4">
+                            <div class="color-header color-spot8">
+                                SPOT COLOR 8
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-4">
+                                    <label for="j_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="j_25_percent" name="j_25_percent" style="min-height: 45px;">
+                                </div>
+                                <div class="col-4">
+                                    <label for="j_50_percent" class="form-label-small">50%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="j_50_percent" name="j_50_percent" style="min-height: 45px;">
+                                </div>                                  
+                                <div class="col-4">
+                                    <label for="j_75_percent" class="form-label-small">75%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="j_75_percent" name="j_75_percent" style="min-height: 45px;">
+                                </div> 
+                            </div>
+                        </div>
+                    </div>
+
                         <div class="col-12 mt-4">
                             <div class="d-flex justify-content-end align-items-center gap-3">
                                 <button type="reset" class="btn btn-outline-clean">

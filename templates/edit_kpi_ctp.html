@@ -112,6 +112,10 @@
         .color-spot2 { background: linear-gradient(135deg, #0059ff 0%, #0041cc 100%); color: white; }
         .color-spot3 { background: linear-gradient(135deg, #892eff 0%, #6a1bcc 100%); color: white; }
         .color-spot4 { background: linear-gradient(135deg, #8dff1c 0%, #76e016 100%); color: #333; }
+        .color-spot5 { background: linear-gradient(135deg, #ff0077 0%, #cc005f 100%); color: white; }
+        .color-spot6 { background: linear-gradient(135deg, #00fff2 0%, #00c6bb 100%); color: #333; }
+        .color-spot7 { background: linear-gradient(135deg, #ffdc1c 0%, #e0c10a 100%); color: #333; }
+        .color-spot8 { background: linear-gradient(135deg, #3300ff 0%, #2200cc 100%); color: white; }                
         
         .color-header {
             width: 100%;
@@ -305,7 +309,7 @@
                         </div>
                         <div class="col-md-2">
                             <label class="info-label">PIC CTP</label>
-                            <input type="text" class="form-control form-control-clean text-muted" name="ctp_pic" id="ctp_pic" placeholder="e.g GILANG" required>
+                            <input type="text" class="form-control form-control-clean text-muted" name="ctp_pic" id="ctp_pic" placeholder="e.g GILANG" style="background-color: #f8f9fa; opacity: 1; cursor: not-allowed;" required>
                         </div>
                     </div>
                     
@@ -431,17 +435,21 @@
                             <input type="text" class="form-control form-control-clean" id="mc_number" name="mc_number" placeholder="" required>
                         </div>
                         <div class="col-md-2">
-                            <label class="info-label">Run Length Sheet</label>
-                            <input type="number" class="form-control form-control-clean" id="run_length_sheet" name="run_length_sheet" min="0" placeholder="">
+                            <label class="info-label">Jenis Kertas</label>
+                            <input type="text" class="form-control form-control-clean" id="paper_type" name="paper_type" placeholder="e.g. HANSOL, CMI" required>
                         </div>
                     </div>
                     
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
                             <label class="info-label">Nama Item</label>
-                            <input type="text" class="form-control form-control-clean" id="item_name" name="item_name" placeholder="e.g: 516586200 LIGHT2 MA" required>
+                            <input type="text" class="form-control form-control-clean" id="item_name" name="item_name" placeholder="e.g. 516586200 CONTOH JFL" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-2">
+                            <label class="info-label">Run Length Sheet</label>
+                            <input type="number" class="form-control form-control-clean" id="run_length_sheet" name="run_length_sheet" min="0" placeholder="">
+                        </div>                        
+                        <div class="col-md-4">
                             <label class="info-label">Note</label>
                             <textarea class="form-control form-control-clean" id="note" name="note" rows="3" placeholder="Tambahkan catatan jika ada"></textarea>
                         </div>
@@ -617,6 +625,89 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="row py-3 g-4 mb-4">
+                        <!-- SPOT COLOR 5 -->
+                        <div class="col-lg-3 col-md-6 d-flex flex-column align-items-center mb-4">
+                            <div class="color-header color-spot5">
+                                SPOT COLOR 5
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-4">
+                                    <label for="f_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="f_25_percent" name="f_25_percent" style="min-height: 45px;">
+                                </div>
+                                <div class="col-4">
+                                    <label for="f_50_percent" class="form-label-small">50%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="f_50_percent" name="f_50_percent" style="min-height: 45px;">
+                                </div>                                  
+                                <div class="col-4">
+                                    <label for="f_75_percent" class="form-label-small">75%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="f_75_percent" name="f_75_percent" style="min-height: 45px;">
+                                </div> 
+                            </div>
+                        </div>
+                        <!-- SPOT COLOR 6 -->
+                        <div class="col-lg-3 col-md-6 d-flex flex-column align-items-center mb-4">
+                            <div class="color-header color-spot6">
+                                SPOT COLOR 6
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-4">
+                                    <label for="g_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="g_25_percent" name="g_25_percent" style="min-height: 45px;">
+                                </div>
+                                <div class="col-4">
+                                    <label for="g_50_percent" class="form-label-small">50%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="g_50_percent" name="g_50_percent" style="min-height: 45px;">
+                                </div>                                  
+                                <div class="col-4">
+                                    <label for="g_75_percent" class="form-label-small">75%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="g_75_percent" name="g_75_percent" style="min-height: 45px;">
+                                </div> 
+                            </div> 
+                        </div> 
+                        <!-- SPOT COLOR 7 -->
+                        <div class="col-lg-3 col-md-6 d-flex flex-column align-items-center mb-4">
+                            <div class="color-header color-spot7">
+                                SPOT COLOR 7
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-4">
+                                    <label for="h_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="h_25_percent" name="h_25_percent" style="min-height: 45px;">
+                                </div>
+                                <div class="col-4">
+                                    <label for="h_50_percent" class="form-label-small">50%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="h_50_percent" name="h_50_percent" style="min-height: 45px;">
+                                </div>                                  
+                                <div class="col-4">
+                                    <label for="h_75_percent" class="form-label-small">75%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="h_75_percent" name="h_75_percent" style="min-height: 45px;">
+                                </div> 
+                            </div>
+                        </div>
+                        <!-- SPOT COLOR 8 -->
+                        <div class="col-lg-3 col-md-6 d-flex flex-column align-items-center mb-4">
+                            <div class="color-header color-spot8">
+                                SPOT COLOR 8
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-4">
+                                    <label for="j_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="j_25_percent" name="j_25_percent" style="min-height: 45px;">
+                                </div>
+                                <div class="col-4">
+                                    <label for="j_50_percent" class="form-label-small">50%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="j_50_percent" name="j_50_percent" style="min-height: 45px;">
+                                </div>                                  
+                                <div class="col-4">
+                                    <label for="j_75_percent" class="form-label-small">75%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="j_75_percent" name="j_75_percent" style="min-height: 45px;">
+                                </div> 
+                            </div>
+                        </div>
+                    </div>                    
                     
                     <!-- Form Actions -->
                     <div class="row">
@@ -756,6 +847,7 @@
                     document.getElementById('dwell_time').value = data.dwell_time || '';
                     document.getElementById('raster').value = data.raster || '';
                     document.getElementById('plate_type_material').value = data.plate_type_material || '';
+                    document.getElementById('paper_type').value = data.paper_type || '';
                     document.getElementById('num_plate_good').value = data.num_plate_good || '0';
                     document.getElementById('num_plate_not_good').value = data.num_plate_not_good || '0';
                     document.getElementById('not_good_reason').value = data.not_good_reason || '';
@@ -792,6 +884,18 @@
                     document.getElementById('v_25_percent').value = data.v_25_percent || '';
                     document.getElementById('v_50_percent').value = data.v_50_percent || '';
                     document.getElementById('v_75_percent').value = data.v_75_percent || '';
+                    document.getElementById('f_25_percent').value = data.f_25_percent || '';
+                    document.getElementById('f_50_percent').value = data.f_50_percent || '';
+                    document.getElementById('f_75_percent').value = data.f_75_percent || '';
+                    document.getElementById('g_25_percent').value = data.g_25_percent || '';
+                    document.getElementById('g_50_percent').value = data.g_50_percent || '';
+                    document.getElementById('g_75_percent').value = data.g_75_percent || '';
+                    document.getElementById('h_25_percent').value = data.h_25_percent || '';
+                    document.getElementById('h_50_percent').value = data.h_50_percent || '';
+                    document.getElementById('h_75_percent').value = data.h_75_percent || '';
+                    document.getElementById('j_25_percent').value = data.j_25_percent || '';
+                    document.getElementById('j_50_percent').value = data.j_50_percent || '';
+                    document.getElementById('j_75_percent').value = data.j_75_percent || '';
 
                     // Panggil kembali toggleNotGoodReason setelah data terisi
                     toggleNotGoodReason(); 
@@ -856,6 +960,18 @@
                 jsonData.v_25_percent = parseNumberOrNull(jsonData.v_25_percent);
                 jsonData.v_50_percent = parseNumberOrNull(jsonData.v_50_percent);
                 jsonData.v_75_percent = parseNumberOrNull(jsonData.v_75_percent);
+                jsonData.f_25_percent = parseNumberOrNull(jsonData.f_25_percent);
+                jsonData.f_50_percent = parseNumberOrNull(jsonData.f_50_percent);
+                jsonData.f_75_percent = parseNumberOrNull(jsonData.f_75_percent);
+                jsonData.g_25_percent = parseNumberOrNull(jsonData.g_25_percent);
+                jsonData.g_50_percent = parseNumberOrNull(jsonData.g_50_percent);
+                jsonData.g_75_percent = parseNumberOrNull(jsonData.g_75_percent);
+                jsonData.h_25_percent = parseNumberOrNull(jsonData.h_25_percent);
+                jsonData.h_50_percent = parseNumberOrNull(jsonData.h_50_percent);
+                jsonData.h_75_percent = parseNumberOrNull(jsonData.h_75_percent);
+                jsonData.j_25_percent = parseNumberOrNull(jsonData.j_25_percent);
+                jsonData.j_50_percent = parseNumberOrNull(jsonData.j_50_percent);
+                jsonData.j_75_percent = parseNumberOrNull(jsonData.j_75_percent);
 
                 // Pastikan waktu diatur ke null jika kosong, bukan string kosong
                 jsonData.start_time = jsonData.start_time || null;

@@ -2,8 +2,14 @@
 const SidebarNotification = {
     async checkNotifications() {
         try {
+            console.log('Checking notifications...');
             const response = await fetch('/api/check-notifications');
+            if (!response.ok) {
+                console.error('Failed to fetch notifications:', response.status);
+                return;
+            }
             const data = await response.json();
+            console.log('Notifications data:', data);
             
             // CTP Production Notifications
             
@@ -48,18 +54,30 @@ const SidebarNotification = {
                 ['menunggu_adjustment', 'proses_adjustment', 'ditolakctp'], 
                 data.mounting
             );
-            this.updateParentNotification('mountingSubmenu', mountingAdjustmentActive);
+
+            const curveAdjustmentActive = this.updateSubmenuNotification(
+                'curveDataAdjustmentLink', 
+                ['menunggu_adjustment_curve', 'proses_adjustment_curve', 'ditolakmounting'], 
+                data.curve
+            );
+            this.updateParentNotification('mountingSubmenu', mountingAdjustmentActive || curveAdjustmentActive);
 
         } catch (error) {
             console.error('Error checking notifications:', error);
+            console.error('Error stack:', error.stack);
         }
     },
     
     // --- FUNGSI BARU/DIUBAH: updateSubmenuNotification ---
     // Fungsi ini hanya fokus pada satu link submenu dan mengembalikan status aktifnya
     updateSubmenuNotification(id, states, data) {
+        console.log(`Updating submenu notification for ${id}`);
         const link = document.getElementById(id);
-        if (!link) return false;
+        if (!link) {
+            console.error(`Element with id ${id} not found`);
+            return false;
+        }
+        console.log(`Found link: ${link.textContent}, data:`, data);
 
         // Remove existing dots from submenu item
         const existingSubDots = link.querySelectorAll('.submenu-notification-dot');
@@ -82,8 +100,12 @@ const SidebarNotification = {
     // --- FUNGSI BARU: updateParentNotification ---
     // Fungsi ini hanya fokus pada Parent Menu
     updateParentNotification(parentId, hasActiveItems) {
+        console.log(`Updating parent notification for ${parentId}, hasActive: ${hasActiveItems}`);
         const parentMenu = document.querySelector(`[href="#${parentId}"]`);
-        if (!parentMenu) return;
+        if (!parentMenu) {
+            console.error(`Parent menu with href="#${parentId}" not found`);
+            return;
+        }
 
         // Remove existing dots/badges
         const existingDots = parentMenu.querySelectorAll('.notification-dot');
@@ -105,30 +127,10 @@ const SidebarNotification = {
 
 // Initialize when document is ready
 document.addEventListener('DOMContentLoaded', () => {
-    // Tambahkan CSS untuk dot jika belum ada (jika Anda menggunakan badge sebelumnya)
-    const style = document.createElement('style');
-    style.innerHTML = `
-        .submenu-notification-dot {
-            height: 8px;
-            width: 8px;
-            background-color: #dc3545; /* Merah */
-            border-radius: 50%;
-            display: inline-block;
-            margin-left: 8px;
-            flex-shrink: 0;
-        }
-        .notification-dot {
-            height: 10px;
-            width: 10px;
-            background-color: #dc3545; /* Merah */
-            border-radius: 50%;
-            display: inline-block;
-            margin-left: 10px;
-            margin-right: 0px; /* Geser ke kiri sedikit agar tidak terlalu jauh dari teks */
-            flex-shrink: 0;
-        }
-    `;
-    document.head.appendChild(style);
+    // CSS sudah dimuat dari file sidebar_notification.css
+    
+    // Debug: Log untuk memastikan script berjalan
+    console.log('Sidebar Notification System initialized');
     
     SidebarNotification.startPolling();
 });

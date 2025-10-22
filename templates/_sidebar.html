@@ -104,7 +104,7 @@
             <i class="fas fa-chevron-right"></i> </a>
         <div class="collapse" id="ctpSubmenu">
             <a href="/dashboard-ctp" class="list-group-item list-group-item-action ps-5" id="dashboardKpiCtpLink">
-                <i class="fas fa-chart-pie me-2"></i> Dashboard
+                <i class="fas fa-chart-pie me-2"></i>Dashboard
             </a>
             <a href="/tabel-kpi-ctp" class="list-group-item list-group-item-action ps-5" id="inputKpiCtpLink">
                 <i class="fas fa-table me-2"></i>KPI CTP
@@ -128,23 +128,27 @@
         {% endif %}
 
         <!-- Press Production Menu - Only show if user can access Press -->
-        {% if current_user.can_access_press() %}
-         <a href="#pressSubmenu" data-bs-toggle="collapse" aria-expanded="false"
-           class="list-group-item list-group-item-action press-submenu-parent collapsed"
-           style="display: flex; align-items: center; justify-content: space-between;">
-            <div style="display: flex; align-items: center;">
+        {% if current_user.can_access_press() or current_user.can_access_ctp() or current_user.can_access_mounting() or current_user.can_access_pdnd() or current_user.can_access_design() %}
+            <a href="#pressSubmenu" data-bs-toggle="collapse" aria-expanded="false"
+             class="list-group-item list-group-item-action press-submenu-parent collapsed"
+             style="display: flex; align-items: center; justify-content: space-between;">
+              <div style="display: flex; align-items: center;">
                 <i class="fas fa-industry me-2"></i>
                 <span>Press Production</span>
-            </div>
-            <i class="fas fa-chevron-right"></i></a>
-        <div class="collapse" id="pressSubmenu">
-            <a href="/data-adjustment" class="list-group-item list-group-item-action ps-5" id="dataAdjustmentLink">
+              </div>
+              <i class="fas fa-chevron-right"></i></a>
+            <div class="collapse" id="pressSubmenu">
+                    <a href="/data-adjustment" class="list-group-item list-group-item-action ps-5" id="dataAdjustmentLink">
                 <i class="fas fa-layer-group me-2"></i>Adjustment Press
-            </a>
-            <a href="/data-bon" class="list-group-item list-group-item-action ps-5" id="dataBonLink">
+              </a>
+              
+                    {% if current_user.can_access_ctp() or current_user.can_access_press() %}
+              <a href="/data-bon" class="list-group-item list-group-item-action ps-5" id="dataBonLink">
                 <i class="fas fa-layer-group me-2"></i>Bon Press
-            </a>
-        </div>
+              </a>
+              {% endif %}
+
+            </div>
         {% endif %}
 
         <!-- Mounting Production Menu - Only show if user can access Mounting -->
@@ -158,6 +162,12 @@
             </div>
             <i class="fas fa-chevron-right"></i></a>
         <div class="collapse" id="mountingSubmenu">
+            <a href="/dashboard-mounting" class="list-group-item list-group-item-action ps-5" id="dashboardMountingLink">
+                <i class="fas fa-chart-pie me-2"></i>Dashboard
+            </a>
+            <a href="/curve-data-adjustment" class="list-group-item list-group-item-action ps-5" id="curveDataAdjustmentLink">
+                <i class="fas fa-layer-group me-2"></i>Adjustment Curve
+            </a>
             <a href="/mounting-data-adjustment" class="list-group-item list-group-item-action ps-5" id="mountingDataAdjustmentLink">
                 <i class="fas fa-layer-group me-2"></i>Adjustment Press
             </a>

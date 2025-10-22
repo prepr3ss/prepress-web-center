@@ -8,9 +8,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
-        /* Clean and Professional Styling for CTP */
+        /* Clean and Professional Styling */
         .page-header {
-            background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+            background: linear-gradient(135deg, #00B09B 0%, #96C93D 100%);
             color: white;
             padding: 2rem 0;
             margin: -1rem -15px 2rem -15px;
@@ -45,7 +45,6 @@
             font-size: 1.5rem;
         }
         
-        /* CTP Color Scheme - Menggunakan hijau seperti mounting */
         .icon-warning { background: linear-gradient(135deg, #ff9a56 0%, #ff6b35 100%); }
         .icon-success { background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%); }
         .icon-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
@@ -79,10 +78,9 @@
             border-radius: 50px;
             font-size: 0.75rem;
             font-weight: 600;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.4px;
         }
         
-        /* Status badges sesuai mounting */
         .badge-waiting { 
             background: linear-gradient(135deg, #ff9a56 0%, #ff6b35 50%, #ff416c 100%);
             color: white;
@@ -101,26 +99,36 @@
             text-shadow: 0 1px 2px rgba(0,0,0,0.2);
             box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
         }
-        .badge-antar {
-            background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 50%, #c084fc 100%);
-            color: white;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
-        }
         .badge-selesai {
             background: linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%);
             color: white;
             text-shadow: 0 1px 2px rgba(0,0,0,0.2);
             box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
         }
-        .badge-warning {
-            background: linear-gradient(135deg, #f59e0b 0%, #f97316 50%, #fb923c 100%);
+        
+        .badge-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #ff4b2b 100%);
             color: white;
             text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
         }
         
-        /* Remarks badges sesuai mounting */
+        /* Styling untuk kartu yang ditolak */
+        .data-card.declined {
+            border: 2px solid rgba(220, 53, 69, 0.1);
+        }
+        
+        .data-card.declined .card-header-clean {
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
+        }
+        
+        .alert-danger {
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
+            border: none;
+            border-left: 4px solid #dc3545;
+        }
+        
+        /* Remarks badges */
         .remarks-badge-clean {
             padding: 0.3rem 0.8rem;
             border-radius: 50px;
@@ -171,11 +179,11 @@
             border-radius: 10px;
             padding: 1rem;
             margin: 1rem 0;
-            border-left: 4px solid #ff9500;
+            border-left: 4px solid #667eea;
         }
         
         /* Info section untuk modal finish dengan border hijau */
-        #finishCtpModal .info-section {
+        #finishAdjustmentModal .info-section {
             border-left: 4px solid #56ab2f;
         }
         
@@ -203,14 +211,13 @@
             letter-spacing: 0.5px;
         }
         
-        /* CTP Button Colors */
-        .btn-ctp-clean {
-            background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+        .btn-primary-clean {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
-        .btn-ctp-clean:hover {
+        .btn-primary-clean:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 149, 0, 0.4);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
             color: white;
         }
         
@@ -225,15 +232,15 @@
         }
         
         .btn-outline-clean {
-            border: 2px solid #ff9500;
-            color: #ff9500;
+            border: 2px solid #667eea;
+            color: #667eea;
             background: transparent;
         }
         .btn-outline-clean:hover {
-            background: #ff9500;
+            background: #667eea;
             color: white;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 149, 0, 0.3);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
         }
         
         .filter-section {
@@ -251,8 +258,8 @@
             transition: all 0.3s ease;
         }
         .form-control-clean:focus {
-            border-color: #ff9500;
-            box-shadow: 0 0 0 0.2rem rgba(255, 149, 0, 0.25);
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
         
         .no-data-clean {
@@ -297,12 +304,7 @@
         }
         
         .toast-info {
-            background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
-            color: white;
-        }
-        
-        .toast-warning {
-            background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
     </style>
@@ -317,8 +319,8 @@
                     <div class="container-fluid">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h2 class="mb-1 text-white">CTP Data Bon</h2>
-                                <p class="mb-0 opacity-75">Kelola proses bon CTP dengan mudah dan efisien</p>
+                                <h2 class="mb-1 text-white">CURVE - Adjustment Press</h2>
+                                <p class="mb-0 opacity-75">Kelola seluruh proses request curve adjustment dari Press</p>
                             </div>
                             <div class="text-end">
                                 <div class="small opacity-75">Sistem Monitoring Prepress</div>
@@ -329,42 +331,37 @@
 
                 <!-- Filter Section -->
                 <div class="filter-section">
-                    <div class="row align-items-center">
-                        <div class="col-md-7">
-                            <div class="row g-3">
-                                <div class="col-md-3">
-                                    <label class="form-label info-label">Filter Status</label>
-                                    <select class="form-control form-control-clean" id="statusFilter">
-                                        <option value="">Pilih Status</option>
-                                        <option value="proses_ctp">Tunggu Plate</option>
-                                        <option value="proses_plate">Proses Plate</option>
-                                        <option value="antar_plate">Antar Plate</option>
-                                        <option value="selesai">Selesai</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label info-label">Filter Mesin</label>
-                                    <select class="form-control form-control-clean" id="mesinFilter">
-                                        <option value="">Semua Mesin</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label info-label">Filter Remarks</label>
-                                    <select class="form-control form-control-clean" id="remarksFilter">
-                                        <option value="">Pilih Remarks</option>
-                                        <option value="BON PROOF MESIN OFF">BON PROOF MESIN OFF</option>
-                                        <option value="BON PROOF MESIN TIDAK OFF">BON PROOF MESIN TIDAK OFF</option>  
-                                        <option value="BON PRODUKSI MESIN OFF">BON PRODUKSI MESIN OFF</option>
-                                        <option value="BON PRODUKSI MESIN TIDAK OFF">BON PRODUKSI MESIN TIDAK OFF</option> 
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label info-label">Pencarian</label>
-                                    <input type="text" class="form-control form-control-clean" id="searchInput" placeholder="Cari Job ID, WO, Item...">
-                                </div>
-                            </div>
+                    <div class="row align-items-end">
+                        <div class="col-md-2">
+                            <label class="form-label info-label">Filter Status</label>
+                            <select class="form-control form-control-clean" id="statusFilter">
+                                <option value="">Semua Status</option>
+                                <option value="menunggu_adjustment_curve">Menunggu Curve</option>
+                                <option value="proses_adjustment_curve">Proses Curve</option>
+                                <option value="ditolakmounting">Ditolak Mounting</option>
+                                <option value="selesai">Selesai Curve</option>
+                            </select>
                         </div>
-                        <div class="col-md-5 text-end">
+                        <div class="col-md-2">
+                            <label class="form-label info-label">Filter Mesin</label>
+                            <select class="form-control form-control-clean" id="mesinFilter">
+                                <option value="">Semua Mesin</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label info-label">Filter Remarks</label>
+                            <select class="form-control form-control-clean" id="remarksFilter">
+                                <option value="">Semua Remarks</option>
+                                <option value="ADJUSTMENT CURVE PROOF">CURVE PROOF</option>
+                                <option value="ADJUSTMENT CURVE PRODUKSI">CURVE PRODUKSI</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label info-label">Pencarian</label>
+                            <input type="text" class="form-control form-control-clean" id="searchInput" 
+                                   placeholder="Cari WO, Item, Mesin...">
+                        </div>
+                        <div class="col-md-4 text-end">
                             <div class="d-flex gap-2 justify-content-end align-items-end">
                                 <!-- Auto-refresh toggle -->
                                 <div class="form-check form-switch">
@@ -388,18 +385,18 @@
 
                 <!-- Summary Cards -->
                 <div class="row g-4 mb-4">
-                    <div class="col-lg-3 col-md-6">
+                    <div class="col-lg-3 col-md-6 col-sm-6">
                         <div class="card summary-card">
                             <div class="card-body text-center">
                                 <div class="summary-icon icon-warning">
                                     <i class="fas fa-clock text-white"></i>
                                 </div>
-                                <h3 class="mb-1" id="waitingPlateCount">-</h3>
-                                <div class="info-label">Tunggu Plate</div>
+                                <h3 class="mb-1" id="waitingCount">-</h3>
+                                <div class="info-label">Menunggu Adjustment</div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-3 col-md-6">
+                    <div class="col-lg-3 col-md-6 col-sm-6">
                         <div class="card summary-card">
                             <div class="card-body text-center">
                                 <div class="summary-icon icon-success">
@@ -410,32 +407,20 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-3 col-md-6">
+                    <div class="col-lg-3 col-md-6 col-sm-6">
                         <div class="card summary-card">
                             <div class="card-body text-center">
                                 <div class="summary-icon icon-primary">
                                     <i class="fas fa-bezier-curve text-white"></i>
                                 </div>
-                                <h3 class="mb-1" id="totalBonProofCount">-</h3>
-                                <div class="info-label">Total Bon Proof</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-md-6">
-                        <div class="card summary-card">
-                            <div class="card-body text-center">
-                                <div class="summary-icon icon-info">
-                                    <i class="fas fa-bezier-curve text-white"></i>
-                                </div>
-                                <h3 class="mb-1" id="totalBonProduksiCount">-</h3>
-                                <div class="info-label">Total Bon Produksi</div>
+                                <h3 class="mb-1" id="totalCurveCount">-</h3>
+                                <div class="info-label">Total Adjustment Curve</div>
                             </div>
                         </div>
                     </div>
                 </div>
-
                 <!-- Data Cards -->
-                <div class="row" id="bonCards">
+                <div class="row" id="adjustmentCards">
                     <!-- Cards will be loaded here -->
                 </div>
 
@@ -444,50 +429,45 @@
                     <div class="spinner-border text-primary mb-3" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
-                    <h5 class="text-muted">Memuat data CTP bon...</h5>
+                    <h5 class="text-muted">Memuat data adjustment...</h5>
                     <p class="text-muted mb-0">Mohon tunggu sebentar</p>
                 </div>
 
                 <!-- No data message -->
                 <div class="no-data-clean d-none" id="noDataMessage">
                     <i class="fas fa-inbox text-muted mb-3" style="font-size: 4rem; opacity: 0.5;"></i>
-                    <h4 class="text-muted mb-2">Tidak ada data CTP bon</h4>
-                    <p class="text-muted mb-0">Belum ada request CTP bon yang perlu ditangani saat ini</p>
+                    <h4 class="text-muted mb-2">Tidak ada data adjustment</h4>
+                    <p class="text-muted mb-0">Belum ada request adjustment yang perlu ditangani saat ini</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal Start CTP -->
-    <div class="modal fade" id="startCtpModal" tabindex="-1">
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Modal Start Adjustment -->
+    <div class="modal fade" id="startAdjustmentModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content" style="border: none; border-radius: 15px; overflow: hidden;">
-                <div class="modal-header" style="background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%); color: white; border: none;">
-                    <h5 class="modal-title"><i class="fas fa-play me-2"></i>Mulai Proses Plate</h5>
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+                    <h5 class="modal-title"><i class="fas fa-play me-2"></i>Mulai Proses Curve Adjustment</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <div class="alert" style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border: none; border-radius: 10px;">
+                    <div class="alert" style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); border: none; border-radius: 10px;">
                         <div class="d-flex align-items-center">
-                            <i class="fas fa-info-circle me-2 text-warning"></i>
+                            <i class="fas fa-info-circle me-2 text-primary"></i>
                             <div>
-                                <strong>Konfirmasi Mulai Plate</strong>
-                                <div class="small text-muted">Pastikan semua persiapan sudah siap sebelum memulai proses plate</div>
+                                <strong>Konfirmasi Mulai Curve Adjustment</strong>
+                                <div class="small text-muted">Pastikan semua persiapan sudah siap sebelum memulai proses curve adjustment</div>
                             </div>
                         </div>
                     </div>
-                    <div id="startCtpInfo" class="info-section mb-3"></div>
+                    <div id="startAdjustmentInfo" class="info-section mb-3"></div>
                     <div class="mb-3">
-                        <div class="row g-2 align-items-center mb-2">
-                            <div class="col-auto">
-                                <label for="ctpGrup" class="form-label info-label mb-0">GRUP</label>
-                                <input type="text" name="ctp_grup" id="ctpGrup" class="form-control form-control-clean text-muted" value="{{ current_user.grup }}" readonly tabindex="-1" style="background-color: #f8f9fa; opacity: 1; cursor: not-allowed; min-width: 80px; max-width: 120px; display: inline-block;">
-                            </div>
-                            <div class="col">
-                                <label for="ctpBy" class="form-label info-label mb-0">PIC CTP</label>
-                                <input type="text" name="ctp_by" id="ctpBy" class="form-control form-control-clean text-muted" value="{{ current_user.name }}" readonly tabindex="-1" style="background-color: #f8f9fa; opacity: 1; cursor: not-allowed;">
-                            </div>
-                        </div>
+                        <label for="adjustmentBy" class="form-label info-label">PIC Adjustment</label>
+                        <input type="text" name="curve_by" id="adjustmentBy" class="form-control form-control-clean text-muted" value="{{ current_user.name }}" readonly tabindex="-1" style="background-color: #f8f9fa; opacity: 1; cursor: not-allowed; margin-bottom: 1rem;">
                         <div class="form-text">
                             <i class="fas fa-user me-1 text-muted"></i>
                             Nama ini akan tercatat sebagai PIC yang bertanggung jawab
@@ -498,56 +478,20 @@
                     <button type="button" class="btn btn-outline-clean btn-clean" data-bs-dismiss="modal">
                         <i class="fas fa-times me-1"></i>Batal
                     </button>
-                    <button type="button" class="btn btn-ctp-clean btn-clean" id="confirmStartCtp">
-                        <i class="fas fa-play me-1"></i>Mulai Plate
+                    <button type="button" class="btn btn-primary-clean btn-clean" id="confirmStartAdjustment">
+                        <i class="fas fa-play me-1"></i>Mulai Adjustment
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal Decline Bon -->
-    <div class="modal fade" id="declineBonModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="border: none; border-radius: 15px; overflow: hidden;">
-                <div class="modal-header" style="background: linear-gradient(135deg, #dc3545 0%, #ff4b2b 100%); color: white; border: none;">
-                    <h5 class="modal-title"><i class="fas fa-times-circle me-2"></i>Tolak Bon</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="alert" style="background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%); border: none; border-radius: 10px;">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-exclamation-circle me-2 text-danger"></i>
-                            <div>
-                                <strong>Konfirmasi Tolak Bon</strong>
-                                <div class="small text-muted">Harap berikan alasan penolakan bon ini</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="declineBonInfo" class="info-section mb-3"></div>
-                    <div class="mb-3">
-                        <label for="declineReason" class="form-label info-label">Alasan Penolakan <span class="text-danger">*</span></label>
-                        <textarea id="declineReason" class="form-control form-control-clean" rows="3" placeholder="Tuliskan alasan penolakan..."></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer border-0 p-4">
-                    <button type="button" class="btn btn-outline-clean btn-clean" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>Batal
-                    </button>
-                    <button type="button" class="btn btn-danger btn-clean" id="confirmDecline">
-                        <i class="fas fa-times-circle me-1"></i>Tolak Bon
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>     
-
-    <!-- Modal Finish CTP -->
-    <div class="modal fade" id="finishCtpModal" tabindex="-1">
+    <!-- Modal Finish Adjustment -->
+    <div class="modal fade" id="finishAdjustmentModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content" style="border: none; border-radius: 15px; overflow: hidden;">
                 <div class="modal-header" style="background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%); color: white; border: none;">
-                    <h5 class="modal-title"><i class="fas fa-check me-2"></i>Selesai Proses Plate</h5>
+                    <h5 class="modal-title"><i class="fas fa-check me-2"></i>Selesai Proses Curve Adjustment</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
@@ -555,40 +499,37 @@
                         <div class="d-flex align-items-center">
                             <i class="fas fa-check-circle me-2 text-success"></i>
                             <div>
-                                <strong>Konfirmasi Selesai Plate</strong>
-                                <div class="small text-muted">Pastikan semua proses plate sudah selesai dengan baik</div>
+                                <strong>Konfirmasi Selesai Curve Adjustment</strong>
+                                <div class="small text-muted">Pastikan semua proses curve adjustment sudah selesai dengan baik</div>
                             </div>
                         </div>
                     </div>
-                    <div id="finishCtpInfo" class="info-section"></div>
+                    <div id="finishAdjustmentInfo" class="info-section"></div>
                 </div>
                 <div class="modal-footer border-0 p-4">
                     <button type="button" class="btn btn-outline-clean btn-clean" data-bs-dismiss="modal">
                         <i class="fas fa-times me-1"></i>Batal
                     </button>
-                    <button type="button" class="btn btn-success-clean btn-clean" id="confirmFinishCtp">
-                        <i class="fas fa-check me-1"></i>Selesai Plate
+                    <button type="button" class="btn btn-success-clean btn-clean" id="confirmFinishAdjustment">
+                        <i class="fas fa-check me-1"></i>Selesai Adjustment
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer"></div>
-
     <!-- Modal Export Data -->
     <div class="modal fade" id="exportModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content" style="border: none; border-radius: 15px; overflow: hidden;">
-                <div class="modal-header" style="background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%); color: white; border: none;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%); color: white; border: none;">
                     <h5 class="modal-title"><i class="fas fa-download me-2"></i>Export Data CSV</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <div class="alert" style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border: none; border-radius: 10px;">
+                    <div class="alert" style="background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%); border: none; border-radius: 10px;">
                         <div class="d-flex align-items-center">
-                            <i class="fas fa-info-circle me-2 text-warning"></i>
+                            <i class="fas fa-info-circle me-2 text-success"></i>
                             <div>
                                 <strong>Export Data CSV</strong>
                                 <div class="small text-muted">File CSV yang dapat dibuka langsung di Excel dengan kolom terpisah</div>
@@ -601,7 +542,8 @@
                             <label class="form-label info-label">Filter Status</label>
                             <select class="form-control form-control-clean" id="exportStatusFilter">
                                 <option value="">Semua Status</option>
-                                <option value="proses_ctp">Proses CTP</option>
+                                <option value="menunggu_adjustment_curve">Menunggu Curve Adjustment</option>
+                                <option value="proses_adjustment_curve">Proses Curve Adjustment</option>
                                 <option value="selesai">Selesai</option>
                             </select>
                         </div>
@@ -609,8 +551,8 @@
                             <label class="form-label info-label">Filter Remarks</label>
                             <select class="form-control form-control-clean" id="exportRemarksFilter">
                                 <option value="">Semua Remarks</option>
-                                <option value="PRODUKSI">PRODUKSI</option>
-                                <option value="PROOF">PROOF</option>
+                                <option value="ADJUSTMENT CURVE PROOF">CURVE PROOF</option>
+                                <option value="ADJUSTMENT CURVE PRODUKSI">CURVE PRODUKSI</option>
                             </select>
                         </div>
                         <div class="col-md-6">
@@ -629,7 +571,7 @@
                             <strong>Info Export:</strong>
                             <ul class="mb-0 mt-1">
                                 <li>File CSV dengan semicolon delimiter untuk Excel Indonesia</li>
-                                <li>17 kolom sesuai database (A, B, C, D, dll)</li>
+                                <li>19 kolom sesuai database (A, B, C, D, dll)</li>
                                 <li>Compatible dengan Excel Indonesia (semicolon separator)</li>
                                 <li>Format tanggal: YYYY-MM-DD HH:MM:SS</li>
                             </ul>
@@ -640,40 +582,8 @@
                     <button type="button" class="btn btn-outline-clean btn-clean" data-bs-dismiss="modal">
                         <i class="fas fa-times me-1"></i>Batal
                     </button>
-                    <button type="button" class="btn btn-ctp-clean btn-clean" id="confirmExport">
+                    <button type="button" class="btn btn-success-clean btn-clean" id="confirmExport">
                         <i class="fas fa-download me-1"></i>Download CSV
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Plate Delivered -->
-    <div class="modal fade" id="plateDeliveredModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="border: none; border-radius: 15px; overflow: hidden;">
-                <div class="modal-header" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border: none;">
-                    <h5 class="modal-title"><i class="fas fa-truck me-2"></i>Plate Sampai</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="alert" style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); border: none; border-radius: 10px;">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-check-circle me-2 text-success"></i>
-                            <div>
-                                <strong>Konfirmasi Plate Sampai</strong>
-                                <div class="small text-muted">Pastikan plate sudah sampai di mesin cetak dengan baik</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="plateDeliveredInfo" class="info-section"></div>
-                </div>
-                <div class="modal-footer border-0 p-4">
-                    <button type="button" class="btn btn-outline-clean btn-clean" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>Batal
-                    </button>
-                    <button type="button" class="btn btn-success-clean btn-clean" id="confirmPlateDelivered">
-                        <i class="fas fa-truck me-1"></i>Konfirmasi Plate Sampai
                     </button>
                 </div>
             </div>
@@ -685,8 +595,8 @@
     <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
     <script src="{{ url_for('static', filename='js/badge_system.js') }}"></script>
     <script>
-        let bonData = [];
-        let currentbonId = null;
+        let adjustmentData = [];
+        let currentAdjustmentId = null;
         
         // Format tanggal Indonesia
         function formatTanggalIndonesia(dateString) {
@@ -769,61 +679,75 @@
 
         // Load data
         async function loadData() {
-            // Request notification permission when loading data
-            await requestNotificationPermission();            
             try {
                 document.getElementById('loadingIndicator').style.display = 'block';
                 document.getElementById('noDataMessage').classList.add('d-none');
                 
-                const response = await fetch('/get-ctp-bon-data');
+                const response = await fetch('/get-curve-adjustment-data');
                 if (!response.ok) throw new Error('Failed to fetch data');
                 
                 const result = await response.json();
-
-                bonData = result.data || [];
-                const allData = result.all_data || result.data || [];
-
-                // Check untuk bon baru yang menunggu
-                const waitingBons = allData.filter(item => item.status === 'proses_ctp');
-                if (waitingBons.length > 0) {
-                    showBrowserNotification('Bon Menunggu', {
-                        body: `Terdapat ${waitingBons.length} bon yang menunggu untuk diproses`,
+                // adjustmentData = result.data || []; // Baris ini tidak digunakan karena ada adjustmentData = allData; di bawah
+                const allData = result.all_data || [];
+                
+                // --- LANGKAH PENTING: GUNAKAN SEMUA DATA TANPA FILTER is_epson ---
+                // Tidak memfilter berdasarkan is_epson, gunakan semua data
+                adjustmentData = allData;
+                
+                // Check untuk adjustment baru yang menunggu
+                const waitingAdjustments = adjustmentData.filter(item => item.status === 'menunggu_adjustment_curve');
+                if (waitingAdjustments.length > 0) {
+                    showBrowserNotification('Adjustment Menunggu', {
+                        body: `Terdapat ${waitingAdjustments.length} adjustment yang menunggu untuk diproses`,
                         requireInteraction: false
                     });
-                }                 
-                
-                // Use allData instead of bonData for filtering to include completed items
-                bonData = allData;
+                }
 
-                // Sort data: antar_plate first, then proses_plate, then proses_ctp (FIFO by id), then others
-                bonData.sort((a, b) => {
-                    // Priority sorting: antar_plate (1), proses_plate (2), proses_ctp (3), others (4+)
-                    const getPriority = (status) => {
-                        switch(status) {
-                            case 'antar_plate': return 1;
-                            case 'proses_plate': return 2;
-                            case 'proses_ctp': return 3;
-                            default: return 4;
-                        }
-                    };
+                // Check untuk adjustment baru yang ditolak
+                const declinedmountingAdjustments = adjustmentData.filter(item => item.status === 'ditolakmounting');
+                if (declinedmountingAdjustments.length > 0) {
+                    showBrowserNotification('Adjustment Ditolak Mounting', {
+                        body: `Terdapat ${declinedmountingAdjustments.length} adjustment yang ditolak mounting dan perlu direvisi`,
+                        requireInteraction: false
+                    });
+                }
+                
+                // Sort data dengan prioritas baru:
+                adjustmentData.sort((a, b) => {
+                    // Priority 1: ditolakmounting (Paling atas untuk item yang perlu direvisi CURVE)
+                    if (a.status === 'ditolakmounting' && b.status !== 'ditolakmounting') return -1;
+                    if (b.status === 'ditolakmounting' && a.status !== 'ditolakmounting') return 1;
+                                            
+                    // Priority 2: proses_adjustment_curve first
+                    if (a.status === 'proses_adjustment_curve' && b.status !== 'proses_adjustment_curve') return -1;
+                    if (b.status === 'proses_adjustment_curve' && a.status !== 'proses_adjustment_curve') return 1;
                     
-                    const priorityA = getPriority(a.status);
-                    const priorityB = getPriority(b.status);
+                    // Priority 3: menunggu_adjustment_curve second
+                    if (a.status === 'menunggu_adjustment_curve' && b.status !== 'menunggu_adjustment_curve') return -1;
+                    if (b.status === 'menunggu_adjustment_curve' && a.status !== 'menunggu_adjustment_curve') return 1;
                     
-                    if (priorityA !== priorityB) {
-                        return priorityA - priorityB;
+                    // Special handling for completed items: sort by machine off time in reverse order
+                    if (a.status === 'selesai' && b.status === 'selesai') {
+                        const dateA = new Date(a.machine_off_at || 0);
+                        const dateB = new Date(b.machine_off_at || 0);
+                        return dateB - dateA; // Newest first
                     }
-                    
-                    // Within same priority, sort by ID FIFO (oldest first for queue)
-                    return a.id - b.id;
+
+                    // Priority 4: Within same status, sort by created_at (oldest first for FIFO)
+                    const dateA = new Date(a.created_at || a.machine_off_at || 0);
+                    const dateB = new Date(b.created_at || b.machine_off_at || 0);
+                    return dateA - dateB;
                 });
                 
-                // Show only active CTP processes on initial load (exclude selesai status)
-                const initialData = bonData.filter(item => 
-                    item.status === 'proses_ctp' || item.status === 'proses_plate' || item.status === 'antar_plate'
+                // Tampilkan data yang menunggu, dalam proses, dan yang ditolak
+                const initialData = adjustmentData.filter(item =>
+                    item.status === 'menunggu_adjustment_curve' ||
+                    item.status === 'proses_adjustment_curve' ||
+                    item.status === 'ditolakmounting'
                 );
+
                 displayData(initialData);
-                updateSummary(allData);
+                updateSummary(allData); // Gunakan allData yang asli untuk summary keseluruhan
                 populateMesinFilter(allData);
                 
                 showToast('Data berhasil dimuat', 'success', 2000);
@@ -832,16 +756,12 @@
                 console.error('Error loading data:', error);
                 document.getElementById('loadingIndicator').style.display = 'none';
                 document.getElementById('noDataMessage').classList.remove('d-none');
-                
-                // Show error details in console
-                console.error('Detailed error:', {
-                    message: error.message,
-                    stack: error.stack
-                });
-                
                 showToast('Gagal memuat data', 'error');
             }
         }
+
+// Update juga bagian filter status untuk menampilkan opsi 'Ditolakmounting'
+// Tambahkan di HTML filter section:
 
         // Populate mesin filter
         function populateMesinFilter(data) {
@@ -863,7 +783,7 @@
         // Display data cards
         function displayData(data) {
             document.getElementById('loadingIndicator').style.display = 'none';
-            const container = document.getElementById('bonCards');
+            const container = document.getElementById('adjustmentCards');
             
             if (!data || data.length === 0) {
                 document.getElementById('noDataMessage').classList.remove('d-none');
@@ -877,6 +797,23 @@
                 const statusBadge = getStatusBadge(item.status);
                 const remarksBadge = getRemarksBadge(item.remarks);
                 const actionButtons = getActionButtons(item);
+                
+                // Info penolakan jika status ditolak
+                const declineInfo = item.status === 'ditolakmounting' ? `
+                    <div class="alert alert-danger mt-3">
+                        <div class="d-flex">
+                            <i class="fas fa-times-circle me-2 mt-1"></i>
+                            <div>
+                                <strong>Alasan:</strong>
+                                <p class="mb-0 fw-bold">${item.decline_reason || 'Tidak ada alasan yang diberikan'}</p>
+                                <div class="mt-2 small">
+                                    <div class="text-danger">Ditolak oleh: <span class="fw-bold">${item.declined_by || '-'}</span></div>
+                                    <div class="text-muted">Pada: ${formatDateTimeIndonesia(item.declined_at) || '-'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ` : '';
                 
                 return `
                 <div class="col-lg-6 col-xl-4 mb-4">
@@ -931,7 +868,7 @@
                                             <i class="fas fa-file-alt me-1 text-info"></i>
                                             ${item.paper_type || '-'}
                                         </div>
-                                    </div>                                      
+                                    </div>
                                 </div>
                                 
                                 ${item.note ? `
@@ -943,6 +880,7 @@
                                     </div>
                                 </div>
                                 ` : ''}
+                                ${declineInfo}
                             </div>
                             
                             <!-- Timeline Section -->
@@ -954,36 +892,27 @@
                                     ${item.machine_off_at ? `
                                     <div class="col-12">
                                         <div class="d-flex align-items-center">
-                                            <div class="bg-warning rounded-circle me-2" style="width: 8px; height: 8px;"></div>
+                                            <div class="bg-danger rounded-circle me-2" style="width: 8px; height: 8px;"></div>
                                             <small class="text-muted">Mesin Off:</small>
                                             <small class="ms-auto fw-bold">${formatDateTimeIndonesia(item.machine_off_at)}</small>
                                         </div>
                                     </div>
                                     ` : ''}
-                                    ${item.plate_start_at ? `
+                                    ${item.curve_start_at ? `
                                     <div class="col-12">
                                         <div class="d-flex align-items-center">
-                                            <div class="bg-primary rounded-circle me-2" style="width: 8px; height: 8px;"></div>
-                                            <small class="text-muted">Mulai Plate:</small>
-                                            <small class="ms-auto fw-bold">${formatDateTimeIndonesia(item.plate_start_at)}</small>
+                                            <div class="bg-info rounded-circle me-2" style="width: 8px; height: 8px;"></div>
+                                            <small class="text-muted">Mulai Curve Adjustment:</small>
+                                            <small class="ms-auto fw-bold">${formatDateTimeIndonesia(item.curve_start_at)}</small>
                                         </div>
                                     </div>
                                     ` : ''}
-                                    ${item.plate_finish_at ? `
+                                    ${item.curve_finish_at ? `
                                     <div class="col-12">
                                         <div class="d-flex align-items-center">
-                                            <div class="bg-secondary rounded-circle me-2" style="width: 8px; height: 8px;"></div>
-                                            <small class="text-muted">Selesai Plate:</small>
-                                            <small class="ms-auto fw-bold">${formatDateTimeIndonesia(item.plate_finish_at)}</small>
-                                        </div>
-                                    </div>
-                                    ` : ''}
-                                    ${item.plate_delivered_at ? `
-                                    <div class="col-12">
-                                        <div class="d-flex align-items-center">
-                                            <div class="bg-danger rounded-circle me-2" style="width: 8px; height: 8px;"></div>
-                                            <small class="text-muted">Plate Sampai:</small>
-                                            <small class="ms-auto fw-bold">${formatDateTimeIndonesia(item.plate_delivered_at)}</small>
+                                            <div class="bg-success rounded-circle me-2" style="width: 8px; height: 8px;"></div>
+                                            <small class="text-muted">Selesai Curve Adjustment:</small>
+                                            <small class="ms-auto fw-bold">${formatDateTimeIndonesia(item.curve_finish_at)}</small>
                                         </div>
                                     </div>
                                     ` : ''}
@@ -995,7 +924,7 @@
                                 <div class="flex-grow-1">
                                     ${actionButtons}
                                 </div>
-                                <a href="/detail-bon/${item.id}" class="btn btn-outline-clean btn-clean">
+                                <a href="/detail-adjustment/${item.id}" class="btn btn-outline-clean btn-clean">
                                     <i class="fas fa-eye me-1"></i>Detail
                                 </a>
                             </div>
@@ -1007,27 +936,28 @@
             
             container.innerHTML = html;
         }
-
-    // Inject current user name for JS logic (harus di awal agar global)
-    window.currentUserName = "{{ current_user.name }}";
-
-    // Get status badge - Using Unified Badge System (Simplified Workflow)
+        
+        // Inject current user name for JS logic
+        window.currentUserName = "{{ current_user.name }}";
+        
+        // Get status badge - Using curve Division Badge System
         function getStatusBadge(status) {
             if (window.BadgeSystem) {
-                const statusInfo = window.BadgeSystem.getStatusInfo(status, 'ctp');
+                const statusInfo = window.BadgeSystem.getStatusInfo(status, 'curve');
                 if (statusInfo) {
                     return `<span class="badge status-badge ${statusInfo.class}" data-status="${status}">${statusInfo.label}</span>`;
                 }
             }
             
-            // Fallback untuk CTP division
-            const ctpBadges = {
-                'proses_ctp': '<span class="badge status-badge badge-menunggu-plate" data-status="proses_ctp">Menunggu Plate</span>',
-                'proses_plate': '<span class="badge status-badge badge-proses-plate" data-status="proses_plate">Proses Plate</span>',
-                'antar_plate': '<span class="badge status-badge badge-antar" data-status="antar_plate">Plate Sedang Diantar</span>',
-                'selesai': '<span class="badge status-badge badge-selesai" data-status="selesai">Selesai</span>'
+            // Fallback untuk curve division
+            const curveBadges = {
+                'menunggu_adjustment_curve': '<span class="badge status-badge badge-menunggu" data-status="menunggu_adjustment">Menunggu Adjustment</span>',
+                'proses_adjustment_curve': '<span class="badge status-badge badge-proses" data-status="proses_adjustment">Proses Adjustment</span>',
+                'menunggu_adjustment': '<span class="badge status-badge badge-selesai" data-status="selesai">Selesai</span>',
+                'selesai': '<span class="badge status-badge badge-selesai" data-status="selesai">Selesai</span>',
+                'ditolakmounting': '<span class="badge status-badge badge-danger" data-status="ditolakmounting">Ditolak Mounting</span>'
             };
-            return ctpBadges[status] || '<span class="badge status-badge badge-menunggu-plate">Unknown</span>';
+            return curveBadges[status] || '<span class="badge status-badge badge-menunggu">Unknown</span>';
         }
 
         // Get remarks badge
@@ -1036,14 +966,10 @@
             
             const remarksLower = remarks.toLowerCase();
             
-            if (remarksLower.includes('bon proof mesin off')) {
-                return '<span class="badge remarks-badge-clean badge-fa-proof">Proof Mesin Off</span>';
-            } else if (remarksLower.includes('bon proof mesin tidak off')) {
-                return '<span class="badge remarks-badge-clean badge-fa-produksi">Proof Mesin Tidak Off</span>';
-            } else if (remarksLower.includes('bon produksi mesin off')) {
-                return '<span class="badge remarks-badge-clean badge-curve-proof">Produksi Mesin Off</span>';
-            } else if (remarksLower.includes('bon produksi mesin tidak off')) {
-                return '<span class="badge remarks-badge-clean badge-curve-produksi">Produksi Mesin Tidak Off</span>';
+            if (remarksLower.includes('adjustment curve proof')) {
+                return '<span class="badge remarks-badge-clean badge-curve-proof">Curve Proof</span>';
+            } else if (remarksLower.includes('adjustment curve produksi')) {
+                return '<span class="badge remarks-badge-clean badge-curve-produksi">Curve Produksi</span>';
             } else {
                 // For other remarks, show truncated version
                 const shortRemarks = remarks.length > 15 ? remarks.substring(0, 15) + '...' : remarks;
@@ -1051,110 +977,24 @@
             }
         }
 
-
-        // Fungsi untuk menampilkan modal decline
-        function declineBon(id) {
-            const item = bonData.find(item => item.id === id);
-            if (!item) return;
-
-            currentBonId = id;
-            document.getElementById('declineReason').value = '';
-
-            document.getElementById('declineBonInfo').innerHTML = `
-                <div class="row g-3">
-                    <div class="col-12">
-                        <div class="info-label">Item Name</div>
-                        <div class="info-value">
-                            <i class="fas fa-box me-1 text-danger"></i>
-                            ${item.item_name}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="info-label">WO Number</div>
-                        <div class="info-value">${item.wo_number}</div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="info-label">MC Number</div>
-                        <div class="info-value">${item.mc_number}</div>
-                    </div>
-                    <div class="col-12">
-                        <div class="info-label">Remarks</div>
-                        <div class="info-value">${item.remarks || '-'}</div>
-                    </div>
-                </div>
-            `;
-            
-            new bootstrap.Modal(document.getElementById('declineBonModal')).show();
-        }
-
-        // Event listener untuk konfirmasi decline
-        document.getElementById('confirmDecline').addEventListener('click', async function() {
-            const reason = document.getElementById('declineReason').value.trim();
-            
-            if (!reason) {
-                showToast('Harap isi alasan penolakan', 'error');
-                return;
-            }
-            
-            try {
-                const response = await fetch('/decline-ctp-bon', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        id: currentBonId,
-                        reason: reason,
-                        declined_by: window.currentUserName
-                    })
-                });
-                
-                if (response.ok) {
-                    bootstrap.Modal.getInstance(document.getElementById('declineBonModal')).hide();
-                    showToast('Bon berhasil ditolak', 'success');
-                    loadData();
-                } else {
-                    throw new Error('Failed to decline bon');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showToast('Terjadi kesalahan saat menolak bon', 'error');
-            }
-        });        
-
         // Get action buttons
         function getActionButtons(item) {
-            if (item.status === 'proses_ctp') {
-                return `
-                    <div class="d-flex gap-2 w-100">
-                        <button class="btn btn-ctp-clean btn-clean flex-grow-1" onclick="startCtp(${item.id})">
-                            <i class="fas fa-play me-1"></i>Mulai Plate
-                        </button>
-                        <button class="btn btn-danger btn-clean" onclick="declineBon(${item.id})">
-                            <i class="fas fa-times me-1"></i>Tolak
-                        </button>
-                    </div>`;
-            } else if (item.status === 'proses_plate') {
-                // Hanya operator yang memulai (item.ctp_by) yang bisa menyelesaikan
-                if (window.currentUserName && item.ctp_by && window.currentUserName === item.ctp_by) {
-                    return `<button class="btn btn-success-clean btn-clean flex-grow-1" onclick="finishCtp(${item.id})">
-                        <i class="fas fa-check me-1"></i>Selesai Plate
+            if (item.status === 'menunggu_adjustment_curve' || item.status === 'ditolakmounting') {
+                return `<button class="btn btn-primary-clean btn-clean flex-grow-1" onclick="startAdjustment(${item.id})">
+                    <i class="fas fa-play me-1"></i>${item.status === 'ditolakmounting' ? 'Proses Ulang' : 'Mulai Adjustment'}
+                </button>`;
+            } else if (item.status === 'proses_adjustment_curve') {
+                if (window.currentUserName && item.curve_by && window.currentUserName === item.curve_by) {
+                    return `<button class="btn btn-success-clean btn-clean flex-grow-1" onclick="finishAdjustment(${item.id})">
+                        <i class="fas fa-check me-1"></i>Selesai Adjustment
                     </button>`;
                 } else {
                     return `<button class="btn btn-success-clean btn-clean flex-grow-1" hidden title="Hanya operator yang memulai yang bisa menyelesaikan">
-                        <i class="fas fa-check me-1"></i>Selesai Plate
-                    </button>`;
-                }
-            } else if (item.status === 'antar_plate') {
-                if (window.currentUserName && item.ctp_by && window.currentUserName === item.ctp_by) {
-                    return `<button class="btn btn-success-clean btn-clean flex-grow-1" onclick="deliverPlate(${item.id})">
-                        <i class="fas fa-truck me-1"></i>Plate Sampai
-                    </button>`;
-                } else {
-                    return `<button class="btn btn-success-clean btn-clean flex-grow-1" hidden title="Hanya operator yang memulai yang bisa menyelesaikan">
-                        <i class="fas fa-truck me-1"></i>Plate Sampai
+                        <i class="fas fa-check me-1"></i>Selesai Adjustment
                     </button>`;
                 }
             }
-            return ''; // Empty string untuk status selesai
+            return ''; // Empty string instead of "Tidak ada aksi tersedia"
         }
 
         // Update summary
@@ -1162,98 +1002,34 @@
             const today = new Date().toISOString().split('T')[0];
             
             const summary = {
-                waitingPlate: data.filter(item => item.status === 'proses_ctp').length,
-                completedToday: data.filter(item => {
-                    const isCompleted = item.status === 'selesai';
-                    const hasFinishDate = item.plate_delivered_at || item.plate_finish_at;
-                    const isToday = hasFinishDate && hasFinishDate.startsWith(today);
-                    return isCompleted && hasFinishDate && isToday;
-                }).length,
-                totalBonProof: data.filter(item => {
-                    const remarksLower = (item.remarks || '').toLowerCase();
-                    const isProof = remarksLower.includes('proof') || remarksLower.includes('PROOF');
-                    return isProof;
-                }).length,
-                totalBonProduksi: data.filter(item => {
-                    const remarksLower = (item.remarks || '').toLowerCase();
-                    const isProduksi = remarksLower.includes('produksi') || remarksLower.includes('PRODUKSI');
-                    return isProduksi;
-                }).length
+                waiting: data.filter(item => item.status === 'menunggu_adjustment_curve').length,
+                completedToday: data.filter(item => 
+                    (item.status === 'menunggu_adjustment' || item.status === 'selesai') && 
+                    item.curve_finish_at && item.curve_finish_at.startsWith(today)
+                ).length,
+                // Gabungkan FA Proof dan FA Produksi DAN hanya hitung jika is_epson adalah true
+                totalCurve: data.filter(item => 
+ 
+                    item.remarks && (
+                        item.remarks.toLowerCase().includes('adjustment curve proof') ||
+                        item.remarks.toLowerCase().includes('adjustment curve produksi')
+                    )
+                ).length
             };
 
-            document.getElementById('waitingPlateCount').textContent = summary.waitingPlate;
+            document.getElementById('waitingCount').textContent = summary.waiting;
             document.getElementById('completedTodayCount').textContent = summary.completedToday;
-            document.getElementById('totalBonProofCount').textContent = summary.totalBonProof;
-            document.getElementById('totalBonProduksiCount').textContent = summary.totalBonProduksi;
+            document.getElementById('totalCurveCount').textContent = summary.totalCurve;
         }
 
-        // Filter data
-        function filterData() {
-            const statusFilter = document.getElementById('statusFilter').value;
-            const mesinFilter = document.getElementById('mesinFilter').value;
-            const remarksFilter = document.getElementById('remarksFilter').value;
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            
-            let filteredData = bonData;
-            
-            // If viewing completed items, sort by completion date (newest first)
-            if (statusFilter === 'selesai') {
-                filteredData.sort((a, b) => {
-                    const dateA = new Date(a.machine_off_at || 0);
-                     const dateB = new Date(b.machine_off_at || 0);
-                    return dateB - dateA;
-                });
-            }
-
-            // Filter by status
-            if (statusFilter) {
-                filteredData = filteredData.filter(item => item.status === statusFilter);
-            } else {
-                // Default: show active CTP processes (exclude selesai for card display)
-                filteredData = filteredData.filter(item => 
-                    item.status === 'proses_ctp' || item.status === 'proses_plate' || item.status === 'antar_plate'
-                );
-            }
-            
-            // Filter by mesin
-            if (mesinFilter) {
-                filteredData = filteredData.filter(item => item.mesin_cetak === mesinFilter);
-            }
-            
-            // Filter by remarks
-            if (remarksFilter) {
-                filteredData = filteredData.filter(item => 
-                    item.remarks && item.remarks.includes(remarksFilter)
-                );
-            }
-            
-            // Filter by search term
-            if (searchTerm) {
-                filteredData = filteredData.filter(item => 
-                    (item.job_id && item.job_id.toLowerCase().includes(searchTerm)) ||
-                    (item.wo_number && item.wo_number.toLowerCase().includes(searchTerm)) ||
-                    (item.item_name && item.item_name.toLowerCase().includes(searchTerm)) ||
-                    (item.pic && item.pic.toLowerCase().includes(searchTerm))
-                );
-            }
-            
-            displayData(filteredData);
-        }
-
-        // Format date
-        function formatDate(dateString) {
-            if (!dateString) return 'N/A';
-            return new Date(dateString).toLocaleDateString('id-ID');
-        }
-
-        // Start CTP
-        function startCtp(id) {
-            const item = bonData.find(item => item.id === id);
+        // Start adjustment
+        function startAdjustment(id) {
+            const item = adjustmentData.find(item => item.id === id);
             if (!item) return;
             
-            currentBonId = id;
+            currentAdjustmentId = id;
             
-            document.getElementById('startCtpInfo').innerHTML = `
+            document.getElementById('startAdjustmentInfo').innerHTML = `
                 <div class="row g-3">
                     <div class="col-12">
                         <div class="info-label">Item Name</div>
@@ -1296,7 +1072,7 @@
                             <i class="fas fa-file-alt me-1 text-info"></i>
                             ${item.paper_type}
                         </div>
-                    </div>                     
+                    </div>                    
                     ${item.remarks ? `
                     <div class="col-12">
                         <div class="info-label">Remarks</div>
@@ -1310,25 +1086,27 @@
                     <div class="col-12 mt-3">
                         <div class="info-label">Catatan Request</div>
                         <div class="alert alert-light border border-warning" style="background: linear-gradient(135deg, #fff8e1 0%, #fffde7 100%); border-radius: 8px;">
-                            <i class="fas fa-sticky-note me-1 text-warning"></i>
-                            ${item.note}
+                            <div class="d-flex align-items-start">
+                                <i class="fas fa-sticky-note me-2 text-warning mt-1"></i>
+                                <div class="info-value text-dark">${item.note}</div>
+                            </div>
                         </div>
                     </div>
                     ` : ''}
                 </div>
             `;
             
-            new bootstrap.Modal(document.getElementById('startCtpModal')).show();
+            new bootstrap.Modal(document.getElementById('startAdjustmentModal')).show();
         }
 
-        // Finish CTP
-        function finishCtp(id) {
-            const item = bonData.find(item => item.id === id);
+        // Finish adjustment
+        function finishAdjustment(id) {
+            const item = adjustmentData.find(item => item.id === id);
             if (!item) return;
-
-            currentBonId = id;
-
-            document.getElementById('finishCtpInfo').innerHTML = `
+            
+            currentAdjustmentId = id;
+            
+            document.getElementById('finishAdjustmentInfo').innerHTML = `
                 <div class="row g-3">
                     <div class="col-12">
                         <div class="info-label">Item Name</div>
@@ -1393,257 +1171,180 @@
                     </div>
                     ` : ''}
                     <div class="col-12 mt-3">
-                        <div class="info-label">Waktu Dimulai Plate</div>
+                        <div class="info-label">Waktu Dimulai Adjustment</div>
                         <div class="info-value">
                             <i class="fas fa-clock me-1 text-info"></i>
-                            ${formatDateTimeIndonesia(item.plate_start_at || '-')}
-                            ${item.ctp_by ? '<span class="text-muted ms-2">[PIC: ' + item.ctp_by + ']</span>' : ''}
+                            ${formatDateTimeIndonesia(item.curve_start_at)}
+                            ${item.curve_by ? '<span class="text-muted ms-2">[PIC: ' + item.curve_by + ']</span>' : ''}
                         </div>
                     </div>
                 </div>
             `;
             
-            new bootstrap.Modal(document.getElementById('finishCtpModal')).show();
+            new bootstrap.Modal(document.getElementById('finishAdjustmentModal')).show();
         }
 
-        // Deliver Plate
-        function deliverPlate(id) {
-            const item = bonData.find(item => item.id === id);
-            if (!item) return;
-
-            currentBonId = id;
-
-            // Populate modal info
-            document.getElementById('plateDeliveredInfo').innerHTML = `
-                <div class="row g-3">
-                    <div class="col-12">
-                        <div class="info-label">Item Name</div>
-                        <div class="info-value">
-                            <i class="fas fa-box me-1 text-success"></i>
-                            ${item.item_name}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="info-label">WO Number</div>
-                        <div class="info-value">
-                            <i class="fas fa-file-alt me-1 text-info"></i>
-                            ${item.wo_number}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="info-label">MC Number</div>
-                        <div class="info-value">
-                            <i class="fas fa-barcode me-1 text-warning"></i>
-                            ${item.mc_number}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="info-label">Mesin Cetak</div>
-                        <div class="info-value">
-                            <i class="fas fa-industry me-1 text-primary"></i>
-                            ${item.mesin_cetak}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="info-label">Jumlah Plate</div>
-                        <div class="info-value">
-                            <i class="fas fa-layer-group me-1 text-secondary"></i>
-                            ${item.jumlah_plate} plate
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="info-label">Jenis Kertas</div>
-                        <div class="info-value">
-                            <i class="fas fa-file-alt me-1 text-info"></i>
-                            ${item.paper_type}
-                        </div>
-                    </div>                     
-                    ${item.remarks ? `
-                    <div class="col-12">
-                        <div class="info-label">Remarks</div>
-                        <div class="info-value">
-                            <i class="fas fa-comment-alt me-1 text-primary"></i>
-                            ${item.remarks}
-                        </div>
-                    </div>
-                    ` : ''}
-                    ${item.note ? `
-                    <div class="col-12 mt-3">
-                        <div class="info-label">Catatan Request</div>
-                        <div class="alert alert-light border border-warning" style="background: linear-gradient(135deg, #fff8e1 0%, #fffde7 100%); border-radius: 8px;">
-                            <i class="fas fa-sticky-note me-1 text-warning"></i>
-                            ${item.note}
-                        </div>
-                    </div>
-                    ` : ''}
-                </div>
-            `;
-            
-            // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('plateDeliveredModal'));
-            modal.show();
-        }
-
-        // Handle confirm plate delivered
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('confirmPlateDelivered').addEventListener('click', function() {
-                if (!currentBonId) return;
-
-                const confirmBtn = this;
-                const originalText = confirmBtn.innerHTML;
-                confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Memproses...';
-                confirmBtn.disabled = true;
-                
-                fetch('/plate-delivered-bon', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: currentBonId })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Close modal
-                        const modal = bootstrap.Modal.getInstance(document.getElementById('plateDeliveredModal'));
-                        modal.hide();
-                        
-                        loadData();
-                        showToast('Plate berhasil sampai di mesin', 'success');
-                    } else {
-                        showToast('Gagal konfirmasi plate sampai', 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showToast('Terjadi kesalahan saat konfirmasi plate sampai', 'error');
-                })
-                .finally(() => {
-                    // Reset button
-                    confirmBtn.innerHTML = originalText;
-                    confirmBtn.disabled = false;
-                });
-            });
-        });
-
-        // Initialize page
+        // Event listeners
         document.addEventListener('DOMContentLoaded', async function() {
             // Request notification permission when page loads
             await requestNotificationPermission();
+            
             loadData();
             
-            // Add event listeners for filters
-            document.getElementById('statusFilter').addEventListener('change', filterData);
-            document.getElementById('mesinFilter').addEventListener('change', filterData);
-            document.getElementById('remarksFilter').addEventListener('change', filterData);
-            document.getElementById('searchInput').addEventListener('input', filterData);
+            // Filter functions
+            function applyFilters() {
+                const statusFilter = document.getElementById('statusFilter').value;
+                const mesinFilter = document.getElementById('mesinFilter').value;
+                const remarksFilter = document.getElementById('remarksFilter').value;
+                const searchInput = document.getElementById('searchInput').value.toLowerCase().trim();
+                
+                let filteredData = [...adjustmentData]; // Create a copy to avoid modifying original array
+
+                // If viewing completed items, sort by completion date (newest first)
+                if (statusFilter === 'selesai') {
+                    filteredData.sort((a, b) => {
+                        const dateA = new Date(a.machine_off_at || 0);
+                        const dateB = new Date(b.machine_off_at || 0);
+                        return dateB - dateA;
+                    });
+                }
+
+                // If no filters are applied, show waiting and in-progress adjustments
+                const hasActiveFilters = statusFilter || mesinFilter || remarksFilter || searchInput;
+                if (!hasActiveFilters) {
+                    filteredData = adjustmentData.filter(item => 
+                        item.status === 'menunggu_adjustment_curve' || item.status === 'proses_adjustment_curve' || item.status === 'ditolakmounting'
+                    );
+                } else {
+                    // Apply filters when user actively uses them
+                    if (statusFilter) {
+                        // Handle special cases for curve division status filtering
+                        if (statusFilter === 'selesai') {
+                            // Show only items that have both curve_start_at and curve_finish_at timestamps
+                            filteredData = filteredData.filter(item => 
+                                item.curve_start_at && item.curve_finish_at
+                            );
+                        } else {
+                            filteredData = filteredData.filter(item => item.status === statusFilter);
+                        }
+                    }
+                    
+                    if (mesinFilter) {
+                        filteredData = filteredData.filter(item => item.mesin_cetak === mesinFilter);
+                    }
+                    
+                    if (remarksFilter) {
+                        filteredData = filteredData.filter(item => 
+                            item.remarks && item.remarks.toUpperCase().includes(remarksFilter)
+                        );
+                    }
+                    
+                    if (searchInput) {
+                        filteredData = filteredData.filter(item => {
+                            const searchFields = [
+                                item.wo_number || '',
+                                item.mc_number || '',
+                                item.item_name || '',
+                                item.mesin_cetak || '',
+                                item.remarks || ''
+                            ];
+                            return searchFields.some(field => 
+                                field.toLowerCase().includes(searchInput)
+                            );
+                        });
+                    }
+                }
+                
+                displayData(filteredData);
+                
+                // No need for toast notifications on filter/search actions
+                // Users can see the results directly in the interface
+            }
+            
+            // Status filter
+            document.getElementById('statusFilter').addEventListener('change', function() {
+                applyFilters();
+            });
+            
+            // Mesin filter
+            document.getElementById('mesinFilter').addEventListener('change', applyFilters);
+            
+            // Remarks filter
+            document.getElementById('remarksFilter').addEventListener('change', applyFilters);
+            
+            // Search input
+            document.getElementById('searchInput').addEventListener('input', applyFilters);
             
             // Refresh button
             document.getElementById('refreshData').addEventListener('click', loadData);
             
-            // Export button
-            document.getElementById('exportData').addEventListener('click', function() {
-                console.log('Export button clicked - CTP Bon');
-                new bootstrap.Modal(document.getElementById('exportModal')).show();
+            // Confirm start adjustment
+            document.getElementById('confirmStartAdjustment').addEventListener('click', async function() {
+                const adjustmentBy = document.getElementById('adjustmentBy').value.trim();
+                
+                if (!adjustmentBy) {
+                    showToast('Harap isi nama PIC adjustment', 'error');
+                    return;
+                }
+                
+                // Get the current item to check if it's a reprocess
+                const currentItem = adjustmentData.find(item => item.id === currentAdjustmentId);
+                const isReprocess = currentItem?.status === 'ditolakmounting';
+                
+                try {
+                    const response = await fetch('/start-adjustment-curve', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            id: currentAdjustmentId,
+                            curve_by: adjustmentBy,
+                            is_reprocess: isReprocess // Add flag for reprocess
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        bootstrap.Modal.getInstance(document.getElementById('startAdjustmentModal')).hide();
+                        showToast('Proses adjustment berhasil dimulai', 'success');
+                        loadData();
+                    } else {
+                        showToast('Gagal memulai adjustment', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showToast('Terjadi kesalahan saat memulai adjustment', 'error');
+                }
+            });
+            
+            // Confirm finish adjustment
+            document.getElementById('confirmFinishAdjustment').addEventListener('click', async function() {
+                try {
+                    const response = await fetch('/finish-adjustment-curve', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            id: currentAdjustmentId
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        bootstrap.Modal.getInstance(document.getElementById('finishAdjustmentModal')).hide();
+                        loadData();
+                    } else {
+                        showToast('Gagal menyelesaikan adjustment', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Terjadi kesalahan');
+                }
             });
             
             // Confirm export
             document.getElementById('confirmExport').addEventListener('click', function() {
-                // Get filter values
-                const statusFilter = document.getElementById('exportStatusFilter').value;
-                const remarksFilter = document.getElementById('exportRemarksFilter').value;
-                const dateFrom = document.getElementById('exportDateFrom').value;
-                const dateTo = document.getElementById('exportDateTo').value;
-                
-                // Build query parameters
-                let queryParams = [];
-                if (statusFilter) queryParams.push(`status=${encodeURIComponent(statusFilter)}`);
-                if (remarksFilter) queryParams.push(`remarks=${encodeURIComponent(remarksFilter)}`);
-                if (dateFrom) queryParams.push(`date_from=${encodeURIComponent(dateFrom)}`);
-                if (dateTo) queryParams.push(`date_to=${encodeURIComponent(dateTo)}`);
-                
-                const queryString = queryParams.length > 0 ? '?' + queryParams.join('&') : '';
-                
-                // Redirect to CSV export endpoint with filters
-                window.open(`/export-ctp-bon${queryString}`, '_blank');
-                bootstrap.Modal.getInstance(document.getElementById('exportModal')).hide();
-                
-                showToast('Export Data berhasil dimulai, file akan segera didownload', 'success');
-            });
-            
-            // Auto refresh toggle
-            document.getElementById('autoRefresh').addEventListener('change', function() {
-                autoRefreshEnabled = this.checked;
-                if (autoRefreshEnabled) {
-                    startAutoRefresh();
-                    showToast('Auto refresh diaktifkan', 'success', 2000);
-                } else {
-                    stopAutoRefresh();
-                    showToast('Auto refresh dinonaktifkan', 'info', 2000);
-                }
-            });
-            
-            // Start auto refresh by default
-            startAutoRefresh();
-            
-            // Confirm start CTP
-            document.getElementById('confirmStartCtp').addEventListener('click', async function() {
-                const ctpBy = document.getElementById('ctpBy').value.trim();
-                const ctpGroup = document.getElementById('ctpGrup').value.trim();
-                
-                if (!ctpBy || !ctpGroup) {
-                    showToast('Harap isi nama PIC CTP dan Grup CTP', 'error');
-                    return;
-                }
-                
-                try {
-                    const response = await fetch('/start-ctp-bon', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            id: currentBonId,
-                            ctp_by: ctpBy,
-                            ctp_group: ctpGroup
-                        })
-                    });
-                    
-                    if (response.ok) {
-                        bootstrap.Modal.getInstance(document.getElementById('startCtpModal')).hide();
-                        showToast('Proses plate berhasil dimulai', 'success');
-                        loadData();
-                    } else {
-                        showToast('Gagal memulai proses plate', 'error');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    showToast('Terjadi kesalahan saat memulai proses plate', 'error');
-                }
-            });
-            
-            // Confirm finish CTP
-            document.getElementById('confirmFinishCtp').addEventListener('click', async function() {
-                try {
-                    const response = await fetch('/finish-ctp-bon', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            id: currentBonId
-                        })
-                    });
-                    
-                    if (response.ok) {
-                        bootstrap.Modal.getInstance(document.getElementById('finishCtpModal')).hide();
-                        showToast('Proses plate berhasil diselesaikan', 'success');
-                        loadData();
-                    } else {
-                        showToast('Gagal menyelesaikan proses plate', 'error');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    showToast('Terjadi kesalahan saat menyelesaikan proses plate', 'error');
-                }
+                exportCurveData();
             });
         });
         
-        // CTP ENHANCEMENTS - Professional Features
+        // CURVE ENHANCEMENTS - Professional Features
         
         // Auto-refresh functionality
         let autoRefreshInterval;
@@ -1658,16 +1359,78 @@
             }
         }
         
-        function stopAutoRefresh() {
-            if (autoRefreshInterval) {
+        // Auto-refresh toggle
+        document.getElementById('autoRefresh').addEventListener('change', function() {
+            autoRefreshEnabled = this.checked;
+            if (autoRefreshEnabled) {
+                showToast('Auto-refresh diaktifkan (setiap 30 detik)', 'success');
+                startAutoRefresh();
+            } else {
                 clearInterval(autoRefreshInterval);
-                autoRefreshInterval = null;
+                showToast('Auto-refresh dinonaktifkan', 'info');
+            }
+        });
+        
+        // Export functionality
+        document.getElementById('exportData').addEventListener('click', function() {
+            showExportModal();
+        });
+        
+        function showExportModal() {
+            // Set current filter values to export modal (excluding mesin and search)
+            document.getElementById('exportStatusFilter').value = document.getElementById('statusFilter').value;
+            document.getElementById('exportRemarksFilter').value = document.getElementById('remarksFilter').value;
+            
+            new bootstrap.Modal(document.getElementById('exportModal')).show();
+        }
+        
+        function exportCurveData() {
+            try {
+                showToast('Mempersiapkan export data...', 'info');
+                
+                // Get export filter values (no mesin and search field)
+                const statusFilter = document.getElementById('exportStatusFilter').value;
+                const remarksFilter = document.getElementById('exportRemarksFilter').value;
+                const dateFrom = document.getElementById('exportDateFrom').value;
+                const dateTo = document.getElementById('exportDateTo').value;
+                
+                // Build export URL with parameters (no mesin and search parameter)
+                const params = new URLSearchParams();
+                if (statusFilter) params.append('status', statusFilter);
+                if (remarksFilter) params.append('remarks', remarksFilter);
+                if (dateFrom) params.append('date_from', dateFrom);
+                if (dateTo) params.append('date_to', dateTo);
+                
+                const exportUrl = '/export-curve-adjustment?' + params.toString();
+                
+                // Create temporary link and trigger download
+                const link = document.createElement('a');
+                link.href = exportUrl;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Close modal and show success message
+                bootstrap.Modal.getInstance(document.getElementById('exportModal')).hide();
+                showToast('Export Data berhasil dimulai, file akan segera didownload', 'success');
+                
+            } catch (error) {
+                console.error('Export error:', error);
+                showToast('Gagal export data', 'error');
             }
         }
-
-        // Add audio element for notification sound
-        const notificationSound = new Audio('/static/sounds/bon.mp3');
-
+        
+        function extractCardData(card) {
+            // This function is no longer used - kept for compatibility
+            return null;
+        }
+        
+        function createCSV(data) {
+            // This function is no longer used - kept for compatibility
+            return '';
+        }
+        
         // Browser Notification System
         async function requestNotificationPermission() {
             if (!('Notification' in window)) {
@@ -1687,6 +1450,9 @@
             return false;
         }
 
+        // Add audio element for notification sound
+        const notificationSound = new Audio('/static/sounds/adjustment.mp3');
+
         // Function to show browser notification
         function showBrowserNotification(title, options = {}) {
             if (Notification.permission === 'granted') {
@@ -1696,7 +1462,7 @@
                     vibrate: [200, 100, 200],
                     silent: false,
                     requireInteraction: false,
-                    sound: '/static/sounds/bon.mp3'
+                    sound: '/static/sounds/adjustment.mp3'  // Add sound URL
                 };
 
                 // Create and show notification
@@ -1714,8 +1480,8 @@
                     notification.close();
                 };
             }
-        }        
-        
+        }
+
         // Toast notification system
         function showToast(message, type = 'info', duration = 5000) {
             const toastContainer = document.getElementById('toastContainer');
@@ -1764,7 +1530,7 @@
             // Ctrl+E: Export
             if (e.ctrlKey && e.key === 'e') {
                 e.preventDefault();
-                exportCtpData(); // Export function already has its own notifications
+                exportCurveData(); // Export function already has its own notifications
             }
             
             // Escape: Close modals
@@ -1778,6 +1544,7 @@
         
         // Initialize auto-refresh on page load
         startAutoRefresh();
+        
     </script>
 </body>
 </html>

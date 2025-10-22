@@ -142,7 +142,7 @@
 
     </style>
 </head>
-<body>
+<body data-can-access-press="{{ current_user.can_access_press() | tojson }}"></body>>
     <div class="d-flex" id="wrapper">
         {% include '_sidebar.html' %}
         <div id="page-content-wrapper">
@@ -155,11 +155,13 @@
                                 <h2 class="mb-1 text-white">Data Adjustment Plate</h2>
                                 <p class="mb-0 opacity-75">Monitoring semua request adjustment plate</p>
                             </div>
-                            <div class="text-end">
-                                <a href="/request-plate-adjustment" class="btn btn-light">
-                                    <i class="fas fa-plus-circle me-1"></i> Request Plate Adjustment
-                                </a>
-                            </div>
+                        {% if current_user.can_access_press() %}
+                          <div class="text-end">
+                            <a href="/request-plate-adjustment" class="btn btn-light">
+                              <i class="fas fa-plus-circle me-1"></i> Request Plate Adjustment
+                            </a>
+                          </div>
+                        {% endif %}
                         </div>
                     </div>
                 </div>
@@ -205,12 +207,14 @@
                                 <button class="btn btn-outline-secondary" type="button" id="clearSearch">Clear</button>
                             </div>
                         </div>
+                        {% if current_user.can_access_press() %}
                         <div class="col-md-2 mb-2 mb-md-0">
                             <label class="form-label">&nbsp;</label>
                             <button class="btn btn-export-csv w-100" onclick="showExportModal()" type="button">
                                 <i class="fas fa-file-export me-2"></i>Export Data
                             </button>
                         </div>
+                        {% endif %}
                     </div>
                 </div>
                 <div id="dataMessage" class="alert d-none" role="alert"></div>
