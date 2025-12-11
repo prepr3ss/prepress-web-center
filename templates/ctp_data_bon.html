@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prepress Impact</title>
+    <title>Impact 360</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <style>
         /* Clean and Professional Styling for CTP */
         .page-header {
@@ -308,10 +309,11 @@
     </style>
 </head>
 <body>
-    <div class="d-flex" id="wrapper">
+    {% include '_top_header.html' %}
+    <div class="d-flex" id="content-wrapper">
         {% include '_sidebar.html' %}
         <div id="page-content-wrapper">
-            <div class="container-fluid">
+            <div class="container-fluid pt-3">
                 <!-- Page Header -->
                 <div class="page-header">
                     <div class="container-fluid">
@@ -684,6 +686,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
     <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
     <script src="{{ url_for('static', filename='js/badge_system.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/notification_system.js') }}"></script>
     <script>
         let bonData = [];
         let currentbonId = null;
@@ -775,7 +778,7 @@
                 document.getElementById('loadingIndicator').style.display = 'block';
                 document.getElementById('noDataMessage').classList.add('d-none');
                 
-                const response = await fetch('/get-ctp-bon-data');
+                const response = await fetch('/impact/get-ctp-bon-data');
                 if (!response.ok) throw new Error('Failed to fetch data');
                 
                 const result = await response.json();
@@ -995,7 +998,7 @@
                                 <div class="flex-grow-1">
                                     ${actionButtons}
                                 </div>
-                                <a href="/detail-bon/${item.id}" class="btn btn-outline-clean btn-clean">
+                                <a href="/impact/detail-bon/${item.id}" class="btn btn-outline-clean btn-clean">
                                     <i class="fas fa-eye me-1"></i>Detail
                                 </a>
                             </div>
@@ -1097,7 +1100,7 @@
             }
             
             try {
-                const response = await fetch('/decline-ctp-bon', {
+                const response = await fetch('/impact/decline-ctp-bon', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1494,7 +1497,7 @@
                 confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Memproses...';
                 confirmBtn.disabled = true;
                 
-                fetch('/plate-delivered-bon', {
+                fetch('/impact/plate-delivered-bon', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: currentBonId })
@@ -1563,7 +1566,7 @@
                 const queryString = queryParams.length > 0 ? '?' + queryParams.join('&') : '';
                 
                 // Redirect to CSV export endpoint with filters
-                window.open(`/export-ctp-bon${queryString}`, '_blank');
+                window.open(`/impact/export-ctp-bon${queryString}`, '_blank');
                 bootstrap.Modal.getInstance(document.getElementById('exportModal')).hide();
                 
                 showToast('Export Data berhasil dimulai, file akan segera didownload', 'success');
@@ -1595,7 +1598,7 @@
                 }
                 
                 try {
-                    const response = await fetch('/start-ctp-bon', {
+                    const response = await fetch('/impact/start-ctp-bon', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -1621,7 +1624,7 @@
             // Confirm finish CTP
             document.getElementById('confirmFinishCtp').addEventListener('click', async function() {
                 try {
-                    const response = await fetch('/finish-ctp-bon', {
+                    const response = await fetch('/impact/finish-ctp-bon', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -1666,7 +1669,7 @@
         }
 
         // Add audio element for notification sound
-        const notificationSound = new Audio('/static/sounds/bon.mp3');
+        const notificationSound = new Audio('/impact/static/sounds/bon.mp3');
 
         // Browser Notification System
         async function requestNotificationPermission() {
@@ -1691,12 +1694,12 @@
         function showBrowserNotification(title, options = {}) {
             if (Notification.permission === 'granted') {
                 const defaultOptions = {
-                    icon: '/static/img/prepress_impact_logo.png',
-                    badge: '/static/img/prepress_impact_logo.png',
+                    icon: '/impact/static/img/impact360.png',
+                    badge: '/impact/static/img/impact360.png',
                     vibrate: [200, 100, 200],
                     silent: false,
                     requireInteraction: false,
-                    sound: '/static/sounds/bon.mp3'
+                    sound: '/impact/static/sounds/bon.mp3'
                 };
 
                 // Create and show notification

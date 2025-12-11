@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prepress Impact</title>
+    <title>Impact 360</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <style>
         /* Page Header dengan gradient orange seperti template CTP lainnya */
         .page-header {
@@ -73,7 +74,7 @@
         
         /* Table styling */
         .table-responsive-kartu-stock {
-            width: 49.5%;
+            width: 100%;
             border-radius: 15px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.08);
             overflow: hidden;
@@ -295,10 +296,11 @@
     </style>
 </head>
 <body>
-    <div class="d-flex" id="wrapper">
-        {% include '_sidebar.html' %}
-        <div id="page-content-wrapper">
-            <div class="container-fluid">
+    <div id="wrapper">
+        {% include '_top_header.html' %}
+        <div class="d-flex" id="content-wrapper">
+            {% include '_sidebar.html' %}
+            <div class="container-fluid pt-3">
                 <!-- Page Header -->
                 <div class="page-header">
                     <div class="container-fluid">
@@ -366,7 +368,7 @@
                 </div>
 
                 <!-- Tables Container -->
-                <div class="d-flex justify-content-between">
+                <div class="d-flex flex-column">
                     <div class="table-responsive-kartu-stock">
                         <div class="brand-logo-container">
                             <div class="brand-logo">
@@ -385,7 +387,7 @@
                                         <th colspan="2">Stock Awal</th>
                                         <th colspan="1">Pemakaian</th>
                                         <th colspan="1">Incoming</th>
-                                        <th colspan="2">Stock Akhir</th>
+                                        <th colspan="3">Stock Akhir</th>
                                     </tr>
                                     <tr>
                                         <th>BOX</th>
@@ -394,6 +396,7 @@
                                         <th>BOX</th>
                                         <th>BOX</th>
                                         <th>PCS</th>
+                                        <th>TOTAL PCS</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -405,15 +408,7 @@
                                         <td data-field="jumlah_incoming">0</td>
                                         <td data-field="jumlah_stock_akhir_box">0</td>
                                         <td data-field="jumlah_stock_akhir_pcs">0</td>
-                                    </tr>
-                                    <tr data-item-code="02-023-000-0000007">
-                                        <td>FUJI 1030 UV</td>
-                                        <td data-field="jumlah_stock_awal_box">0</td>
-                                        <td data-field="jumlah_stock_awal_pcs">0</td>
-                                        <td data-field="jumlah_pemakaian">0</td>
-                                        <td data-field="jumlah_incoming">0</td>
-                                        <td data-field="jumlah_stock_akhir_box">0</td>
-                                        <td data-field="jumlah_stock_akhir_pcs">0</td>
+                                        <td data-field="jumlah_stock_akhir">0</td>
                                     </tr>
                                     <tr data-item-code="02-049-000-0000010">
                                         <td>FUJI 1055</td>
@@ -423,24 +418,7 @@
                                         <td data-field="jumlah_incoming">0</td>
                                         <td data-field="jumlah_stock_akhir_box">0</td>
                                         <td data-field="jumlah_stock_akhir_pcs">0</td>
-                                    </tr>
-                                    <tr data-item-code="02-049-000-0000012">
-                                        <td>FUJI 1055 UV</td>
-                                        <td data-field="jumlah_stock_awal_box">0</td>
-                                        <td data-field="jumlah_stock_awal_pcs">0</td>
-                                        <td data-field="jumlah_pemakaian">0</td>
-                                        <td data-field="jumlah_incoming">0</td>
-                                        <td data-field="jumlah_stock_akhir_box">0</td>
-                                        <td data-field="jumlah_stock_akhir_pcs">0</td>
-                                    </tr>
-                                    <tr data-item-code="02-049-000-0000013">
-                                        <td>FUJI 1055 LHPL</td>
-                                        <td data-field="jumlah_stock_awal_box">0</td>
-                                        <td data-field="jumlah_stock_awal_pcs">0</td>
-                                        <td data-field="jumlah_pemakaian">0</td>
-                                        <td data-field="jumlah_incoming">0</td>
-                                        <td data-field="jumlah_stock_akhir_box">0</td>
-                                        <td data-field="jumlah_stock_akhir_pcs">0</td>
+                                        <td data-field="jumlah_stock_akhir">0</td>
                                     </tr>
                                     <tr data-item-code="02-049-000-0000009">
                                         <td>FUJI 1630</td>
@@ -450,6 +428,47 @@
                                         <td data-field="jumlah_incoming">0</td>
                                         <td data-field="jumlah_stock_akhir_box">0</td>
                                         <td data-field="jumlah_stock_akhir_pcs">0</td>
+                                        <td data-field="jumlah_stock_akhir">0</td>
+                                    </tr>
+                                    <tr data-item-code="02-023-000-0000007">
+                                        <td>FUJI 1030 UV</td>
+                                        <td data-field="jumlah_stock_awal_box">0</td>
+                                        <td data-field="jumlah_stock_awal_pcs">0</td>
+                                        <td data-field="jumlah_pemakaian">0</td>
+                                        <td data-field="jumlah_incoming">0</td>
+                                        <td data-field="jumlah_stock_akhir_box">0</td>
+                                        <td data-field="jumlah_stock_akhir_pcs">0</td>
+                                        <td data-field="jumlah_stock_akhir">0</td>
+                                    </tr>
+                                    <tr data-item-code="02-049-000-0000012">
+                                        <td>FUJI 1030 LHPJA</td>
+                                        <td data-field="jumlah_stock_awal_box">0</td>
+                                        <td data-field="jumlah_stock_awal_pcs">0</td>
+                                        <td data-field="jumlah_pemakaian">0</td>
+                                        <td data-field="jumlah_incoming">0</td>
+                                        <td data-field="jumlah_stock_akhir_box">0</td>
+                                        <td data-field="jumlah_stock_akhir_pcs">0</td>
+                                        <td data-field="jumlah_stock_akhir">0</td>
+                                    </tr>
+                                    <tr data-item-code="02-023-000-0000012">
+                                        <td>FUJI 1055 UV</td>
+                                        <td data-field="jumlah_stock_awal_box">0</td>
+                                        <td data-field="jumlah_stock_awal_pcs">0</td>
+                                        <td data-field="jumlah_pemakaian">0</td>
+                                        <td data-field="jumlah_incoming">0</td>
+                                        <td data-field="jumlah_stock_akhir_box">0</td>
+                                        <td data-field="jumlah_stock_akhir_pcs">0</td>
+                                        <td data-field="jumlah_stock_akhir">0</td>
+                                    </tr>
+                                    <tr data-item-code="02-049-000-0000013">
+                                        <td>FUJI 1055 LHPL</td>
+                                        <td data-field="jumlah_stock_awal_box">0</td>
+                                        <td data-field="jumlah_stock_awal_pcs">0</td>
+                                        <td data-field="jumlah_pemakaian">0</td>
+                                        <td data-field="jumlah_incoming">0</td>
+                                        <td data-field="jumlah_stock_akhir_box">0</td>
+                                        <td data-field="jumlah_stock_akhir_pcs">0</td>
+                                        <td data-field="jumlah_stock_akhir">0</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -502,7 +521,7 @@
                                         <th colspan="2">Stock Awal</th>
                                         <th colspan="1">Pemakaian</th>
                                         <th colspan="1">Incoming</th>
-                                        <th colspan="2">Stock Akhir</th>
+                                        <th colspan="3">Stock Akhir</th>
                                     </tr>
                                     <tr>
                                         <th>BOX</th>
@@ -511,6 +530,7 @@
                                         <th>BOX</th>
                                         <th>BOX</th>
                                         <th>PCS</th>
+                                        <th>TOTAL PCS</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -522,6 +542,7 @@
                                         <td data-field="jumlah_incoming">0</td>
                                         <td data-field="jumlah_stock_akhir_box">0</td>
                                         <td data-field="jumlah_stock_akhir_pcs">0</td>
+                                        <td data-field="jumlah_stock_akhir">0</td>
                                     </tr>
                                     <tr data-item-code="02-049-000-0000003">
                                         <td>SAPHIRA 1055</td>
@@ -531,6 +552,7 @@
                                         <td data-field="jumlah_incoming">0</td>
                                         <td data-field="jumlah_stock_akhir_box">0</td>
                                         <td data-field="jumlah_stock_akhir_pcs">0</td>
+                                        <td data-field="jumlah_stock_akhir">0</td>
                                     </tr>
                                     <tr data-item-code="02-049-000-0000011">
                                         <td>SAPHIRA 1055 PN</td>
@@ -540,6 +562,7 @@
                                         <td data-field="jumlah_incoming">0</td>
                                         <td data-field="jumlah_stock_akhir_box">0</td>
                                         <td data-field="jumlah_stock_akhir_pcs">0</td>
+                                        <td data-field="jumlah_stock_akhir">0</td>
                                     </tr>
                                     <tr data-item-code="02-049-000-0000001">
                                         <td>SAPHIRA 1630</td>
@@ -549,6 +572,7 @@
                                         <td data-field="jumlah_incoming">0</td>
                                         <td data-field="jumlah_stock_akhir_box">0</td>
                                         <td data-field="jumlah_stock_akhir_pcs">0</td>
+                                        <td data-field="jumlah_stock_akhir">0</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -632,6 +656,11 @@
                                         <td><input type="number" class="form-control form-control-sm plate-box-input" data-brand="fuji"></td>
                                         <td><input type="number" class="form-control form-control-sm plate-pcs-input" data-brand="fuji"></td>
                                     </tr>
+                                    <tr data-item-code="02-049-000-0000012" data-pcs-per-box="30">
+                                        <td>PLATE FUJI 1030 LH-PJA</td>
+                                        <td><input type="number" class="form-control form-control-sm plate-box-input" data-brand="fuji"></td>
+                                        <td><input type="number" class="form-control form-control-sm plate-pcs-input" data-brand="fuji"></td>
+                                    </tr>
                                     <tr data-item-code="02-023-000-0000007" data-pcs-per-box="30">
                                         <td>PLATE FUJI 1030 UV</td>
                                         <td><input type="number" class="form-control form-control-sm plate-box-input" data-brand="fuji"></td>
@@ -642,7 +671,7 @@
                                         <td><input type="number" class="form-control form-control-sm plate-box-input" data-brand="fuji"></td>
                                         <td><input type="number" class="form-control form-control-sm plate-pcs-input" data-brand="fuji"></td>
                                     </tr>
-                                    <tr data-item-code="02-049-000-0000012" data-pcs-per-box="30">
+                                    <tr data-item-code="02-023-000-0000012" data-pcs-per-box="30">
                                         <td>PLATE FUJI 1055 UV</td>
                                         <td><input type="number" class="form-control form-control-sm plate-box-input" data-brand="fuji"></td>
                                         <td><input type="number" class="form-control form-control-sm plate-pcs-input" data-brand="fuji"></td>
@@ -656,7 +685,7 @@
                                         <td>PLATE FUJI 1630</td>
                                         <td><input type="number" class="form-control form-control-sm plate-box-input" data-brand="fuji"></td>
                                         <td><input type="number" class="form-control form-control-sm plate-pcs-input" data-brand="fuji"></td>
-                                    </tr>                                                                                                                                                  
+                                    </tr>
                                     <!-- Add other Fuji plates here -->
                                 </tbody>
                             </table>
@@ -717,7 +746,7 @@
                                         <td>SAPHIRA 1630</td>
                                         <td><input type="number" class="form-control form-control-sm plate-box-input" data-brand="saphira"></td>
                                         <td><input type="number" class="form-control form-control-sm plate-pcs-input" data-brand="saphira"></td>
-                                    </tr>                                                                         
+                                    </tr>
                                     <!-- Add other Saphira plates here -->
                                 </tbody>
                             </table>
@@ -807,6 +836,10 @@
                                             <td>PLATE FUJI 1030</td>
                                             <td><input type="number" class="form-control form-control-sm incoming-box-input" data-brand="fuji"></td>
                                         </tr>
+                                        <tr data-item-code="02-049-000-0000012" data-pcs-per-box="30">
+                                            <td>PLATE FUJI 1030 LH-PJA</td>
+                                            <td><input type="number" class="form-control form-control-sm incoming-box-input" data-brand="fuji"></td>
+                                        </tr>
                                         <tr data-item-code="02-023-000-0000007" data-pcs-per-box="30">
                                             <td>PLATE FUJI 1030 UV</td>
                                             <td><input type="number" class="form-control form-control-sm incoming-box-input" data-brand="fuji"></td>
@@ -815,7 +848,7 @@
                                             <td>PLATE FUJI 1055</td>
                                             <td><input type="number" class="form-control form-control-sm incoming-box-input" data-brand="fuji"></td>
                                         </tr>
-                                        <tr data-item-code="02-049-000-0000012" data-pcs-per-box="30">
+                                        <tr data-item-code="02-023-000-0000012" data-pcs-per-box="30">
                                             <td>PLATE FUJI 1055 UV</td>
                                             <td><input type="number" class="form-control form-control-sm incoming-box-input" data-brand="fuji"></td>
                                         </tr>
@@ -994,6 +1027,7 @@
 
 <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/notification_system.js') }}"></script>
 <script>
     // Inisialisasi modal
     let initialStockModal;
@@ -1123,7 +1157,7 @@
         });
 
         // Send to server
-        fetch('/api/input-initial-stock', {
+        fetch('/impact/api/input-initial-stock', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1150,7 +1184,7 @@
         const fujiContent = document.getElementById('fujiContent');
         const saphiraContent = document.getElementById('saphiraContent');
 
-        let currentStockData = {}; 
+        let currentStockData = {};
 
         // Event Listener untuk Brand Dropdown (show/hide)
         brandSelect.addEventListener('change', function() {
@@ -1162,6 +1196,7 @@
                 saphiraContent.style.display = 'block';
             }
         });
+
 
         // =======================================================
         // FUNGSI 1: MENGIRIM DATA KE SERVER (Dipanggil setelah konfirmasi)
@@ -1175,7 +1210,7 @@
             const inputModalInstance = bootstrap.Modal.getInstance(document.getElementById('incomingStockModal'));
 
             // Kirim ke server
-            fetch('/api/input-incoming-stock', {
+            fetch('/impact/api/input-incoming-stock', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1391,7 +1426,7 @@
     // Fungsi untuk mengambil data stok dari server
     async function fetchStockData(date, shift) {
         try {
-            const response = await fetch(`/api/kartu-stock?date=${date.toISOString().split('T')[0]}&shift=${shift}`);
+            const response = await fetch(`/impact/api/kartu-stock?date=${date.toISOString().split('T')[0]}&shift=${shift}`);
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
@@ -1548,6 +1583,7 @@
     // Define minimum stock levels and their exact table names
     const minimumStock = {
         'FUJI 1030': { box: 9, type: 'plate' },
+        'FUJI 1030 LHPJA': { box: 2, type: 'plate' },        
         'FUJI 1030 UV': { box: 2, type: 'plate' },
         'FUJI 1055': { box: 9, type: 'plate' },
         'FUJI 1055 UV': { box: 2, type: 'plate' },
@@ -1631,7 +1667,8 @@
                     row.querySelector('[data-field="jumlah_incoming"]').textContent = parseInt(itemData.jumlah_incoming) || '0';
                     row.querySelector('[data-field="jumlah_stock_akhir_box"]').textContent = itemData.jumlah_stock_akhir_box || '0';
                     row.querySelector('[data-field="jumlah_stock_akhir_pcs"]').textContent = itemData.jumlah_stock_akhir_pcs || '0';
-                } 
+                    row.querySelector('[data-field="jumlah_stock_akhir"]').textContent = itemData.jumlah_stock_akhir || '0';
+                }
                 else if (tableId === 'kartuStockChemicalFujiTable' || tableId === 'kartuStockChemicalSaphiraTable') {
                     for (let cell of row.getElementsByTagName('td')) {
                         const field = cell.getAttribute('data-field');

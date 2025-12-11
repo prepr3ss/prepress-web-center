@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function fetchData() {
         const search = searchInput ? searchInput.value.trim() : '';
-        let url = `/get-users-data?page=${currentPage}` +
+        let url = `/impact/get-users-data?page=${currentPage}` +
             `&search=${encodeURIComponent(search)}` +
             `&sort_by=${encodeURIComponent(currentSortColumn)}` +
             `&sort_order=${encodeURIComponent(currentSortOrder)}`;
@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
         editModal.show();
         
-        fetch(`/admin/user/${userId}`)
+        fetch(`/impact/admin/user/${userId}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');

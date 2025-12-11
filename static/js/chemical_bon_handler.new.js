@@ -42,7 +42,7 @@ async function handleBrandChange(event) {
 
     try {
         showLoadingSpinner();
-        const response = await fetch(`/api/chemical-items/${brand}`);
+        const response = await fetch(`/impact/api/chemical-items/${brand}`);
         const data = await response.json();
 
         if (data.success && data.data.length > 0) {
@@ -152,7 +152,7 @@ async function handleFinalize() {
             }))
         };
 
-        const response = await fetch('/api/chemical-bon-ctp/create', {
+        const response = await fetch('/impact/api/chemical-bon-ctp/create', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

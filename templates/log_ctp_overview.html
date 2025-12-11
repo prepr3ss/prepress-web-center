@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log CTP - Impact 360</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    
+    <style>
+        .recent-problems-table thead th {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: none;
+            font-weight: 600;
+            color: #495057;
+            padding: 1rem 0.75rem;
+            text-align: center;
+            vertical-align: middle;
+        }         
+        .machine-header {
+            background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+            color: white;
+            padding: 2rem 0;
+            margin: -1rem -15px 2rem -15px;
+            border-radius: 0 0 20px 20px;
+        }        
+        .machine-card {
+            border: none;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            background: white;
+            cursor: pointer;
+            height: 100%;
+        }
+        
+        .machine-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .machine-status-active {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+        
+        .machine-status-maintenance {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+        }
+        
+        .machine-status-cleaning {
+            background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
+        }
+        
+        .breadcrumb-custom {
+            background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+            color: white;
+            padding: 1rem 0;
+            margin: -1rem -15px 2rem -15px;
+            border-radius: 0 0 20px 20px;
+        }
+        
+        .status-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 2rem;
+            color: white;
+        }
+        
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+        
+        .table-responsive {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: none;
+            border-radius: 15px 15px 0 0 !important;
+        }
+        
+        /* Styling untuk problem description link seperti wo_number */
+        .problem-description-link {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            color: #0066cc !important;
+            text-decoration: none;
+        }
+
+        .problem-description-link:hover {
+            background-color: rgba(0, 102, 204, 0.1);
+            color: #0052a3 !important;
+            text-decoration: underline !important;
+            transform: translateY(-1px);
+        }
+        
+        /* Enhanced text wrapping for long content */
+        .text-wrap {
+            word-wrap: break-word;
+            white-space: normal;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            hyphens: auto;
+        }
+        
+        .modal-body .text-wrap {
+            max-width: 100%;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            hyphens: auto;
+        }
+        
+        .problem-description-wrap {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            hyphens: auto;
+            max-width: 100%;
+            white-space: pre-line; /* Preserve line breaks but trim excessive whitespace */
+            display: block; /* Help with whitespace handling */
+            margin: 0;
+            padding: 0;
+            text-indent: 0;
+            line-height: normal;
+        }
+        
+        .solution-wrap {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            hyphens: auto;
+            max-width: 100%;
+            white-space: pre-line; /* Preserve line breaks but trim excessive whitespace */
+            display: block; /* Help with whitespace handling */
+            margin: 0;
+            padding: 0;
+            text-indent: 0;
+            line-height: normal;
+        }
+    </style>
+</head>
+<body>
+    <div id="wrapper">
+        {% include '_top_header.html' %}
+        <div class="d-flex" id="content-wrapper">
+            {% include '_sidebar.html' %}
+            <div class="container-fluid pt-3">
+                <!-- Machine Header -->
+                <div class="machine-header">
+                    <div class="container-fluid">
+                        <h2 class="mb-0 text-white mt-2">Log CTP - Overview</h2>
+                        <p class="mb-0 opacity-75">Monitoring Mesin CTP</p>
+                    </div>
+                </div>
+
+                <!-- Machine Status Cards -->
+                <div class="row mb-4" id="machineCards">
+                    <div class="col-12 text-center loading-spinner">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div class="mt-2 text-muted">Memuat data mesin...</div>
+                    </div>
+                </div>
+
+                <!-- Recent Problems Section -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>Problem Terbaru
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover recent-problems-table" id="recentProblemsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Tanggal</th>
+                                                <th>Mesin</th>
+                                                <th>Error Code</th>
+                                                <th>Problem</th>
+                                                <th>Teknisi</th>
+                                                <th>PIC</th>
+                                                <th>Status</th>
+                                                <th>Downtime</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td colspan="9" class="text-center text-muted">
+                                                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                                                        <span class="visually-hidden">Loading...</span>
+                                                    </div>
+                                                    Memuat data problem...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/notification_system.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMachineCards();
+            loadRecentProblems();
+        });
+
+        function loadMachineCards() {
+            fetch('/impact/api/ctp-machines')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const container = document.getElementById('machineCards');
+                        container.innerHTML = '';
+                        
+                        if (data.data.length === 0) {
+                            container.innerHTML = `
+                                <div class="col-12 text-center">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Belum ada data mesin CTP. Silakan tambahkan mesin terlebih dahulu.
+                                    </div>
+                                </div>
+                            `;
+                            return;
+                        }
+                        
+                        data.data.forEach(machine => {
+                            const card = createMachineCard(machine);
+                            container.innerHTML += card;
+                        });
+                    } else {
+                        showError('Gagal memuat data mesin: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading machines:', error);
+                    showError('Gagal memuat data mesin. Silakan refresh halaman.');
+                });
+        }
+
+        function createMachineCard(machine) {
+            let statusClass, statusText, statusIcon;
+            
+            switch(machine.status) {
+                case 'active':
+                    statusClass = 'machine-status-active';
+                    statusText = 'AKTIF';
+                    statusIcon = 'fa-check-circle';
+                    break;
+                case 'maintenance':
+                    statusClass = 'machine-status-maintenance';
+                    statusText = 'PERBAIKAN';
+                    statusIcon = 'fa-wrench';
+                    break;
+                case 'cleaning':
+                    statusClass = 'machine-status-cleaning';
+                    statusText = 'CLEANING';
+                    statusIcon = 'fa-broom';
+                    break;
+                default:
+                    statusClass = 'machine-status-active';
+                    statusText = 'AKTIF';
+                    statusIcon = 'fa-check-circle';
+            }
+           
+            return `
+                <div class="col-md-4 mb-4">
+                    <div class="machine-card" onclick="window.location.href='/impact/log-ctp/${machine.nickname}'">
+                        <div class="card-body text-center p-4">
+                            <div class="${statusClass} status-icon">
+                                <i class="fas fa-print"></i>
+                            </div>
+                            <h5 class="card-title">${machine.name}</h5>
+                            <p class="card-text text-muted">${machine.description || ''}</p>
+                            <div class="d-flex align-items-center justify-content-center">
+                                <i class="fas ${statusIcon} me-2"></i>
+                                <span class="fw-semibold">${statusText}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function loadRecentProblems() {
+            fetch('/impact/api/ctp-problem-logs?limit=5')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const tbody = document.querySelector('#recentProblemsTable tbody');
+                        tbody.innerHTML = '';
+                        
+                        if (data.data.length === 0) {
+                            tbody.innerHTML = `
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted">
+                                        <i class="fas fa-check-circle me-2"></i>
+                                        Tidak ada problem terbaru
+                                    </td>
+                                </tr>
+                            `;
+                            return;
+                        }
+                        
+                        data.data.forEach(log => {
+                            const row = createProblemRow(log);
+                            tbody.innerHTML += row;
+                        });
+                    } else {
+                        showError('Gagal memuat data problem: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading recent problems:', error);
+                    const tbody = document.querySelector('#recentProblemsTable tbody');
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="9" class="text-center text-danger">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Gagal memuat data problem
+                            </td>
+                        </tr>
+                    `;
+                });
+        }
+
+        function formatDowntime(hours) {
+            if (!hours || hours === 0) return '-';
+            
+            const wholeHours = Math.floor(hours);
+            const minutes = Math.round((hours - wholeHours) * 60);
+            
+            if (minutes === 0) {
+                return `${wholeHours} jam`;
+            } else if (wholeHours === 0) {
+                return `${minutes} menit`;
+            } else {
+                return `${wholeHours} jam ${minutes} menit`;
+            }
+        }
+
+        function createProblemRow(log) {
+            const statusBadge = log.status === 'completed'
+                ? '<span class="badge bg-success">Selesai</span>'
+                : '<span class="badge bg-warning">Berjalan</span>';
+             
+            const downtime = formatDowntime(log.downtime_hours);
+            
+            // Truncate description if too long, but make it clickable
+            const truncatedDescription = log.problem_description.length > 50
+                ? log.problem_description.substring(0, 50) + '...'
+                : log.problem_description;
+            
+            return `
+                <tr>
+                    <td>${formatDate(log.problem_date)}</td>
+                    <td>${log.machine_name}</td>
+                    <td>${log.error_code || '-'}</td>
+                    <td><a href="#" onclick="viewProblemDetail(${log.id}); return false;" class="problem-description-link">${truncatedDescription}</a></td>
+                    <td>${log.technician_name || '-'}</td>
+                    <td>${log.created_by_name || '-'}</td>
+                    <td>${statusBadge}</td>
+                    <td>${downtime}</td>
+                </tr>
+            `;
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const day = date.getDate();
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const month = monthNames[date.getMonth()];
+            const year = date.getFullYear().toString().slice(-2); // Get last 2 digits
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            return `${day} ${month} ${year} ${hours}:${minutes}`;
+        }
+        
+        function viewProblemDetail(logId) {
+            // Fetch the complete problem details including photo
+            fetch(`/impact/api/ctp-problem-logs/${logId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const log = data.data;
+                        
+                        // Create modal content with complete details
+                        const modalHtml = `
+                            <div class="modal fade" id="problemDetailModal" tabindex="-1">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                Detail Problem
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <div class="mb-2">
+                                                    <strong>Status</strong>
+                                                </div>
+                                                <div>
+                                                    ${log.status === 'completed'
+                                                        ? '<span class="badge bg-success">Selesai</span>'
+                                                        : '<span class="badge bg-warning">Berjalan</span>'}
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-3 row">
+                                                <div class="col-6">
+                                                    <div class="mb-2">
+                                                        <strong>Tanggal & Jam Mulai</strong>
+                                                    </div>
+                                                    <div>
+                                                        ${formatDate(log.problem_date)}
+                                                    </div>
+                                                </div>
+                                                
+                                                ${log.end_time ? `
+                                                <div class="col-6">
+                                                    <div class="mb-2">
+                                                        <strong>Tanggal & Jam Selesai</strong>
+                                                    </div>
+                                                    <div>
+                                                        ${formatDate(log.end_time)}
+                                                    </div>
+                                                </div>
+                                                ` : ''}
+                                            </div>
+
+                                            <div class="mb-3 row">
+                                                <div class="col-6">
+                                                    <div class="mb-2">
+                                                        <strong>Error Code</strong>
+                                                    </div>
+                                                    <div>${log.error_code || '-'}</div>
+                                                </div>
+                                                
+                                                <div class="col-6">
+                                                    <div class="mb-2">
+                                                        <strong>PIC</strong>
+                                                    </div>
+                                                    <div>${log.created_by_name || '-'}</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <div class="mb-2">
+                                                    <strong>Deskripsi Problem</strong>
+                                                </div>
+                                                <div class="problem-description-wrap">${log.problem_description ? log.problem_description.trim() : ''}</div>
+                                            </div>
+                                            
+                                            <div class="mb-3 row">
+                                                <div class="col-6">
+                                                    <div class="mb-2">
+                                                        <strong>Teknisi</strong>
+                                                    </div>
+                                                    <div>
+                                                        ${log.technician_name || '-'}
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="col-6">
+                                                    <div class="mb-2">
+                                                        <strong>Jenis Teknisi</strong>
+                                                    </div>
+                                                    <div>
+                                                        ${log.technician_type === 'lokal'
+                                                        ? '<span class="badge bg-info">Lokal</span>'
+                                                        : log.technician_type === 'vendor'
+                                                        ? '<span class="badge bg-info">Vendor</span>'
+                                                        : '<span class="badge bg-info">Tidak memanggil teknisi</span>'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <div class="mb-2">
+                                                    <strong>Solusi</strong>
+                                                </div>
+                                                <div class="solution-wrap">${log.solution ? log.solution.trim() : '-'}</div>
+                                            </div>
+                                            
+                                            ${log.downtime_hours ? `
+                                            <div class="mb-3">
+                                                <div class="mb-2">
+                                                    <strong>Downtime</strong>
+                                                </div>
+                                                <div>
+                                                    ${formatDowntime(log.downtime_hours)}
+                                                </div>
+                                            </div>
+                                            ` : ''}
+                                            ${log.photos && log.photos.length > 0 ? `
+                                            <div class="mb-3">
+                                                <strong>Foto Problem (${log.photos.length}):</strong><br>
+                                                <div class="row">
+                                                    ${log.photos.map(photo => `
+                                                        <div class="col-md-3 mb-2">
+                                                            <img src="/impact/${photo.file_path}" class="img-fluid rounded" alt="Problem Photo" style="max-height: 150px; cursor: pointer;" onclick="showPhoto('${photo.file_path}')">
+                                                            <div class="small text-muted">${photo.filename}</div>
+                                                        </div>
+                                                    `).join('')}
+                                                </div>
+                                            </div>
+                                            ` : ''}
+                                            
+                                            ${log.documents && log.documents.length > 0 ? `
+                                            <div class="mb-3">
+                                                <strong>Dokumen Lampiran:</strong><br>
+                                                ${log.documents.map(doc => `
+                                                    <div class="mb-2">
+                                                        <a href="/impact/${doc.file_path}" target="_blank" class="btn btn-sm btn-outline-${doc.file_type === 'pdf' ? 'danger' : doc.file_type === 'zip' ? 'warning' : 'primary'}">
+                                                            <i class="fas fa-${doc.file_type === 'pdf' ? 'file-pdf' : doc.file_type === 'zip' ? 'file-archive' : 'file-word'}"></i>
+                                                            ${doc.filename}
+                                                        </a>
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                            ` : ''}
+                                            
+                                            ${log.problem_photo ? `
+                                            <div class="mb-3">
+                                                <strong>Foto Lama (Single):</strong><br>
+                                                <img src="/impact/${log.problem_photo.startsWith('uploads/') ? log.problem_photo : 'uploads/' + log.problem_photo}" class="img-fluid rounded" alt="Problem Photo" style="max-height: 300px; cursor: pointer;" onclick="showPhoto('${log.problem_photo}')">
+                                            </div>
+                                            ` : ''}
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Add modal to page
+                        document.body.insertAdjacentHTML('beforeend', modalHtml);
+                        
+                        // Show modal
+                        const modal = new bootstrap.Modal(document.getElementById('problemDetailModal'));
+                        modal.show();
+                        
+                        // Remove modal from DOM when hidden
+                        document.getElementById('problemDetailModal').addEventListener('hidden.bs.modal', function() {
+                            document.getElementById('problemDetailModal').remove();
+                        });
+                    } else {
+                        showError('Gagal memuat detail problem');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading problem detail:', error);
+                    showError('Gagal memuat detail problem');
+                });
+        }
+        
+        function showPhoto(filename) {
+            // Check if the path already includes 'uploads/' to avoid duplication
+            const imagePath = filename.startsWith('uploads/') ? filename : `uploads/${filename}`;
+            
+            // Create photo modal
+            const photoModalHtml = `
+                <div class="modal fade" id="photoModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Foto Problem</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <img src="/impact/${imagePath}" alt="Foto Problem" class="img-fluid">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add modal to page
+            document.body.insertAdjacentHTML('beforeend', photoModalHtml);
+            
+            // Show modal
+            const photoModal = new bootstrap.Modal(document.getElementById('photoModal'));
+            photoModal.show();
+            
+            // Remove modal from DOM when hidden
+            document.getElementById('photoModal').addEventListener('hidden.bs.modal', function() {
+                document.getElementById('photoModal').remove();
+            });
+        }
+
+        function showError(message) {
+            const toastContainer = document.createElement('div');
+            toastContainer.style.position = 'fixed';
+            toastContainer.style.top = '1rem';
+            toastContainer.style.right = '1rem';
+            toastContainer.style.zIndex = '1050';
+            
+            toastContainer.innerHTML = `
+                <div class="toast align-items-center text-white bg-danger border-0" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-exclamation-triangle me-2"></i>${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(toastContainer);
+            const toast = new bootstrap.Toast(toastContainer.querySelector('.toast'));
+            toast.show();
+            
+            toastContainer.querySelector('.toast').addEventListener('hidden.bs.toast', () => {
+                toastContainer.remove();
+            });
+        }
+    </script>
+</body>
+</html>

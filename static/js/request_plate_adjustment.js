@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
             
-            const response = await fetch('/submit-plate-adjustment', {
+            const response = await fetch('/impact/submit-plate-adjustment', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)

@@ -1,91 +1,51 @@
-from flask import Flask, render_template, request, jsonify, abort, redirect, url_for, flash, session, send_file
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-from werkzeug.security import generate_password_hash, check_password_hash
+# Standard library imports
+from datetime import datetime, time, timedelta
 from functools import wraps
-from datetime import datetime, time
-import os
-import random
-import pymysql
-from plate_mappings import PlateTypeMapping
-
-# Import required modules
-from io import BytesIO
-import openpyxl
-from openpyxl.styles import Font, Alignment, PatternFill
-from openpyxl.utils import get_column_letter
+from io import BytesIO, StringIO
 from urllib.parse import quote_plus
-from sqlalchemy import and_, or_, cast, String, extract, func, literal_column, text
-from flask_migrate import Migrate
-
-# Plate details dictionary moved from bon_routes.py
-PLATE_DETAILS = {
-    'SAPHIRA': {
-        '1030': {
-            'size': '1030 X 790 MM',
-            'code': '02-049-000-0000002',
-            'name': '(SUT1.PAO1SX1) SAPHIRA PA.27 27x1030x790 PKT50 (BOX 50PCS)'
-        },
-        '1055': {
-            'size': '1055 X 811 MM',
-            'code': '02-049-000-0000003',
-            'name': '(SUT1.PAO1SY3) SAPHIRA PA.27 27X1055X811 PKT50 (BOX 50PCS)'
-        },
-        '1055 PN': {
-            'size': '1055 X 811 MM',
-            'code': '02-049-000-0000011',
-            'name': '(SUT1.PNO7U8C) SAPHIRA PN 30 1055 X 811 MM PKT40 (BOX 40PCS)'
-        },
-        '1630': {
-            'size': '1630 X 1325 MM',
-            'code': '02-049-000-0000001',
-            'name': '(SUT1.PNOQXG8) SAPHIRA PN 40 1630 1325 PKT 30 (BOX 30PCS)'
-        }
-    },
-    'FUJI': {
-        '1030': {
-            'size': '1030 X 790 MM',
-            'code': '02-049-000-0000008',
-            'name': 'PLATE FUJI LH-PK 1030x790x0.3 (BOX 30PCS)'
-        },
-        '1030 UV': {
-            'size': '1030 X 790 MM',
-            'code': '02-023-000-0000007',
-            'name': 'PLATE FUJI LH-PJ2 1030x790x0.3 (BOX 30PCS)'
-        },
-        '1055': {
-            'size': '1055 X 811 MM',
-            'code': '02-049-000-0000010',
-            'name': 'PLATE FUJI LH-PK 1055x811x0.3 (BOX 30PCS)'
-        },
-        '1055 LHPL': {
-            'size': '1055 X 811 MM',
-            'code': '02-049-000-0000013',
-            'name': 'PLATE FUJI LH-PL 1055x811x0.3 (BOX 30PCS)'
-        },
-        '1055 UV': {
-            'size': '1055 X 811 MM',
-            'code': '02-049-000-0000012',
-            'name': 'PLATE FUJI LH-PJ2 1055x811x0.3 (BOX 30PCS)'
-        },
-        '1630': {
-            'size': '1630 X 1325 MM',
-            'code': '02-049-000-0000009',
-            'name': 'PLATE FUJI LH-PJ2 1630x1325x0.4 (BOX 15PCS)'
-        }
-    }
-}
-import pytz
-from flask import jsonify, flash
+import calendar
+import csv
+import io
 import locale
+import os
+import pytz
+import random
+import traceback
+
+# Third party imports
+from flask import Flask, abort, flash, jsonify, make_response, redirect, render_template, request, send_file, send_from_directory, session, url_for
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from openpyxl.utils import get_column_letter
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4, landscape, letter
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import inch
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from sqlalchemy import String, and_, cast, extract, func, literal_column, or_, text
+from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
+import openpyxl
+import pymysql
+
+# Local imports
+from config import DB_CONFIG
+from models import db, Division, User, CTPProductionLog, PlateAdjustmentRequest, PlateBonRequest, KartuStockPlateFuji, KartuStockPlateSaphira, KartuStockChemicalFuji, KartuStockChemicalSaphira, MonthlyWorkHours, ChemicalBonCTP, BonPlate, CTPMachine, CTPProblemLog, CTPProblemPhoto, CTPProblemDocument, CTPNotification, TaskCategory, Task, CloudsphereJob, JobTask, JobProgress, JobProgressTask, EvidenceFile
+from export_routes import export_bp
+from ctp_log_routes import ctp_log_bp
+from ctp_dashboard_routes import ctp_dashboard_bp
+from cloudsphere import cloudsphere_bp
+from plate_details import PLATE_DETAILS
 
 # Timezone untuk Jakarta
 jakarta_tz = pytz.timezone('Asia/Jakarta')
 now_jakarta = datetime.now(jakarta_tz)
 
 # Impor konfigurasi database Anda dari config.py
-from config import DB_CONFIG
-from datetime import datetime, time, timedelta
 
 # Helper function to format datetime in Indonesian
 def format_datetime_indonesia(dt):
@@ -132,6 +92,11 @@ login_manager.login_view = 'login'
 login_manager.login_message = 'Silakan login untuk mengakses halaman ini.'
 login_manager.login_message_category = 'info'
 
+# Konfigurasi remember cookie untuk memastikan logout berfungsi dengan benar
+app.config['REMEMBER_COOKIE_NAME'] = 'remember_token'
+app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
+app.config['REMEMBER_COOKIE_HTTPONLY'] = True
+
 # Konfigurasi Database MySQL menggunakan DB_CONFIG dari config.py
 db_user = DB_CONFIG['user']
 db_password = quote_plus(DB_CONFIG['password'])
@@ -142,13 +107,16 @@ db_port = DB_CONFIG['port']
 app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db = SQLAlchemy(app)
+# Register Blueprints
+app.register_blueprint(export_bp)
+app.register_blueprint(ctp_log_bp)
+app.register_blueprint(ctp_dashboard_bp)
+app.register_blueprint(cloudsphere_bp)
+
+# Initialize the db instance from models.py with the app
+db.init_app(app)
 migrate = Migrate(app, db)
 
-import csv
-from io import StringIO
-from flask import make_response
-from datetime import datetime, timedelta
 
 # --- Notifikasi Bulet ---
 @app.route('/api/check-notifications')
@@ -224,210 +192,6 @@ def check_notifications():
         print(f"Error checking notifications: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
 
-# --- Export Routes ---
-@app.route('/export-chemical-bon')
-@login_required
-def export_chemical_bon():
-    try:
-        # Set locale to Indonesian for date formatting
-        try:
-            # For systems that support UTF-8 (e.g., Linux, macOS)
-            locale.setlocale(locale.LC_TIME, 'id_ID.UTF-8')
-        except locale.Error:
-            # Fallback for systems that might not support UTF-8 suffix (e.g., some Windows versions)
-            locale.setlocale(locale.LC_TIME, 'id_ID')
-        
-        # Get query parameters
-        date_from = request.args.get('date_from')
-        date_to = request.args.get('date_to')
-        brand_filter = request.args.get('brand') # This is the original filter value
-
-        # Convert string dates to datetime objects
-        start_date = datetime.strptime(date_from, '%Y-%m-%d').date() if date_from else None
-        end_date = datetime.strptime(date_to, '%Y-%m-%d').date() if date_to else None
-
-        # Create new workbook
-        wb = openpyxl.Workbook()
-        
-        # Define styles
-        title_font = Font(bold=True, size=24)
-        subtitle_font = Font(bold=True, size=18)
-        header_font = Font(bold=True)
-        center_alignment = Alignment(horizontal='center', vertical='center')
-        left_alignment = Alignment(horizontal='left', vertical='center')
-        
-        # Define border style once
-        thin_border = Border(
-            left=Side(style='thin'),
-            right=Side(style='thin'),
-            top=Side(style='thin'),
-            bottom=Side(style='thin')
-        )
-        header_fill = PatternFill(start_color='E0E0E0', end_color='E0E0E0', fill_type='solid')
-
-        # Determine which brands to process
-        if brand_filter:
-            brands_to_process = [brand_filter]
-            # Use the actual brand_filter for download name if a specific brand is selected
-            download_brand_suffix = f"_{brand_filter.replace(' ', '_')}" 
-        else:
-            # Mengambil daftar brand unik dari database
-            brands_to_process = db.session.query(ChemicalBonCTP.brand).distinct().all()
-            brands_to_process = [brand[0] for brand in brands_to_process]
-            # If no specific brand filter, use "_all" for download name
-            download_brand_suffix = "_all"
-
-
-        # Create sheet for each brand
-        for idx, brand in enumerate(brands_to_process):
-            # Build query for current brand
-            query = ChemicalBonCTP.query.filter(ChemicalBonCTP.brand == brand)
-            
-            if start_date and end_date:
-                query = query.filter(ChemicalBonCTP.tanggal.between(start_date, end_date))
-            
-            records = query.order_by(ChemicalBonCTP.tanggal.asc()).all()
-            
-            # Only create a sheet if there are records for this brand
-            if not records and len(brands_to_process) > 1: # Skip if no records and multiple brands
-                continue
-            elif not records and len(brands_to_process) == 1: # If only one brand chosen and no records, still create an empty sheet
-                if idx == 0:
-                    ws = wb.active
-                    ws.title = brand
-                else:
-                    ws = wb.create_sheet(brand)
-                # Ensure the sheet has basic headers even if empty
-                ws.merge_cells('A1:K1')
-                ws['A1'] = 'Laporan Chemical Bon CTP'
-                ws['A1'].font = title_font
-                ws['A1'].alignment = center_alignment
-                ws.merge_cells('A2:K2')
-                ws['A2'] = f'{brand}'
-                ws['A2'].font = subtitle_font
-                ws['A2'].alignment = center_alignment
-                
-                date_range_str = ""
-                if start_date and end_date:
-                    date_range_str = f'{start_date.strftime("%#d %B %Y")} s/d {end_date.strftime("%#d %B %Y")}'
-                elif start_date:
-                    date_range_str = f'Dari {start_date.strftime("%#d %B %Y")}'
-                elif end_date:
-                    date_range_str = f'Sampai {end_date.strftime("%#d %B %Y")}'
-                ws.merge_cells('A3:K3')
-                ws['A3'] = date_range_str
-                ws['A3'].font = subtitle_font
-                ws['A3'].alignment = center_alignment
-
-                headers = ['Tanggal', 'Bon Number', 'Request Number', 'Brand', 'Item Code', 'Item Name', 
-                           'Unit', 'Jumlah', 'PIC', 'Keterangan', 'Periode']
-                for col, header in enumerate(headers, 1):
-                    cell = ws.cell(row=5, column=col, value=header)
-                    cell.font = header_font
-                    cell.fill = header_fill
-                    cell.alignment = center_alignment
-                    cell.border = thin_border
-                continue # Go to next brand
-
-
-            # Create or get sheet
-            if idx == 0: # For the first brand, use the active sheet
-                ws = wb.active
-                ws.title = brand
-            else: # For subsequent brands, create a new sheet
-                ws = wb.create_sheet(brand)
-
-            # Set column widths
-            column_widths = [20, 20, 20, 15, 20, 40, 10, 10, 20, 30, 20]
-            for i, width in enumerate(column_widths, 1):
-                ws.column_dimensions[get_column_letter(i)].width = width
-
-            # Write main title and subtitle
-            ws.merge_cells('A1:K1')
-            ws['A1'] = 'Laporan Chemical Bon CTP'
-            ws['A1'].font = title_font
-            ws['A1'].alignment = center_alignment
-
-            ws.merge_cells('A2:K2')
-            ws['A2'] = f'{brand}'
-            ws['A2'].font = subtitle_font
-            ws['A2'].alignment = center_alignment
-            
-            # Use `strftime` for the date range header
-            date_range_str = ""
-            if start_date and end_date:
-                date_range_str = f'{start_date.strftime("%#d %B %Y")} s/d {end_date.strftime("%#d %B %Y")}'
-            elif start_date:
-                date_range_str = f'Dari {start_date.strftime("%#d %B %Y")}'
-            elif end_date:
-                date_range_str = f'Sampai {end_date.strftime("%#d %B %Y")}'
-
-            ws.merge_cells('A3:K3')
-            ws['A3'] = date_range_str
-            ws['A3'].font = subtitle_font
-            ws['A3'].alignment = center_alignment
-
-            # Headers row
-            headers = ['Tanggal', 'Bon Number', 'Request Number', 'Brand', 'Item Code', 'Item Name', 
-                       'Unit', 'Jumlah', 'PIC', 'Keterangan', 'Periode']
-            
-            for col, header in enumerate(headers, 1):
-                cell = ws.cell(row=5, column=col, value=header)
-                cell.font = header_font
-                cell.fill = header_fill
-                cell.alignment = center_alignment
-                cell.border = thin_border # Apply border to header cells
-
-            # Write data
-            for row_idx, record in enumerate(records, 6):
-                # Use `strftime` for the record date
-                tanggal_str = record.tanggal.strftime('%#d %B %Y') if record.tanggal else ''
-                data = [
-                    tanggal_str,
-                    record.bon_number,
-                    record.request_number,
-                    record.brand,
-                    record.item_code,
-                    record.item_name,
-                    record.unit,
-                    record.jumlah,
-                    record.user.name if record.user else '',
-                    record.wo_number if record.wo_number else '',  # Keterangan diisi dengan WO number
-                    record.bon_periode
-                ]
-                
-                for col_idx, value in enumerate(data, 1):
-                    cell = ws.cell(row=row_idx, column=col_idx, value=value)
-                    # Use center alignment for most columns, left for specific text columns
-                    cell.alignment = Alignment(horizontal='center' if col_idx not in [5, 6, 9, 10] else 'left')
-                    cell.border = thin_border # Apply border to data cells
-
-        # Remove the default empty sheet created by openpyxl if it exists and we've created other sheets
-        # Or if no data was found and the default sheet is the only one
-        if "Sheet" in wb.sheetnames:
-            if len(brands_to_process) > 0 and len(wb.sheetnames) > 1:
-                del wb["Sheet"]
-            elif len(brands_to_process) == 0: # If no brands were found at all
-                del wb["Sheet"]
-
-
-        # Create response
-        output = BytesIO()
-        wb.save(output)
-        output.seek(0)
-
-        # Use the determined download_brand_suffix here
-        return send_file(
-            output,
-            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            as_attachment=True,
-            download_name=f'chemical_bon{download_brand_suffix}_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
-        )
-
-    except Exception as e:
-        print(f"Error in export: {str(e)}")
-        return jsonify({'success': False, 'message': f'Export gagal: {str(e)}'}), 500
-
 # --- Access Control Decorators ---
 def require_admin(f):
     @wraps(f)
@@ -496,6 +260,17 @@ def require_design_access(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def require_rnd_access(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return redirect(url_for('login'))
+        if not current_user.can_access_rnd():
+            flash('Akses ditolak. Anda tidak memiliki akses ke divisi R&D.', 'error')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 # User loader callback untuk Flask-Login
 @login_manager.user_loader
 def load_user(user_id):
@@ -527,1079 +302,6 @@ def change_password():
         return redirect(url_for('change_password'))
 
     return render_template('change_password.html')
-
-# Definisi Model Database untuk User Authentication
-class Division(db.Model):
-    __tablename__ = 'divisions'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False, unique=True)
-    description = db.Column(db.String(255), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationship dengan User
-    users = db.relationship('User', backref='division', lazy=True)
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'description': self.description,
-            'created_at': self.created_at
-        }
-
-class User(UserMixin, db.Model):
-    __tablename__ = 'users'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), nullable=False, unique=True)
-    password_hash = db.Column(db.String(255), nullable=False)
-    name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(100), nullable=True)
-    role = db.Column(db.String(20), nullable=False, default='user')
-    division_id = db.Column(db.Integer, db.ForeignKey('divisions.id'), nullable=True)
-    grup = db.Column(db.String(10), nullable=True)
-    is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    def set_password(self, password):
-        """Set password hash"""
-        self.password_hash = generate_password_hash(password)
-
-    def check_password(self, password):
-        """Check if password matches hash"""
-        return check_password_hash(self.password_hash, password)
-        
-    def is_admin(self):
-        """Check if user is admin"""
-        return self.role == 'admin'
-    
-    def get_division_name(self):
-        """Get division name"""
-        if self.division:
-            return self.division.name
-        return None
-    
-    def is_admin(self):
-        """Check if user is admin"""
-        return self.role == 'admin'
-    
-    def is_operator(self):
-        """Check if user is operator"""
-        return self.role == 'operator'
-    
-    def can_access_division(self, division_name):
-        """Check if user can access specific division"""
-        if self.is_admin():
-            return True  # Admin can access all divisions
-        
-        if self.is_operator():
-            return self.get_division_name() == division_name
-        
-        return False
-    
-    def can_access_ctp(self):
-        """Check if user can access CTP production"""
-        return self.can_access_division('CTP')
-
-    def can_access_pdnd(self):
-        """Check if user can access PDND production"""
-        return self.can_access_division('PDND')
-
-    def can_access_design(self):
-        """Check if user can access Design production"""
-        return self.can_access_division('DESIGN')
-
-    def can_access_mounting(self):
-        """Check if user can access Mounting production"""
-        return self.can_access_division('MOUNTING')
-    
-    def can_access_press(self):
-        """Check if user can access Press production"""
-        return self.can_access_division('PRESS')
-    
-    def get_accessible_divisions(self):
-        """Get list of divisions user can access"""
-        if self.is_admin():
-            return Division.query.all()
-        elif self.is_operator() and self.division:
-            return [self.division]
-        else:
-            return []
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'username': self.username,
-            'name': self.name,
-            'email': self.email,
-            'role': self.role,
-            'division_id': self.division_id,
-            'division_name': self.get_division_name(),
-            'grup': self.grup,
-            'created_at': self.created_at,
-            'updated_at': self.updated_at
-        }
-
-# Definisi Model Database
-class CTPProductionLog(db.Model):
-    __tablename__ = 'ctp_production_logs'
-
-    id = db.Column(db.Integer, primary_key=True)
-    log_date = db.Column(db.Date, nullable=False)
-    ctp_group = db.Column(db.String(50), nullable=False)
-    ctp_shift = db.Column(db.String(50), nullable=False)
-    ctp_pic = db.Column(db.String(100), nullable=False)
-    ctp_machine = db.Column(db.String(50), nullable=False)
-    processor_temperature = db.Column(db.Float)
-    dwell_time = db.Column(db.Float)
-    wo_number = db.Column(db.String(100))
-    mc_number = db.Column(db.String(100), nullable=False)
-    run_length_sheet = db.Column(db.Integer)
-    print_machine = db.Column(db.String(50), nullable=False)
-    remarks_job = db.Column(db.String(50), nullable=False)
-    item_name = db.Column(db.String(255), nullable=False)
-    note = db.Column(db.String(255))
-    plate_type_material = db.Column(db.String(100), nullable=False)
-    paper_type = db.Column(db.String(100), nullable=False)    
-    raster = db.Column(db.String(50), nullable=False)
-    num_plate_good = db.Column(db.Integer)
-    num_plate_not_good = db.Column(db.Integer)
-    not_good_reason = db.Column(db.String(255))
-    cyan_25_percent = db.Column(db.Float)
-    cyan_50_percent = db.Column(db.Float)
-    cyan_75_percent = db.Column(db.Float)
-    magenta_25_percent = db.Column(db.Float)
-    magenta_50_percent = db.Column(db.Float)
-    magenta_75_percent = db.Column(db.Float)
-    yellow_25_percent = db.Column(db.Float)
-    yellow_50_percent = db.Column(db.Float)
-    yellow_75_percent = db.Column(db.Float)
-    black_25_percent = db.Column(db.Float)
-    black_50_percent = db.Column(db.Float)
-    black_75_percent = db.Column(db.Float)
-    x_25_percent = db.Column(db.Float)
-    x_50_percent = db.Column(db.Float)
-    x_75_percent = db.Column(db.Float)
-    z_25_percent = db.Column(db.Float)
-    z_50_percent = db.Column(db.Float)
-    z_75_percent = db.Column(db.Float)
-    u_25_percent = db.Column(db.Float)
-    u_50_percent = db.Column(db.Float)
-    u_75_percent = db.Column(db.Float)
-    v_25_percent = db.Column(db.Float)
-    v_50_percent = db.Column(db.Float)
-    v_75_percent = db.Column(db.Float)
-    f_25_percent = db.Column(db.Float)
-    f_50_percent = db.Column(db.Float)
-    f_75_percent = db.Column(db.Float)
-    g_25_percent = db.Column(db.Float)
-    g_50_percent = db.Column(db.Float)
-    g_75_percent = db.Column(db.Float)
-    h_25_percent = db.Column(db.Float)
-    h_50_percent = db.Column(db.Float)
-    h_75_percent = db.Column(db.Float)
-    j_25_percent = db.Column(db.Float)
-    j_50_percent = db.Column(db.Float)
-    j_75_percent = db.Column(db.Float)    
-    start_time = db.Column(db.Time)   # UBAH INI: dari db.String menjadi db.Time
-    finish_time = db.Column(db.Time)  # UBAH INI: dari db.String menjadi db.Time
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'log_date': self.log_date.strftime('%Y-%m-%d') if self.log_date else None,
-            'ctp_group': self.ctp_group,
-            'ctp_shift': self.ctp_shift,
-            'ctp_pic': self.ctp_pic,
-            'ctp_machine': self.ctp_machine,
-            'processor_temperature': self.processor_temperature,
-            'dwell_time': self.dwell_time,
-            'wo_number': self.wo_number,
-            'mc_number': self.mc_number,
-            'run_length_sheet': self.run_length_sheet,
-            'print_machine': self.print_machine,
-            'remarks_job': self.remarks_job,
-            'item_name': self.item_name,
-            'note': self.note,
-            'plate_type_material': self.plate_type_material,
-            'paper_type': self.paper_type,
-            'raster': self.raster,
-            'num_plate_good': self.num_plate_good,
-            'num_plate_not_good': self.num_plate_not_good,
-            'not_good_reason': self.not_good_reason,
-            'cyan_25_percent': self.cyan_25_percent,
-            'cyan_50_percent': self.cyan_50_percent,
-            'cyan_75_percent': self.cyan_75_percent,
-            'magenta_25_percent': self.magenta_25_percent,
-            'magenta_50_percent': self.magenta_50_percent,
-            'magenta_75_percent': self.magenta_75_percent,
-            'yellow_25_percent': self.yellow_25_percent,
-            'yellow_50_percent': self.yellow_50_percent,
-            'yellow_75_percent': self.yellow_75_percent,
-            'black_25_percent': self.black_25_percent,
-            'black_50_percent': self.black_50_percent,
-            'black_75_percent': self.black_75_percent,
-            'x_25_percent': self.x_25_percent,
-            'x_50_percent': self.x_50_percent,
-            'x_75_percent': self.x_75_percent,
-            'z_25_percent': self.z_25_percent,
-            'z_50_percent': self.z_50_percent,
-            'z_75_percent': self.z_75_percent,
-            'u_25_percent': self.u_25_percent,
-            'u_50_percent': self.u_50_percent,
-            'u_75_percent': self.u_75_percent,
-            'v_25_percent': self.v_25_percent,
-            'v_50_percent': self.v_50_percent,
-            'v_75_percent': self.v_75_percent,
-            'f_25_percent': self.f_25_percent,
-            'f_50_percent': self.f_50_percent,
-            'f_75_percent': self.f_75_percent,
-            'g_25_percent': self.g_25_percent,
-            'g_50_percent': self.g_50_percent,
-            'g_75_percent': self.g_75_percent,
-            'h_25_percent': self.h_25_percent,
-            'h_50_percent': self.h_50_percent,
-            'h_75_percent': self.h_75_percent,
-            'j_25_percent': self.j_25_percent,
-            'j_50_percent': self.j_50_percent,
-            'j_75_percent': self.j_75_percent,
-            'start_time': self.start_time.strftime('%H:%M') if self.start_time else None, # UBAH INI
-            'finish_time': self.finish_time.strftime('%H:%M') if self.finish_time else None, # UBAH INI
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
-        }
-
-class PlateAdjustmentRequest(db.Model):
-    __tablename__ = 'plate_adjustment_requests'
-
-    id = db.Column(db.Integer, primary_key=True)
-    tanggal = db.Column(db.Date, nullable=False)
-    mesin_cetak = db.Column(db.String(100), nullable=False)
-    pic = db.Column(db.String(100), nullable=False)
-    remarks = db.Column(db.String(100), nullable=False)  # PRODUKSI/PROOF
-    wo_number = db.Column(db.String(100), nullable=False)
-    mc_number = db.Column(db.String(100), nullable=False)
-    run_length = db.Column(db.Integer, nullable=True)
-    item_name = db.Column(db.String(255), nullable=False)
-    paper_type = db.Column(db.String(100), nullable=False)  # Kolom baru untuk jenis kertas
-    ctp_group = db.Column(db.String(50), nullable=True)  # Kolom baru untuk grup CTP
-    jumlah_plate = db.Column(db.Integer, nullable=False)
-    note = db.Column(db.String(255), nullable=True)
-
-    machine_off_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    is_epson = db.Column(db.Boolean, default=False)
-
-    pdnd_start_at = db.Column(db.DateTime, nullable=True)
-    pdnd_finish_at = db.Column(db.DateTime, nullable=True)
-    pdnd_by = db.Column(db.String(100), nullable=True)
-
-    curve_start_at = db.Column(db.DateTime, nullable=True)
-    curve_finish_at = db.Column(db.DateTime, nullable=True)
-    curve_by = db.Column(db.String(100), nullable=True)
-
-    design_start_at = db.Column(db.DateTime, nullable=True)
-    design_finish_at = db.Column(db.DateTime, nullable=True)
-    design_by = db.Column(db.String(100), nullable=True)      
-
-    adjustment_start_at = db.Column(db.DateTime, nullable=True)
-    adjustment_finish_at = db.Column(db.DateTime, nullable=True)
-    adjustment_by = db.Column(db.String(100), nullable=True)
-
-    plate_start_at = db.Column(db.DateTime, nullable=True)
-    plate_finish_at = db.Column(db.DateTime, nullable=True)
-    plate_delivered_at = db.Column(db.DateTime, nullable=True)
-    ctp_by = db.Column(db.String(100), nullable=True)
-
-    declined_at = db.Column(db.DateTime, nullable=True)
-    declined_by = db.Column(db.String(100), nullable=True)
-    decline_reason = db.Column(db.Text, nullable=True)
-    is_declined = db.Column(db.Boolean, default=False)
-
-    cancelled_at = db.Column(db.DateTime, nullable=True)
-    cancellation_reason = db.Column(db.Text, nullable=True)
-    cancelled_by = db.Column(db.String(100), nullable=True)
-
-# Ubah default status menjadi property yang bergantung pada remarks
-    status = db.Column(db.String(30))
-
-    def __init__(self, **kwargs):
-        super(PlateAdjustmentRequest, self).__init__(**kwargs)
-        self.set_initial_status()
-
-    def set_initial_status(self):
-        """Set status awal berdasarkan prioritas: Curve > EPSON (FA) > Non-EPSON (FA)."""
-        
-        fa_remarks = ['ADJUSTMENT FA PROOF', 'ADJUSTMENT FA PRODUKSI']
-        curve_remarks = ['ADJUSTMENT CURVE PROOF', 'ADJUSTMENT CURVE PRODUKSI']
-        
-        # 1. Prioritas Tertinggi: Cek Remarks CURVE
-        # Jika Remarks adalah CURVE, abaikan is_epson, langsung ke 'menunggu_adjustment'
-        if self.remarks and self.remarks.upper() in curve_remarks:
-            self.status = 'menunggu_adjustment_curve' 
-            
-        # 2. Prioritas Kedua: Cek Item EPSON (Hanya berlaku untuk FA)
-        # Jika Remarks adalah FA DAN is_epson = True, kirim ke 'design'
-        elif self.is_epson and self.remarks and self.remarks.upper() in fa_remarks:
-            self.status = 'menunggu_adjustment_design'
-
-        # 3. Prioritas Ketiga: Cek Remarks FA (Non-EPSON)
-        # Jika Remarks adalah FA DAN is_epson = False, kirim ke 'pdnd'
-        elif self.remarks and self.remarks.upper() in fa_remarks:
-            self.status = 'menunggu_adjustment_pdnd'
-            
-        else:
-            # Status default (untuk jaga-jaga, atau jika ada remarks yang tidak dikenal)
-            self.status = 'menunggu_adjustment' # Atau status default lain yang paling sesuai
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'tanggal': self.tanggal.strftime('%Y-%m-%d') if self.tanggal else None,
-            'mesin_cetak': self.mesin_cetak,
-            'pic': self.pic,
-            'remarks': self.remarks,
-            'wo_number': self.wo_number,
-            'mc_number': self.mc_number,
-            'run_length': self.run_length,
-            'item_name': self.item_name,
-            'paper_type': self.paper_type,
-            'jumlah_plate': self.jumlah_plate,
-            'note': self.note,
-            'machine_off_at': self.machine_off_at.isoformat() if self.machine_off_at else None,
-            'is_epson': self.is_epson,
-            'design_start_at': self.design_start_at.isoformat() if self.design_start_at else None,
-            'design_finish_at': self.design_finish_at.isoformat() if self.design_finish_at else None,
-            'design_by': self.design_by,
-            'pdnd_start_at': self.pdnd_start_at.isoformat() if self.pdnd_start_at else None,
-            'pdnd_finish_at': self.pdnd_finish_at.isoformat() if self.pdnd_finish_at else None,
-            'pdnd_by': self.pdnd_by,
-            'curve_start_at': self.curve_start_at.isoformat() if self.curve_start_at else None,
-            'curve_finish_at': self.curve_finish_at.isoformat() if self.curve_finish_at else None,
-            'curve_by': self.curve_by,
-            'adjustment_start_at': self.adjustment_start_at.isoformat() if self.adjustment_start_at else None,
-            'adjustment_finish_at': self.adjustment_finish_at.isoformat() if self.adjustment_finish_at else None,
-            'adjustment_by': self.adjustment_by,
-            'plate_start_at': self.plate_start_at.isoformat() if self.plate_start_at else None,
-            'plate_finish_at': self.plate_finish_at.isoformat() if self.plate_finish_at else None,
-            'plate_delivered_at': self.plate_delivered_at.isoformat() if self.plate_delivered_at else None,
-            'ctp_by': self.ctp_by,
-            'ctp_group': self.ctp_group,
-            'status': self.status,
-            'declined_at': self.declined_at.isoformat() if self.declined_at else None,
-            'declined_by': self.declined_by,
-            'decline_reason': self.decline_reason,
-            'is_declined': self.is_declined,
-            'cancelled_at': self.cancelled_at.isoformat() if self.cancelled_at else None,
-            'cancellation_reason': self.cancellation_reason,
-            'cancelled_by': self.cancelled_by
-        }
-
-#def bon table
-
-class MonthlyWorkHours(db.Model):
-    __tablename__ = 'monthly_work_hours'
-    id = db.Column(db.Integer, primary_key=True)
-    year = db.Column(db.Integer, nullable=False)
-    month = db.Column(db.Integer, nullable=False)
-    total_work_hours_produksi = db.Column(db.Float, nullable=False)
-    total_work_hours_proof = db.Column(db.Float, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'year': self.year,
-            'month': self.month,
-            'total_work_hours_produksi': self.total_work_hours_produksi,
-            'total_work_hours_proof': self.total_work_hours_proof,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
-        }
-
-class ChemicalBonCTP(db.Model):
-    __tablename__ = 'chemical_bon_ctp'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    bon_number = db.Column(db.String(255), nullable=False)
-    request_number = db.Column(db.String(255), nullable=False)
-    tanggal = db.Column(db.Date, nullable=False)
-    bon_periode = db.Column(db.String(50), nullable=False)  # Misalnya: "Maret 2025"
-    item_code = db.Column(db.String(100), nullable=False)   # Contoh: "02-005-000-0000061"
-    item_name = db.Column(db.String(255), nullable=False)   # Contoh: "SAPHIRA PN DEVELOPER 20 L"
-    brand = db.Column(db.String(50), nullable=False)        # SAPHIRA/FUJI
-    unit = db.Column(db.String(20), nullable=False)  #SELALU "GLN"
-    jumlah = db.Column(db.Integer, nullable=False)
-    wo_number = db.Column(db.String(255), nullable=True)  # WO number yang dipilih secara random
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    
-    # Relationship dengan User
-    user = db.relationship('User', backref=db.backref('chemical_bons', lazy=True))
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'bon_number': self.bon_number,
-            'request_number': self.request_number,
-            'tanggal': self.tanggal.strftime('%Y-%m-%d') if self.tanggal else None,
-            'bon_periode': self.bon_periode,
-            'item_code': self.item_code,
-            'item_name': self.item_name,
-            'brand': self.brand,
-            'unit': self.unit,
-            'jumlah': self.jumlah,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'created_by': self.user.name if self.user else None  # Mengembalikan nama user bukan ID
-        }
-
-# Stock calculation and management functions integrated into models
-
-class KartuStockPlateFuji(db.Model):
-    __tablename__ = 'kartu_stock_plate_fuji'
-
-    id = db.Column(db.Integer, primary_key=True)
-    tanggal = db.Column(db.Date, nullable=False)
-    shift = db.Column(db.String(1), nullable=False)
-    item_code = db.Column(db.String(100), nullable=False)
-    item_name = db.Column(db.String(255), nullable=False)
-    jumlah_stock_awal = db.Column(db.Integer, nullable=False)
-    jumlah_pemakaian = db.Column(db.Integer, nullable=False)
-    jumlah_incoming = db.Column(db.Integer, nullable=False)
-    incoming_shift = db.Column(db.String(1), nullable=True)
-    jumlah_stock_akhir = db.Column(db.Integer, nullable=False)
-    jumlah_per_box = db.Column(db.Integer, nullable=False)    
-    confirmed_at = db.Column(db.DateTime, nullable=True)
-    confirmed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-
-    PLATE_TYPE_MAPPING = PlateTypeMapping.FUJI_PLATES
-
-    user = db.relationship('User', backref=db.backref('stock_plates_fuji', lazy=True))
-
-    def calculate_usage(self):
-        """Hitung penggunaan plat dari log produksi CTP"""
-        plate_type = self.PLATE_TYPE_MAPPING.get(self.item_code)
-        if not plate_type:
-            return 0
-        ctp_shift = f"Shift {self.shift}"
-        usage = db.session.query(
-            func.sum(
-                func.coalesce(CTPProductionLog.num_plate_good, 0) + 
-                func.coalesce(CTPProductionLog.num_plate_not_good, 0)
-            )
-        ).filter(
-            CTPProductionLog.log_date == self.tanggal,
-            CTPProductionLog.ctp_shift == ctp_shift,
-            CTPProductionLog.plate_type_material == plate_type
-        ).scalar()
-        return usage or 0
-
-    def update_stock(self):
-        """Perbarui jumlah pemakaian dan stok akhir"""
-        self.jumlah_pemakaian = self.calculate_usage()
-        self.jumlah_stock_akhir = self.jumlah_stock_awal - self.jumlah_pemakaian + self.jumlah_incoming
-
-    @classmethod
-    def get_previous_shift_stock(cls, tanggal, shift, item_code):
-        """
-        Gets the last known stock count for an item by finding the single most recent record
-        based on a chronological ordering of date and shift.
-        """
-        # A more robust query to find the last record
-        prev_record = cls.query.filter(
-            cls.item_code == item_code,
-            # Filter for records that are chronologically before the current date and shift
-            (cls.tanggal < tanggal) |
-            ((cls.tanggal == tanggal) & (cls.shift < shift))
-        ).order_by(
-            cls.tanggal.desc(),
-            cls.shift.desc()
-        ).first()
-
-        return prev_record.jumlah_stock_akhir if prev_record else 0
-
-    @classmethod
-    def get_or_create_stocks(cls, tanggal, shift, user_id):
-        stocks = cls.query.filter_by(tanggal=tanggal, shift=shift).all()
-        
-        if not stocks:
-            stocks = []
-            for item_code, item_name in cls.PLATE_TYPE_MAPPING.items():
-                prev_stock = cls.get_previous_shift_stock(tanggal, shift, item_code)
-                
-                # Logika yang ada sekarang untuk membuat baris baru
-                if item_code in PlateTypeMapping.FUJI_PLATES:
-                    jumlah_per_box = 30 if '1630' not in item_name else 15
-                else: # Fallback untuk Saphira atau lainnya, meskipun ini seharusnya tidak terjadi di kelas Fuji
-                    if '1055 PN' in item_name:
-                        jumlah_per_box = 40
-                    elif '1630' in item_name:
-                        jumlah_per_box = 30
-                    else:
-                        jumlah_per_box = 50
-                
-                new_stock = cls(
-                    tanggal=tanggal,
-                    shift=shift,
-                    item_code=item_code,
-                    item_name=item_name,
-                    jumlah_stock_awal=prev_stock,
-                    jumlah_pemakaian=0,
-                    jumlah_incoming=0,
-                    jumlah_stock_akhir=prev_stock,
-                    jumlah_per_box=jumlah_per_box,
-                    confirmed_by=user_id
-                )
-                db.session.add(new_stock)
-                stocks.append(new_stock)
-            
-            db.session.commit()
-        
-        # Perbaikan utama: Perbarui jumlah_stock_awal untuk semua entri yang sudah ada
-        for stock in stocks:
-            stock.jumlah_stock_awal = cls.get_previous_shift_stock(tanggal, shift, stock.item_code)
-            stock.update_stock() # Panggil update_stock() setelah stock awal diperbarui
-            db.session.add(stock)
-        
-        db.session.commit()
-        return stocks
-
-    def to_dict(self):
-        """Konversi data stok ke dictionary untuk respons API, termasuk konversi box/pcs"""
-        stock_awal_box = self.jumlah_stock_awal // self.jumlah_per_box
-        stock_awal_pcs = self.jumlah_stock_awal % self.jumlah_per_box
-        
-        stock_akhir_box = self.jumlah_stock_akhir // self.jumlah_per_box
-        stock_akhir_pcs = self.jumlah_stock_akhir % self.jumlah_per_box
-        
-        incoming_box = self.jumlah_incoming // self.jumlah_per_box
-        
-        return {
-            'id': self.id,
-            'tanggal': self.tanggal.strftime('%Y-%m-%d') if self.tanggal else None,
-            'shift': self.shift,
-            'item_code': self.item_code,
-            'item_name': self.item_name,
-            'jumlah_stock_awal': self.jumlah_stock_awal,
-            'jumlah_stock_awal_box': stock_awal_box,
-            'jumlah_stock_awal_pcs': stock_awal_pcs,
-            'jumlah_pemakaian': self.jumlah_pemakaian,
-            'jumlah_incoming': incoming_box,
-            'jumlah_stock_akhir': self.jumlah_stock_akhir,
-            'jumlah_stock_akhir_box': stock_akhir_box,
-            'jumlah_stock_akhir_pcs': stock_akhir_pcs,
-            'jumlah_per_box': self.jumlah_per_box,
-            'confirmed_at': self.confirmed_at.isoformat() if self.confirmed_at else None,
-            'confirmed_by': self.user.name if self.user else None
-        }
-
-class KartuStockChemicalFuji(db.Model):
-    __tablename__ = 'kartu_stock_chemical_fuji'
-
-    id = db.Column(db.Integer, primary_key=True)
-    tanggal = db.Column(db.Date, nullable=False)
-    shift = db.Column(db.String(1), nullable=False)
-    item_code = db.Column(db.String(100), nullable=False)
-    item_name = db.Column(db.String(255), nullable=False)
-    jumlah_stock_awal = db.Column(db.Integer, nullable=False)
-    jumlah_pemakaian = db.Column(db.Integer, nullable=False)
-    jumlah_incoming = db.Column(db.Integer, nullable=False)
-    incoming_shift = db.Column(db.String(1), nullable=True)
-    jumlah_stock_akhir = db.Column(db.Integer, nullable=False)
-    confirmed_at = db.Column(db.DateTime, nullable=True)
-    confirmed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-
-    user = db.relationship('User', backref=db.backref('stock_chemicals_fuji', lazy=True))
-
-    CHEMICAL_TYPE_MAPPING = {
-        '02-005-000-0000153': 'FUJI DEVELOPER',
-        '02-005-000-0000154': 'FUJI REPLENISHER'
-    }
-
-    def calculate_usage(self):
-        """
-        Menghitung jumlah pemakaian chemical dari bon untuk shift dan tanggal yang bersangkutan.
-        """
-        
-        # Pilih model bon yang sesuai
-        if "fuji" in self.__tablename__.lower():
-            BonModel = ChemicalBonCTP # Sesuaikan jika nama model Saphira berbeda
-        else:
-            BonModel = ChemicalBonCTP
-        
-        # Definisikan rentang waktu yang relevan berdasarkan shift
-        if self.shift == '1':
-            # Shift 1: dari 06:45:00 di hari yang sama hingga 18:44:59 di hari yang sama
-            start_time = time(6, 45)
-            end_time = time(18, 45)
-            query = db.session.query(func.coalesce(func.sum(BonModel.jumlah), 0)).filter(
-                BonModel.tanggal == self.tanggal, # Menggunakan tanggal bon
-                BonModel.item_code == self.item_code,
-                func.time(BonModel.created_at) >= start_time,
-                func.time(BonModel.created_at) < end_time
-            )
-        elif self.shift == '2':
-            # Shift 2: dari 18:45:00 di hari ini hingga 06:44:59 di hari berikutnya
-            start_time = time(18, 45)
-            end_time = time(6, 45)
-            next_day = self.tanggal + timedelta(days=1)
-            
-            query = db.session.query(func.coalesce(func.sum(BonModel.jumlah), 0)).filter(
-                BonModel.item_code == self.item_code,
-                or_(
-                    # Kondisi untuk bon yang dibuat dari 18:45:00 hingga tengah malam hari ini
-                    and_(
-                        BonModel.tanggal == self.tanggal,
-                        func.time(BonModel.created_at) >= start_time
-                    ),
-                    # Kondisi untuk bon yang dibuat dari tengah malam hingga 06:44:59 hari berikutnya
-                    and_(
-                        BonModel.tanggal == next_day,
-                        func.time(BonModel.created_at) < end_time
-                    )
-                )
-            )
-        else:
-            return 0
-        
-        return query.scalar()
-
-    def update_stock(self):
-        self.jumlah_pemakaian = self.calculate_usage()
-        self.jumlah_stock_akhir = self.jumlah_stock_awal + self.jumlah_incoming - self.jumlah_pemakaian
-
-    @classmethod
-    def get_previous_shift_stock(cls, tanggal, shift, item_code):
-        prev_record = None
-        if shift == '2':
-            prev_record = cls.query.filter_by(tanggal=tanggal, item_code=item_code, shift='1').first()
-        elif shift == '1':
-            prev_tanggal = tanggal - timedelta(days=1)
-            prev_record = cls.query.filter_by(tanggal=prev_tanggal, item_code=item_code, shift='2').first()
-        
-        return prev_record.jumlah_stock_akhir if prev_record else 0
-
-    @classmethod
-    def get_or_create_stocks(cls, tanggal, shift, user_id):
-        stocks = cls.query.filter_by(tanggal=tanggal, shift=shift).all()
-
-        if not stocks:
-            stocks = []
-            for item_code, item_name in cls.CHEMICAL_TYPE_MAPPING.items():
-                prev_stock = cls.get_previous_shift_stock(tanggal, shift, item_code)
-                new_stock = cls(
-                    tanggal=tanggal,
-                    shift=shift,
-                    item_code=item_code,
-                    item_name=item_name,
-                    jumlah_stock_awal=prev_stock,
-                    jumlah_pemakaian=0,
-                    jumlah_incoming=0,
-                    jumlah_stock_akhir=prev_stock,
-                    confirmed_by=user_id
-                )
-                db.session.add(new_stock)
-                stocks.append(new_stock)
-            
-            db.session.commit()
-            
-        # Ini adalah bagian yang paling penting!
-        # Memastikan stok awal selalu diperbarui dari data terbaru,
-        # bahkan jika barisnya sudah ada di database.
-        for stock in stocks:
-            stock.jumlah_stock_awal = cls.get_previous_shift_stock(tanggal, shift, stock.item_code)
-            stock.update_stock() # Hitung ulang jumlah_stock_akhir
-            db.session.add(stock)
-
-        db.session.commit()
-        return stocks
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'tanggal': self.tanggal.strftime('%Y-%m-%d') if self.tanggal else None,
-            'shift': self.shift,
-            'item_code': self.item_code,
-            'item_name': self.item_name,
-            'jumlah_stock_awal': self.jumlah_stock_awal,
-            'jumlah_pemakaian': self.jumlah_pemakaian,
-            'jumlah_incoming': self.jumlah_incoming,
-            'jumlah_stock_akhir': self.jumlah_stock_akhir,
-            'confirmed_at': self.confirmed_at.isoformat() if self.confirmed_at else None,
-            'confirmed_by': self.user.name if self.user else None
-        }
-    
-class KartuStockPlateSaphira(db.Model):
-    __tablename__ = 'kartu_stock_plate_saphira'
-
-    id = db.Column(db.Integer, primary_key=True)
-    tanggal = db.Column(db.Date, nullable=False)
-    shift = db.Column(db.String(1), nullable=False)
-    item_code = db.Column(db.String(100), nullable=False)
-    item_name = db.Column(db.String(255), nullable=False)
-    jumlah_stock_awal = db.Column(db.Integer, nullable=False)
-    jumlah_pemakaian = db.Column(db.Integer, nullable=False)
-    jumlah_incoming = db.Column(db.Integer, nullable=False)
-    incoming_shift = db.Column(db.String(1), nullable=True)
-    jumlah_stock_akhir = db.Column(db.Integer, nullable=False)
-    jumlah_per_box = db.Column(db.Integer, nullable=False)
-    confirmed_at = db.Column(db.DateTime, nullable=True)
-    confirmed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-
-    PLATE_TYPE_MAPPING = PlateTypeMapping.SAPHIRA_PLATES
-
-    user = db.relationship('User', backref=db.backref('stock_plates_saphira', lazy=True))
-
-    def calculate_usage(self):
-        """Hitung penggunaan plat dari log produksi CTP"""
-        plate_type = self.PLATE_TYPE_MAPPING.get(self.item_code)
-        if not plate_type:
-            return 0
-        ctp_shift = f"Shift {self.shift}"
-        usage = db.session.query(
-            func.sum(
-                func.coalesce(CTPProductionLog.num_plate_good, 0) + 
-                func.coalesce(CTPProductionLog.num_plate_not_good, 0)
-            )
-        ).filter(
-            CTPProductionLog.log_date == self.tanggal,
-            CTPProductionLog.ctp_shift == ctp_shift,
-            CTPProductionLog.plate_type_material == plate_type
-        ).scalar()
-        return usage or 0
-
-    def update_stock(self):
-        """Perbarui jumlah pemakaian dan stok akhir"""
-        self.jumlah_pemakaian = self.calculate_usage()
-        self.jumlah_stock_akhir = self.jumlah_stock_awal - self.jumlah_pemakaian + self.jumlah_incoming
-
-    @classmethod
-    def get_previous_shift_stock(cls, tanggal, shift, item_code):
-        """
-        Gets the last known stock count for an item by finding the single most recent record
-        based on a chronological ordering of date and shift.
-        """
-        # A more robust query to find the last record
-        prev_record = cls.query.filter(
-            cls.item_code == item_code,
-            # Filter for records that are chronologically before the current date and shift
-            (cls.tanggal < tanggal) |
-            ((cls.tanggal == tanggal) & (cls.shift < shift))
-        ).order_by(
-            cls.tanggal.desc(),
-            cls.shift.desc()
-        ).first()
-
-        return prev_record.jumlah_stock_akhir if prev_record else 0
-
-    @classmethod
-    def get_or_create_stocks(cls, tanggal, shift, user_id):
-        stocks = cls.query.filter_by(tanggal=tanggal, shift=shift).all()
-        
-        if not stocks:
-            stocks = []
-            for item_code, item_name in cls.PLATE_TYPE_MAPPING.items():
-                prev_stock = cls.get_previous_shift_stock(tanggal, shift, item_code)
-                
-                # Logika yang ada sekarang untuk membuat baris baru
-                if item_code in PlateTypeMapping.FUJI_PLATES:
-                    jumlah_per_box = 30 if '1630' not in item_name else 15
-                else: # Fallback untuk Saphira atau lainnya, meskipun ini seharusnya tidak terjadi di kelas Fuji
-                    if '1055 PN' in item_name:
-                        jumlah_per_box = 40
-                    elif '1630' in item_name:
-                        jumlah_per_box = 30
-                    else:
-                        jumlah_per_box = 50
-                
-                new_stock = cls(
-                    tanggal=tanggal,
-                    shift=shift,
-                    item_code=item_code,
-                    item_name=item_name,
-                    jumlah_stock_awal=prev_stock,
-                    jumlah_pemakaian=0,
-                    jumlah_incoming=0,
-                    jumlah_stock_akhir=prev_stock,
-                    jumlah_per_box=jumlah_per_box,
-                    confirmed_by=user_id
-                )
-                db.session.add(new_stock)
-                stocks.append(new_stock)
-            
-            db.session.commit()
-        
-        # Perbaikan utama: Perbarui jumlah_stock_awal untuk semua entri yang sudah ada
-        for stock in stocks:
-            stock.jumlah_stock_awal = cls.get_previous_shift_stock(tanggal, shift, stock.item_code)
-            stock.update_stock() # Panggil update_stock() setelah stock awal diperbarui
-            db.session.add(stock)
-        
-        db.session.commit()
-        return stocks
-
-    def to_dict(self):
-        """Konversi data stok ke dictionary untuk respons API, termasuk konversi box/pcs"""
-        stock_awal_box = self.jumlah_stock_awal // self.jumlah_per_box
-        stock_awal_pcs = self.jumlah_stock_awal % self.jumlah_per_box
-        
-        stock_akhir_box = self.jumlah_stock_akhir // self.jumlah_per_box
-        stock_akhir_pcs = self.jumlah_stock_akhir % self.jumlah_per_box
-        
-        incoming_box = self.jumlah_incoming // self.jumlah_per_box
-        
-        return {
-            'id': self.id,
-            'tanggal': self.tanggal.strftime('%Y-%m-%d') if self.tanggal else None,
-            'shift': self.shift,
-            'item_code': self.item_code,
-            'item_name': self.item_name,
-            'jumlah_stock_awal': self.jumlah_stock_awal,
-            'jumlah_stock_awal_box': stock_awal_box,
-            'jumlah_stock_awal_pcs': stock_awal_pcs,
-            'jumlah_pemakaian': self.jumlah_pemakaian,
-            'jumlah_incoming': incoming_box,
-            'jumlah_stock_akhir': self.jumlah_stock_akhir,
-            'jumlah_stock_akhir_box': stock_akhir_box,
-            'jumlah_stock_akhir_pcs': stock_akhir_pcs,
-            'jumlah_per_box': self.jumlah_per_box,
-            'confirmed_at': self.confirmed_at.isoformat() if self.confirmed_at else None,
-            'confirmed_by': self.user.name if self.user else None
-        }
-
-class KartuStockChemicalSaphira(db.Model):
-    __tablename__ = 'kartu_stock_chemical_saphira'
-
-    id = db.Column(db.Integer, primary_key=True)
-    tanggal = db.Column(db.Date, nullable=False)
-    shift = db.Column(db.String(1), nullable=False)
-    item_code = db.Column(db.String(100), nullable=False)
-    item_name = db.Column(db.String(255), nullable=False)
-    jumlah_stock_awal = db.Column(db.Integer, nullable=False)
-    jumlah_pemakaian = db.Column(db.Integer, nullable=False)
-    jumlah_incoming = db.Column(db.Integer, nullable=False)
-    incoming_shift = db.Column(db.String(1), nullable=True)
-    jumlah_stock_akhir = db.Column(db.Integer, nullable=False)
-    confirmed_at = db.Column(db.DateTime, default=datetime.utcnow)
-    confirmed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-
-    user = db.relationship('User', backref=db.backref('stock_chemicals_saphira', lazy=True))
-
-    CHEMICAL_TYPE_MAPPING = {
-        '02-005-000-0000061': 'SAPHIRA DEVELOPER',
-        '02-005-000-0000046': 'SAPHIRA REPLENISHER',
-        '02-005-000-0000158': 'SAPHIRA GUM'  # Diperbarui agar sesuai dengan data bon
-    }
-
-    def calculate_usage(self):
-        """
-        Menghitung jumlah pemakaian chemical dari bon untuk shift dan tanggal yang bersangkutan.
-        """
-        
-        # Pilih model bon yang sesuai
-        if "saphira" in self.__tablename__.lower():
-            BonModel = ChemicalBonCTP # Sesuaikan jika nama model Saphira berbeda
-        else:
-            BonModel = ChemicalBonCTP
-        
-        # Definisikan rentang waktu yang relevan berdasarkan shift
-        if self.shift == '1':
-            # Shift 1: dari 06:45:00 di hari yang sama hingga 18:44:59 di hari yang sama
-            start_time = time(6, 45)
-            end_time = time(18, 45)
-            query = db.session.query(func.coalesce(func.sum(BonModel.jumlah), 0)).filter(
-                BonModel.tanggal == self.tanggal, # Menggunakan tanggal
-                BonModel.item_code == self.item_code,
-                func.time(BonModel.created_at) >= start_time,
-                func.time(BonModel.created_at) < end_time
-            )
-        elif self.shift == '2':
-            # Shift 2: dari 18:45:00 di hari ini hingga 06:44:59 di hari berikutnya
-            start_time = time(18, 45)
-            end_time = time(6, 45)
-            next_day = self.tanggal + timedelta(days=1)
-            
-            query = db.session.query(func.coalesce(func.sum(BonModel.jumlah), 0)).filter(
-                BonModel.item_code == self.item_code,
-                or_(
-                    # Kondisi untuk bon yang dibuat dari 18:45:00 hingga tengah malam hari ini
-                    and_(
-                        BonModel.tanggal == self.tanggal, # Menggunakan tanggal
-                        func.time(BonModel.created_at) >= start_time
-                    ),
-                    # Kondisi untuk bon yang dibuat dari tengah malam hingga 06:44:59 hari berikutnya
-                    and_(
-                        BonModel.tanggal == next_day, # Menggunakan tanggal
-                        func.time(BonModel.created_at) < end_time
-                    )
-                )
-            )
-        else:
-            return 0
-        
-        return query.scalar()
-
-    def update_stock(self):
-        self.jumlah_pemakaian = self.calculate_usage()
-        self.jumlah_stock_akhir = self.jumlah_stock_awal + self.jumlah_incoming - self.jumlah_pemakaian
-        
-    @classmethod
-    def get_previous_shift_stock(cls, tanggal, shift, item_code):
-        prev_record = None
-        if shift == '2':
-            prev_record = cls.query.filter_by(tanggal=tanggal, item_code=item_code, shift='1').first()
-        elif shift == '1':
-            prev_tanggal = tanggal - timedelta(days=1)
-            prev_record = cls.query.filter_by(tanggal=prev_tanggal, item_code=item_code, shift='2').first()
-        
-        return prev_record.jumlah_stock_akhir if prev_record else 0
-
-    @classmethod
-    def get_or_create_stocks(cls, tanggal, shift, user_id):
-        stocks = cls.query.filter_by(tanggal=tanggal, shift=shift).all()
-
-        if not stocks:
-            stocks = []
-            for item_code, item_name in cls.CHEMICAL_TYPE_MAPPING.items():
-                prev_stock = cls.get_previous_shift_stock(tanggal, shift, item_code)
-                new_stock = cls(
-                    tanggal=tanggal,
-                    shift=shift,
-                    item_code=item_code,
-                    item_name=item_name,
-                    jumlah_stock_awal=prev_stock,
-                    jumlah_pemakaian=0,
-                    jumlah_incoming=0,
-                    jumlah_stock_akhir=prev_stock,
-                    confirmed_by=user_id
-                )
-                db.session.add(new_stock)
-                stocks.append(new_stock)
-            
-            db.session.commit()
-            
-        # Bagian perbaikan utama:
-        # Memastikan stok awal selalu diperbarui dari data terbaru,
-        # bahkan jika barisnya sudah ada di database.
-        for stock in stocks:
-            stock.jumlah_stock_awal = cls.get_previous_shift_stock(tanggal, shift, stock.item_code)
-            stock.update_stock() # Hitung ulang jumlah_stock_akhir
-            db.session.add(stock)
-
-        db.session.commit()
-        return stocks
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'tanggal': self.tanggal.strftime('%Y-%m-%d') if self.tanggal else None,
-            'shift': self.shift,
-            'item_code': self.item_code,
-            'item_name': self.item_name,
-            'jumlah_stock_awal': self.jumlah_stock_awal,
-            'jumlah_pemakaian': self.jumlah_pemakaian,
-            'jumlah_incoming': self.jumlah_incoming,
-            'jumlah_stock_akhir': self.jumlah_stock_akhir,
-            'confirmed_at': self.confirmed_at.isoformat() if self.confirmed_at else None,
-            'confirmed_by': self.user.name if self.user else None
-        }
-
-class BonPlate(db.Model):
-    """Model untuk tabel bon_plate"""
-    __tablename__ = 'bon_plate'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    bon_number = db.Column(db.String(255), nullable=False)
-    request_number = db.Column(db.String(255), nullable=False)
-    tanggal = db.Column(db.Date, nullable=False)
-    bon_periode = db.Column(db.String(255), nullable=False)
-    jenis_plate = db.Column(db.String(50), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    
-    # Relationship dengan User - dengan primary join yang eksplisit
-    user = db.relationship('User', 
-                         primaryjoin='BonPlate.created_by == User.id',
-                         backref=db.backref('bon_plates', lazy=True))
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'bon_number': self.bon_number,
-            'request_number': self.request_number,
-            'tanggal': self.tanggal.strftime('%Y-%m-%d') if self.tanggal else None,
-            'jenis_plate': self.jenis_plate,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'created_by': self.created_by,
-            'created_by_name': self.user.name if self.user else None
-        }
-
-class PlateBonRequest(db.Model):
-    __tablename__ = 'plate_bon_requests'
-
-    id = db.Column(db.Integer, primary_key=True)
-    tanggal = db.Column(db.Date, nullable=False)
-    mesin_cetak = db.Column(db.String(100), nullable=False)
-    pic = db.Column(db.String(100), nullable=False)
-    remarks = db.Column(db.String(100), nullable=False)  # PRODUKSI/PROOF
-    wo_number = db.Column(db.String(100), nullable=False)
-    mc_number = db.Column(db.String(100), nullable=False)
-    run_length = db.Column(db.Integer, nullable=True)
-    item_name = db.Column(db.String(255), nullable=False)
-    paper_type = db.Column(db.String(100), nullable=False)  # Kolom baru untuk jenis kertas
-    jumlah_plate = db.Column(db.Integer, nullable=False)
-    note = db.Column(db.String(255), nullable=True)
-    machine_off_at = db.Column(db.DateTime, default=datetime.utcnow)
-    plate_start_at = db.Column(db.DateTime, nullable=True)
-    plate_finish_at = db.Column(db.DateTime, nullable=True)
-    plate_delivered_at = db.Column(db.DateTime, nullable=True)
-    ctp_by = db.Column(db.String(100), nullable=True)
-    ctp_group = db.Column(db.String(50), nullable=True)  # Mengubah ctp_grup menjadi ctp_group untuk konsistensi
-    status = db.Column(db.String(30), default='proses_ctp')
-
-    cancellation_reason = db.Column(db.String(255), nullable=True)
-    cancelled_by = db.Column(db.String(100), nullable=True)
-    cancelled_at = db.Column(db.DateTime, nullable=True)
-
-    declined_at = db.Column(db.DateTime, nullable=True)
-    declined_by = db.Column(db.String(100), nullable=True)
-    decline_reason = db.Column(db.Text, nullable=True)
-    is_declined = db.Column(db.Boolean, default=False)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'tanggal': self.tanggal.strftime('%Y-%m-%d') if self.tanggal else None,
-            'mesin_cetak': self.mesin_cetak,
-            'pic': self.pic,
-            'remarks': self.remarks,
-            'wo_number': self.wo_number,
-            'mc_number': self.mc_number,
-            'run_length': self.run_length,
-            'item_name': self.item_name,
-            'paper_type': self.paper_type,
-            'jumlah_plate': self.jumlah_plate,
-            'note': self.note,
-            'machine_off_at': self.machine_off_at.isoformat() if self.machine_off_at else None,
-            'plate_start_at': self.plate_start_at.isoformat() if self.plate_start_at else None,
-            'plate_finish_at': self.plate_finish_at.isoformat() if self.plate_finish_at else None,
-            'plate_delivered_at': self.plate_delivered_at.isoformat() if self.plate_delivered_at else None,
-            'ctp_by': self.ctp_by,
-            'ctp_group': self.ctp_group,
-            'status': self.status,
-            'cancellation_reason': self.cancellation_reason,
-            'cancelled_by': self.cancelled_by,
-            'cancelled_at': self.cancelled_at.isoformat() if self.cancelled_at else None,
-            'declined_by': self.declined_by,
-            'declined_at': self.declined_at.isoformat() if self.declined_at else None,
-            'decline_reason': self.decline_reason,
-            'is_declined': self.is_declined
-        }
 
 # Admin routes for user management
 @app.route('/admin/users')
@@ -1728,88 +430,6 @@ def admin_delete_user():
             'message': f'Gagal menghapus user: {str(e)}'
         }), 400
 
-# Function to collect plate usage data
-# Helper function to get shift name for CTP logs
-def get_ctp_shift_name(shift_num):
-    """Convert numeric shift to CTP log shift format"""
-    return f"Shift {shift_num}"
-    
-    # Update Fuji plate stock
-    fuji_stocks = KartuStockPlateFuji.query.filter_by(
-        tanggal=stock_date,
-        shift=shift_num
-    ).all()
-    
-    if not fuji_stocks:
-        app.logger.info('Creating new Fuji plate stock records')
-        # Create new stock records for all Fuji plate types
-        for item_code, plate_type in KartuStockPlateFuji.PLATE_TYPE_MAPPING.items():
-            # Get previous day's stock
-            prev_stock = KartuStockPlateFuji.get_previous_day_stock(stock_date, item_code)
-            
-            # Create new stock record
-            new_stock = KartuStockPlateFuji(
-                tanggal=stock_date,
-                shift=shift_num,
-                item_code=item_code,
-                item_name=plate_type,
-                jumlah_stock_awal=prev_stock or 0,
-                jumlah_pemakaian=usage_map.get(plate_type, 0),
-                jumlah_incoming=0,
-                jumlah_stock_akhir=(prev_stock or 0) - usage_map.get(plate_type, 0),
-                jumlah_per_box=100,
-                confirmed_by=current_user.id
-            )
-            db.session.add(new_stock)
-    else:
-        app.logger.info('Updating existing Fuji plate stock records')
-        # Update existing stock records
-        for stock in fuji_stocks:
-            plate_type = KartuStockPlateFuji.PLATE_TYPE_MAPPING.get(stock.item_code)
-            if plate_type:
-                stock.jumlah_pemakaian = usage_map.get(plate_type, 0)
-                stock.jumlah_stock_akhir = stock.jumlah_stock_awal - stock.jumlah_pemakaian + stock.jumlah_incoming
-    
-    # Update Saphira plate stock
-    saphira_stocks = KartuStockPlateSaphira.query.filter_by(
-        tanggal=stock_date,
-        shift=shift_num
-    ).all()
-    
-    if not saphira_stocks:
-        app.logger.info('Creating new Saphira plate stock records')
-        # Create new stock records for all Saphira plate types
-        for item_code, plate_type in KartuStockPlateSaphira.PLATE_TYPE_MAPPING.items():
-            # Get previous day's stock
-            prev_stock = KartuStockPlateSaphira.get_previous_day_stock(stock_date, item_code)
-            
-            # Create new stock record
-            new_stock = KartuStockPlateSaphira(
-                tanggal=stock_date,
-                shift=shift_num,
-                item_code=item_code,
-                item_name=plate_type,
-                jumlah_stock_awal=prev_stock or 0,
-                jumlah_pemakaian=usage_map.get(plate_type, 0),
-                jumlah_incoming=0,
-                jumlah_stock_akhir=(prev_stock or 0) - usage_map.get(plate_type, 0),
-                jumlah_per_box=100,
-                confirmed_by=current_user.id
-            )
-            db.session.add(new_stock)
-    else:
-        app.logger.info('Updating existing Saphira plate stock records')
-        # Update existing stock records
-        for stock in saphira_stocks:
-            plate_type = KartuStockPlateSaphira.PLATE_TYPE_MAPPING.get(stock.item_code)
-            if plate_type:
-                stock.jumlah_pemakaian = usage_map.get(plate_type, 0)
-                stock.jumlah_stock_akhir = stock.jumlah_stock_awal - stock.jumlah_pemakaian + stock.jumlah_incoming
-    
-    # Commit changes
-    db.session.commit()
-    app.logger.info('Plate usage data collection completed')
-
 # Routes for Kartu Stock CTP
 @app.route('/kartu-stock-ctp')
 @login_required
@@ -1880,54 +500,6 @@ def get_kartu_stock():
         db.session.rollback()
         app.logger.error(f'Error processing kartu stock: {str(e)}', exc_info=True)
         return jsonify({'error': str(e)}), 500
-# This code has been moved to the model class methods
-            
-# This functionality has been moved to the model class methods
-
-    # Get confirmation status
-    def get_confirmation_status(brand_stocks):
-        if not brand_stocks:
-            return {"confirmed": False}
-        
-        all_confirmed = all(stock.get('confirmed', False) for stock in brand_stocks)
-        if all_confirmed:
-            confirmed_by = db.session.get(User, brand_stocks[0].get('confirmed_by'))
-            return {
-                "confirmed": True,
-                "confirmedBy": confirmed_by.name if confirmed_by else "Unknown"
-            }
-        return {"confirmed": False}
-
-    # Dapatkan data untuk setiap jenis stok
-    fuji_plate = get_stock_data(KartuStockPlateFuji)
-    fuji_chemical = get_stock_data(KartuStockChemicalFuji)
-    saphira_plate = get_stock_data(KartuStockPlateSaphira)
-    saphira_chemical = get_stock_data(KartuStockChemicalSaphira)
-
-    return jsonify({
-        'fuji': {
-            'plate': {
-                'data': fuji_plate,
-                'status': get_confirmation_status(fuji_plate)
-            },
-            'chemical': {
-                'data': fuji_chemical,
-                'status': get_confirmation_status(fuji_chemical)
-            }
-        },
-        'saphira': {
-            'plate': {
-                'data': saphira_plate,
-                'status': get_confirmation_status(saphira_plate)
-            },
-            'chemical': {
-                'data': saphira_chemical,
-                'status': get_confirmation_status(saphira_chemical)
-            }
-        }
-    })
-
-
 
 @app.route('/api/confirm-stock', methods=['POST'])
 @login_required
@@ -1994,11 +566,9 @@ def input_initial_stock():
         # Process Fuji plates
         for plate in data.get('fuji', {}).get('plates', []):
             if plate.get('jumlah_stock_awal', 0) > 0:
-                box_value = int(plate['jumlah_stock_awal'] / plate['jumlah_per_box'])
-                pcs_value = plate['jumlah_stock_awal'] % plate['jumlah_per_box']
-                
                 stock = KartuStockPlateFuji(
                     tanggal=selected_date,
+                    shift='1',  # Add required shift field
                     item_code=plate['item_code'],
                     item_name=plate['item_name'],
                     jumlah_stock_awal=plate['jumlah_stock_awal'],
@@ -2015,6 +585,7 @@ def input_initial_stock():
             if chemical.get('jumlah_stock_awal', 0) > 0:
                 stock = KartuStockChemicalFuji(
                     tanggal=selected_date,
+                    shift='1',  # Add required shift field
                     item_code=chemical['item_code'],
                     item_name=chemical['item_name'],
                     jumlah_stock_awal=chemical['jumlah_stock_awal'],
@@ -2028,11 +599,9 @@ def input_initial_stock():
         # Process Saphira plates
         for plate in data.get('saphira', {}).get('plates', []):
             if plate.get('jumlah_stock_awal', 0) > 0:
-                box_value = int(plate['jumlah_stock_awal'] / plate['jumlah_per_box'])
-                pcs_value = plate['jumlah_stock_awal'] % plate['jumlah_per_box']
-                
                 stock = KartuStockPlateSaphira(
                     tanggal=selected_date,
+                    shift='1',  # Add required shift field
                     item_code=plate['item_code'],
                     item_name=plate['item_name'],
                     jumlah_stock_awal=plate['jumlah_stock_awal'],
@@ -2049,6 +618,7 @@ def input_initial_stock():
             if chemical.get('jumlah_stock_awal', 0) > 0:
                 stock = KartuStockChemicalSaphira(
                     tanggal=selected_date,
+                    shift='1',  # Add required shift field
                     item_code=chemical['item_code'],
                     item_name=chemical['item_name'],
                     jumlah_stock_awal=chemical['jumlah_stock_awal'],
@@ -2424,99 +994,6 @@ def get_monthly_work_hours(year, month):
             'error': str(e)
         }), 500
 
-
-# Inisialisasi database
-#with app.app_context():
-    #db.create_all() # Create tables if they don't exist
-
-    # Add dummy data for PlateAdjustmentRequest if table is empty
-    #if PlateAdjustmentRequest.query.count() == 0:
-    #    print("Adding dummy CTP adjustment data...")
-    #    
-    #    # Dummy data with 'proses_ctp' status
-    #    dummy_entries = [
-    #        PlateAdjustmentRequest(
-    #            tanggal=datetime(2025, 8, 1).date(),
-    #            mesin_cetak="SM74-1",
-    #            pic="Budi Santoso",
-    #            remarks="PRODUKSI",
-    #            wo_number="WO001-2025",
-    #            mc_number="MC001",
-    #            run_length=1000,
-    #            item_name="Kemasan Box Makanan A",
-    #            jumlah_plate=4,
-    #            note="Perlu adjustment warna untuk konsistensi",
-    #            status="proses_ctp",
-    #            adjustment_finish_at=datetime.utcnow(),
-    #            adjustment_by="Ahmad"
-    #        ),
-    #        PlateAdjustmentRequest(
-    #            tanggal=datetime(2025, 8, 1).date(),
-    #            mesin_cetak="SM52",
-    #            pic="Sari Dewi",
-    #            remarks="PROOF",
-    #            wo_number="WO002-2025",
-    #            mc_number="MC002",
-    #            run_length=500,
-    #            item_name="Brosur Promosi B",
-    #            jumlah_plate=2,
-    #            note="Test proof untuk approval client",
-    #            status="proses_ctp",
-    #            adjustment_finish_at=datetime.utcnow(),
-    #            adjustment_by="Rina"
-    #        ),
-    #        PlateAdjustmentRequest(
-    #            tanggal=datetime(2025, 8, 1).date(),
-    #            mesin_cetak="SM74-2",
-    #            pic="Eko Prasetyo",
-    #            remarks="PRODUKSI",
-    #            wo_number="WO003-2025",
-    #            mc_number="MC003",
-    #            run_length=2000,
-    #            item_name="Katalog Produk C",
-    #            jumlah_plate=8,
-    #            note="High quality printing untuk katalog premium",
-    #            status="proses_ctp",
-    #            adjustment_finish_at=datetime.utcnow(),
-    #            adjustment_by="Dian",
-    #            plate_start_at=datetime.utcnow(),
-    #            ctp_by="Joko"
-    #        )
-    #    ]
-    #    
-    #    for entry in dummy_entries:
-    #        db.session.add(entry)
-    #    
-    #   db.session.commit()
-    #    print("Dummy CTP adjustment data added.")
-
-    # Optional: Add dummy data if database is empty
-    # if CTPProductionLog.query.count() == 0:
-    #     print("Adding dummy data...")
-    #     dummy_entry = CTPProductionLog(
-    #         log_date=datetime(2025, 7, 20).date(),
-    #         ctp_group="Group B", ctp_shift="2", ctp_pic="Joko", ctp_machine="CTP 2",
-    #         processor_temperature=24.1, dwell_time=25.5, wo_number="WO987", mc_number="MC987",
-    #         run_length_sheet=750, print_machine="SM74", remarks_job="Packaging", item_name="Box A",
-    #         note="Test entry for CTP log", plate_type_material="Kodak Sonora", raster="FM",
-    #         num_plate_good=15, num_plate_not_good=0, not_good_reason=None,
-    #         cyan_25_percent=25.0, cyan_50_percent=50.0, cyan_75_percent=75.0,
-    #         magenta_25_percent=25.0, magenta_50_percent=50.0, magenta_75_percent=75.0,
-    #         yellow_25_percent=25.0, yellow_50_percent=50.0, yellow_75_percent=75.0,
-    #         black_25_percent=25.0, black_50_percent=50.0, black_75_percent=75.0,
-    #         x_25_percent=25.0, x_50_percent=50.0, x_75_percent=75.0,
-    #         z_25_percent=25.0, z_50_percent=50.0, z_75_percent=75.0,
-    #         u_25_percent=25.0, u_50_percent=50.0, u_75_percent=75.0,
-    #         v_25_percent=25.0, v_50_percent=50.0, v_75_percent=75.0,
-    #         start_time=time(9, 30), finish_time=time(10, 30) # Contoh: Gunakan objek time()
-    #     )
-    #     db.session.add(dummy_entry)
-    #     db.session.commit()
-    #     print("Dummy data added.")
-
-
-
-
 # --- Chemical Bon CTP Routes ---
 @app.route('/chemical-bon-ctp')
 @login_required
@@ -2776,7 +1253,28 @@ def login():
 def logout():
     logout_user()
     session.clear()  # Clear all session data including flash messages
-    return redirect(url_for('login'))
+    
+    # Clear remember me cookie if it exists
+    response = make_response(redirect(url_for('login')))
+    
+    # Delete cookies with different possible names, paths, and domains
+    cookie_names = ['remember_token', 'remember', 'session']
+    paths = ['/', '/impact', '']
+    domains = [None, '', 'localhost']  # Handle different domain scenarios
+    
+    # Log untuk debugging (dapat dihapus di production)
+    app.logger.info(f"User {current_user.username if current_user.is_authenticated else 'unknown'} logging out")
+    
+    for cookie_name in cookie_names:
+        for path in paths:
+            for domain in domains:
+                response.delete_cookie(cookie_name, path=path, domain=domain)
+                # Also set cookie to expire in the past as a fallback
+                response.set_cookie(cookie_name, '', expires=0, path=path, domain=domain)
+                app.logger.debug(f"Attempting to delete cookie: {cookie_name}, path: {path}, domain: {domain}")
+    
+    app.logger.info("Logout completed, all remember cookies should be cleared")
+    return response
 
 # --- Rute Halaman ---
 @app.route('/')
@@ -2811,9 +1309,28 @@ def edit_kpi_ctp_page(data_id):
         return render_template('edit_kpi_ctp.html', data_id=data_id)
 
     # Non-admin: cek apakah data <24 jam
-    now = now_jakarta
-    if kpi_entry.created_at:
-        age = now - kpi_entry.created_at
+    created = kpi_entry.created_at
+    if created:
+        # Buat perbandingan timezone-safe: normalisasi kedua waktu ke UTC-aware
+        try:
+            now_utc = datetime.now(pytz.utc)
+
+            if created.tzinfo is None:
+                # Asumsikan nilai yang disimpan tanpa tz adalah UTC
+                created_aware = pytz.utc.localize(created)
+            else:
+                created_aware = created.astimezone(pytz.utc)
+
+            age = now_utc - created_aware
+        except Exception:
+            # Fallback: coba bandingkan sebagai naive (both in UTC naive)
+            now_naive = datetime.utcnow()
+            if getattr(created, 'tzinfo', None) is not None:
+                created_naive = created.astimezone(pytz.utc).replace(tzinfo=None)
+            else:
+                created_naive = created
+            age = now_naive - created_naive
+
         if age.total_seconds() <= 24 * 3600:
             return render_template('edit_kpi_ctp.html', data_id=data_id)
         else:
@@ -2962,21 +1479,31 @@ def get_all_plate_data():
             total = int(usage.good) + int(usage.not_good)
             if total > 0:
                 material = usage.plate_type_material.upper()
+                # Normalize material to be robust against spaces and hyphens (e.g., 'LH-PJA' vs 'LHPJA')
+                normalized_material = material.replace(' ', '').replace('-', '')
                 matched_size = None
                 
                 for size in plate_sizes:
-                    size_check = size.replace(' ', '')
-                    material_check = material.replace(' ', '')
+                    # Normalize size key similarly to ensure consistent substring checks
+                    size_check = size.replace(' ', '').replace('-', '')
+                    material_check = normalized_material
                     if size_check in material_check:
                         matched_size = size
-                        if 'UV' in material and size == '1030':
-                            matched_size = '1030 UV'
-                        elif 'PN' in material and size == '1055':
-                            matched_size = '1055 PN'
-                        elif 'UV' in material and size == '1055':
-                            matched_size = '1055 UV'
-                        elif 'LHPL' in material and size == '1055':
-                            matched_size = '1055 LHPL'
+                        # Variant refinement using normalized material for robustness
+                        if size == '1030':
+                            # UV detection should also consider PJ2 codes commonly used for UV variants
+                            if 'UV' in material_check or 'PJ2' in material_check:
+                                matched_size = '1030 UV'
+                            # Handle LH-PJA or LHPJA variant (accept both with/without hyphen)
+                            elif 'LHPJA' in material_check or 'PJA' in material_check:
+                                matched_size = '1030 LHPJA'
+                        elif size == '1055':
+                            if 'PN' in material_check:
+                                matched_size = '1055 PN'
+                            elif 'UV' in material_check or 'PJ2' in material_check:
+                                matched_size = '1055 UV'
+                            elif 'LHPL' in material_check:
+                                matched_size = '1055 LHPL'
                         break
                 
                 if matched_size in plate_dict:
@@ -3535,7 +2062,6 @@ def cancel_adjustment_plate():
 def submit_kpi():
     data = request.json
     try:
-        import pytz
         jakarta_tz = pytz.timezone('Asia/Jakarta')
         now_jakarta = datetime.now(jakarta_tz)
         # Konversi string waktu dari frontend ke objek time Python
@@ -3563,42 +2089,92 @@ def submit_kpi():
             num_plate_good=data['num_plate_good'],
             num_plate_not_good=data.get('num_plate_not_good'),
             not_good_reason=data.get('not_good_reason'),
+            detail_not_good=data.get('detail_not_good'),
+            cyan_20_percent=data.get('cyan_20_percent'),
             cyan_25_percent=data.get('cyan_25_percent'),
+            cyan_40_percent=data.get('cyan_40_percent'),
             cyan_50_percent=data.get('cyan_50_percent'),
+            cyan_80_percent=data.get('cyan_80_percent'),
             cyan_75_percent=data.get('cyan_75_percent'),
+            magenta_20_percent=data.get('magenta_20_percent'),
             magenta_25_percent=data.get('magenta_25_percent'),
+            magenta_40_percent=data.get('magenta_40_percent'),
             magenta_50_percent=data.get('magenta_50_percent'),
+            magenta_80_percent=data.get('magenta_80_percent'),
             magenta_75_percent=data.get('magenta_75_percent'),
+            yellow_20_percent=data.get('yellow_20_percent'),
             yellow_25_percent=data.get('yellow_25_percent'),
+            yellow_40_percent=data.get('yellow_40_percent'),
             yellow_50_percent=data.get('yellow_50_percent'),
+            yellow_80_percent=data.get('yellow_80_percent'),
             yellow_75_percent=data.get('yellow_75_percent'),
+            black_20_percent=data.get('black_20_percent'),
             black_25_percent=data.get('black_25_percent'),
+            black_40_percent=data.get('black_40_percent'),
             black_50_percent=data.get('black_50_percent'),
+            black_80_percent=data.get('black_80_percent'),
             black_75_percent=data.get('black_75_percent'),
+            x_20_percent=data.get('x_20_percent'),
             x_25_percent=data.get('x_25_percent'),
+            x_40_percent=data.get('x_40_percent'),
             x_50_percent=data.get('x_50_percent'),
+            x_80_percent=data.get('x_80_percent'),
             x_75_percent=data.get('x_75_percent'),
+            z_20_percent=data.get('z_20_percent'),
             z_25_percent=data.get('z_25_percent'),
+            z_40_percent=data.get('z_40_percent'),
             z_50_percent=data.get('z_50_percent'),
+            z_80_percent=data.get('z_80_percent'),
             z_75_percent=data.get('z_75_percent'),
+            u_20_percent=data.get('u_20_percent'),
             u_25_percent=data.get('u_25_percent'),
+            u_40_percent=data.get('u_40_percent'),
             u_50_percent=data.get('u_50_percent'),
+            u_80_percent=data.get('u_80_percent'),
             u_75_percent=data.get('u_75_percent'),
+            v_20_percent=data.get('v_20_percent'),
             v_25_percent=data.get('v_25_percent'),
+            v_40_percent=data.get('v_40_percent'),
             v_50_percent=data.get('v_50_percent'),
+            v_80_percent=data.get('v_80_percent'),
             v_75_percent=data.get('v_75_percent'),
+            f_20_percent=data.get('f_20_percent'),
             f_25_percent=data.get('f_25_percent'),
+            f_40_percent=data.get('f_40_percent'),
             f_50_percent=data.get('f_50_percent'),
+            f_80_percent=data.get('f_80_percent'),
             f_75_percent=data.get('f_75_percent'),
+            g_20_percent=data.get('g_20_percent'),
             g_25_percent=data.get('g_25_percent'),
+            g_40_percent=data.get('g_40_percent'),
             g_50_percent=data.get('g_50_percent'),
+            g_80_percent=data.get('g_80_percent'),
             g_75_percent=data.get('g_75_percent'),
+            h_20_percent=data.get('h_20_percent'),
             h_25_percent=data.get('h_25_percent'),
+            h_40_percent=data.get('h_40_percent'),
             h_50_percent=data.get('h_50_percent'),
+            h_80_percent=data.get('h_80_percent'),
             h_75_percent=data.get('h_75_percent'),
+            j_20_percent=data.get('j_20_percent'),
             j_25_percent=data.get('j_25_percent'),
+            j_40_percent=data.get('j_40_percent'),
             j_50_percent=data.get('j_50_percent'),
+            j_80_percent=data.get('j_80_percent'),
             j_75_percent=data.get('j_75_percent'),
+            # Linear fields
+            cyan_linear=data.get('cyan_linear'),
+            magenta_linear=data.get('magenta_linear'),
+            yellow_linear=data.get('yellow_linear'),
+            black_linear=data.get('black_linear'),
+            x_linear=data.get('x_linear'),
+            z_linear=data.get('z_linear'),
+            u_linear=data.get('u_linear'),
+            v_linear=data.get('v_linear'),
+            f_linear=data.get('f_linear'),
+            g_linear=data.get('g_linear'),
+            h_linear=data.get('h_linear'),
+            j_linear=data.get('j_linear'),
             start_time=start_time_obj,  # Gunakan objek time
             finish_time=finish_time_obj, # Gunakan objek time
             created_at=now_jakarta,
@@ -3735,42 +2311,93 @@ def update_kpi_ctp(data_id):
         kpi_entry.num_plate_good = data.get('num_plate_good')
         kpi_entry.num_plate_not_good = data.get('num_plate_not_good')
         kpi_entry.not_good_reason = data.get('not_good_reason')
+        kpi_entry.detail_not_good = data.get('detail_not_good')
+        kpi_entry.cyan_20_percent = data.get('cyan_20_percent')
         kpi_entry.cyan_25_percent = data.get('cyan_25_percent')
+        kpi_entry.cyan_40_percent = data.get('cyan_40_percent')
         kpi_entry.cyan_50_percent = data.get('cyan_50_percent')
+        kpi_entry.cyan_80_percent = data.get('cyan_80_percent')
         kpi_entry.cyan_75_percent = data.get('cyan_75_percent')
+        kpi_entry.magenta_20_percent = data.get('magenta_20_percent')
         kpi_entry.magenta_25_percent = data.get('magenta_25_percent')
+        kpi_entry.magenta_40_percent = data.get('magenta_40_percent')
         kpi_entry.magenta_50_percent = data.get('magenta_50_percent')
+        kpi_entry.magenta_80_percent = data.get('magenta_80_percent')
         kpi_entry.magenta_75_percent = data.get('magenta_75_percent')
+        kpi_entry.yellow_20_percent = data.get('yellow_20_percent')
         kpi_entry.yellow_25_percent = data.get('yellow_25_percent')
+        kpi_entry.yellow_40_percent = data.get('yellow_40_percent')
         kpi_entry.yellow_50_percent = data.get('yellow_50_percent')
+        kpi_entry.yellow_80_percent = data.get('yellow_80_percent')
         kpi_entry.yellow_75_percent = data.get('yellow_75_percent')
+        kpi_entry.black_20_percent = data.get('black_20_percent')
         kpi_entry.black_25_percent = data.get('black_25_percent')
+        kpi_entry.black_40_percent = data.get('black_40_percent')
         kpi_entry.black_50_percent = data.get('black_50_percent')
+        kpi_entry.black_80_percent = data.get('black_80_percent')
         kpi_entry.black_75_percent = data.get('black_75_percent')
+        kpi_entry.x_20_percent = data.get('x_20_percent')
         kpi_entry.x_25_percent = data.get('x_25_percent')
+        kpi_entry.x_40_percent = data.get('x_40_percent')
         kpi_entry.x_50_percent = data.get('x_50_percent')
+        kpi_entry.x_80_percent = data.get('x_80_percent')
         kpi_entry.x_75_percent = data.get('x_75_percent')
+        kpi_entry.z_20_percent = data.get('z_20_percent')
         kpi_entry.z_25_percent = data.get('z_25_percent')
+        kpi_entry.z_40_percent = data.get('z_40_percent')
         kpi_entry.z_50_percent = data.get('z_50_percent')
+        kpi_entry.z_80_percent = data.get('z_80_percent')
         kpi_entry.z_75_percent = data.get('z_75_percent')
+        kpi_entry.u_20_percent = data.get('u_20_percent')
         kpi_entry.u_25_percent = data.get('u_25_percent')
+        kpi_entry.u_40_percent = data.get('u_40_percent')
         kpi_entry.u_50_percent = data.get('u_50_percent')
+        kpi_entry.u_80_percent = data.get('u_80_percent')
         kpi_entry.u_75_percent = data.get('u_75_percent')
+        kpi_entry.v_20_percent = data.get('v_20_percent')
         kpi_entry.v_25_percent = data.get('v_25_percent')
+        kpi_entry.v_40_percent = data.get('v_40_percent')
         kpi_entry.v_50_percent = data.get('v_50_percent')
+        kpi_entry.v_80_percent = data.get('v_80_percent')
         kpi_entry.v_75_percent = data.get('v_75_percent')
+        kpi_entry.f_20_percent = data.get('f_20_percent')
         kpi_entry.f_25_percent = data.get('f_25_percent')
+        kpi_entry.f_40_percent = data.get('f_40_percent')
         kpi_entry.f_50_percent = data.get('f_50_percent')
+        kpi_entry.f_80_percent = data.get('f_80_percent')
         kpi_entry.f_75_percent = data.get('f_75_percent')
+        kpi_entry.g_20_percent = data.get('g_20_percent')
         kpi_entry.g_25_percent = data.get('g_25_percent')
+        kpi_entry.g_40_percent = data.get('g_40_percent')
         kpi_entry.g_50_percent = data.get('g_50_percent')
+        kpi_entry.g_80_percent = data.get('g_80_percent')
         kpi_entry.g_75_percent = data.get('g_75_percent')
+        kpi_entry.h_20_percent = data.get('h_20_percent')
         kpi_entry.h_25_percent = data.get('h_25_percent')
+        kpi_entry.h_40_percent = data.get('h_40_percent')
         kpi_entry.h_50_percent = data.get('h_50_percent')
+        kpi_entry.h_80_percent = data.get('h_80_percent')
         kpi_entry.h_75_percent = data.get('h_75_percent')
+        kpi_entry.j_20_percent = data.get('j_20_percent')
         kpi_entry.j_25_percent = data.get('j_25_percent')
+        kpi_entry.j_40_percent = data.get('j_40_percent')
         kpi_entry.j_50_percent = data.get('j_50_percent')
+        kpi_entry.j_80_percent = data.get('j_80_percent')
         kpi_entry.j_75_percent = data.get('j_75_percent')
+        
+        # Update linear fields
+        kpi_entry.cyan_linear = data.get('cyan_linear')
+        kpi_entry.magenta_linear = data.get('magenta_linear')
+        kpi_entry.yellow_linear = data.get('yellow_linear')
+        kpi_entry.black_linear = data.get('black_linear')
+        kpi_entry.x_linear = data.get('x_linear')
+        kpi_entry.z_linear = data.get('z_linear')
+        kpi_entry.u_linear = data.get('u_linear')
+        kpi_entry.v_linear = data.get('v_linear')
+        kpi_entry.f_linear = data.get('f_linear')
+        kpi_entry.g_linear = data.get('g_linear')
+        kpi_entry.h_linear = data.get('h_linear')
+        kpi_entry.j_linear = data.get('j_linear')
         
         # Update timestamp
         kpi_entry.updated_at = now_jakarta
@@ -4003,106 +2630,91 @@ def print_bon():
 
         if not bon:
             return "Bon tidak ditemukan", 404
-        
-        # Sisa logika untuk menyiapkan data print, sama seperti sebelumnya
+
+        # Debug header log
+        print(f"print_bon: start date={tanggal}, plate_type={bon.jenis_plate}, request_number={bon.request_number}")
+
+        # Ambil semua log CTP untuk tanggal dan brand terkait
         logs = CTPProductionLog.query.filter(
             CTPProductionLog.log_date == bon.tanggal,
             CTPProductionLog.plate_type_material.like(f'%{bon.jenis_plate}%')
         ).all()
-        
-        plate_counts = {}
-        for log in logs:
-            size = None
-            if '1030' in log.plate_type_material:
-                size = '1030'
-            elif '1055' in log.plate_type_material:
-                size = '1055'
-            elif '1630' in log.plate_type_material:
-                size = '1630'
-            
-            if size:
-                if size not in plate_counts:
-                    plate_counts[size] = 0
-                plate_counts[size] += (log.num_plate_good or 0)
-        
-        plate_details = {
-            'SAPHIRA': {
-                '1030': {
-                    'size': '1030 X 790 MM',
-                    'code': '02-049-000-0000002',
-                    'name': '(SUT1.PAO1SX1) SAPHIRA PA.27 27x1030x790 PKT50 (BOX 50PCS)'
-                },
-                '1055': {
-                    'size': '1055 X 811 MM',
-                    'code': '02-049-000-0000003',
-                    'name': '(SUT1.PAO1SY3) SAPHIRA PA.27 27X1055X811 PKT50 (BOX 50PCS)'
-                },
-                '1055 PN': {
-                    'size': '1055 X 811 MM',
-                    'code': '02-049-000-0000011',
-                    'name': '(SUT1.PNO7U8C) SAPHIRA PN 30 1055 X 811 MM PKT40 (BOX 40PCS)'
-                },
-                '1630': {
-                    'size': '1630 X 1325 MM',
-                    'code': '02-049-000-0000001',
-                    'name': '(SUT1.PNOQXG8) SAPHIRA PN 40 1630 1325 PKT 30 (BOX 30PCS)'
-                }
-            },
-            'FUJI': {
-                '1030': {
-                    'size': '1030 X 790 MM',
-                    'code': '02-049-000-0000008',
-                    'name': 'PLATE FUJI LH-PK 1030x790x0.3 (BOX 30PCS)'
-                },
-                '1030 UV': {
-                    'size': '1030 X 790 MM',
-                    'code': '02-023-000-0000007',
-                    'name': 'PLATE FUJI LH-PJ2 1030x790x0.3 (BOX 30PCS)'
-                },
-                '1055': {
-                    'size': '1055 X 811 MM',
-                    'code': '02-049-000-0000010',
-                    'name': 'PLATE FUJI LH-PK 1055x811x0.3 (BOX 30PCS)'
-                },
-                '1055 LHPL': {
-                    'size': '1055 X 811 MM',
-                    'code': '02-049-000-0000013',
-                    'name': 'PLATE FUJI LH-PL 1055x811x0.3 (BOX 30PCS)'
-                },
-                '1055 UV': {
-                    'size': '1055 X 811 MM',
-                    'code': '02-049-000-0000012',
-                    'name': 'PLATE FUJI LH-PJ2 1055x811x0.3 (BOX 30PCS)'
-                },
-                '1630': {
-                    'size': '1630 X 1325 MM',
-                    'code': '02-049-000-0000009',
-                    'name': 'PLATE FUJI LH-PJ2 1630x1325x0.4 (BOX 15PCS)'
-                }
-            }
-        }
-        
+        app.logger.info(f"print_bon: date={bon.tanggal}, jenis_plate={bon.jenis_plate}, request_number={bon.request_number}")
+        app.logger.info(f"print_bon: fetched logs count={len(logs)}")
+        unique_materials = list({(log.plate_type_material or '').upper() for log in logs})
+        app.logger.info(f"print_bon: unique plate_type_materials={unique_materials}")
+
+        # Gunakan PLATE_DETAILS global untuk pemetaan item_code/item_name
+        plate_details_all = PLATE_DETAILS
+        brand = (bon.jenis_plate or '').upper()
+        if brand not in plate_details_all:
+            app.logger.warning(f"print_bon: brand '{brand}' tidak ada di PLATE_DETAILS. Mengembalikan tanpa items.")
+            plate_details = {}
+        else:
+            plate_details = plate_details_all[brand]
+
+        # Variant-aware mapping seperti /get-all-plate-data
         grouped = {}
         for log in logs:
-            size = None
-            if '1030' in log.plate_type_material:
-                size = '1030'
-            elif '1055' in log.plate_type_material:
-                size = '1055'
-            elif '1630' in log.plate_type_material:
-                size = '1630'
-            if size and size in plate_details[bon.jenis_plate]:
-                details = plate_details[bon.jenis_plate][size]
+            material_upper = (log.plate_type_material or '').upper()
+            material_check = material_upper.replace(' ', '')
+
+            # Tentukan base size
+            base_size = None
+            if '1030' in material_upper:
+                base_size = '1030'
+            elif '1055' in material_upper:
+                base_size = '1055'
+            elif '1630' in material_upper:
+                base_size = '1630'
+
+            resolved_size = base_size
+
+            # Deteksi varian berdasarkan brand (robust normalization)
+            normalized_material = material_upper.replace(' ', '').replace('-', '')
+            if base_size == '1030' and brand == 'FUJI':
+                # FUJI 1030 UV (consider PJ2 as UV indicator)
+                if 'UV' in normalized_material or 'PJ2' in normalized_material:
+                    resolved_size = '1030 UV'
+                # FUJI 1030 LHPJA (accept both LH-PJA and LHPJA, also PJA marker)
+                elif 'LHPJA' in normalized_material or 'PJA' in normalized_material:
+                    resolved_size = '1030 LHPJA'
+            elif base_size == '1055':
+                if brand == 'SAPHIRA':
+                    # SAPHIRA 1055 PN
+                    if 'PN' in normalized_material:
+                        resolved_size = '1055 PN'
+                elif brand == 'FUJI':
+                    # FUJI 1055 UV / LHPL (consider PJ2 as UV indicator)
+                    if 'UV' in normalized_material or 'PJ2' in normalized_material:
+                        resolved_size = '1055 UV'
+                    elif 'LHPL' in normalized_material:
+                        resolved_size = '1055 LHPL'
+
+            # Log detail resolusi varian
+            app.logger.info(
+                f"print_bon: material='{material_upper}', base='{base_size}', "
+                f"PN_present={'PN' in material_upper}, UV_present={'UV' in material_upper}, LHPL_present={'LHPL' in material_upper}, "
+                f"resolved='{resolved_size}'"
+            )
+
+            if resolved_size and resolved_size in plate_details:
+                details = plate_details[resolved_size]
                 code = details['code']
                 total_jumlah = (log.num_plate_good or 0) + (log.num_plate_not_good or 0)
-                wo = log.wo_number or ''
+                wo = (log.wo_number or '').strip()
+
+                # Tambahan log untuk verifikasi item_code terpilih
+                app.logger.info(
+                    f"print_bon: select code='{code}', name='{details['name']}', jumlah={total_jumlah}, wo='{wo}'"
+                )
+
                 if code in grouped:
                     grouped[code]['jumlah'] += total_jumlah
-                    if wo and wo not in grouped[code]['keterangan'].split(','):
-                        if grouped[code]['keterangan']:
-                            grouped[code]['keterangan'] += ',' + wo
-                        else:
-                            grouped[code]['keterangan'] = wo
+                    if wo:
+                        existing_wos = [w.strip() for w in grouped[code]['keterangan'].split(',') if w.strip()]
+                        if wo not in existing_wos:
+                            grouped[code]['keterangan'] = (grouped[code]['keterangan'] + ',' + wo).strip(',')
                 else:
                     grouped[code] = {
                         'item_code': code,
@@ -4122,7 +2734,7 @@ def print_bon():
                 'request_number': bon.request_number,
                 'tanggal': bon.tanggal,
                 'jenis_plate': bon.jenis_plate,
-                'bon_periode': bon.bon_periode, # Pastikan ini diteruskan ke template
+                'bon_periode': bon.bon_periode,  # diteruskan ke template
                 'created_by_name': created_by_name
             },
             items=items
@@ -4209,7 +2821,6 @@ def get_mounting_adjustment_data():
         })
     except Exception as e:
         print(f"Error fetching mounting adjustment data: {e}")
-        import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -4310,7 +2921,6 @@ def get_pdnd_adjustment_data():
         })
     except Exception as e:
         print(f"Error fetching pdnd adjustment data: {e}")
-        import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -4378,102 +2988,6 @@ def finish_adjustment_pdnd():
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/export-pdnd-adjustment', methods=['GET'])
-def export_pdnd_adjustment():
-    try:
-        from flask import make_response, request, jsonify
-        import io
-        import openpyxl
-        from datetime import datetime
-        
-        # Get filter parameters
-        status_filter = request.args.get('status', '')
-        remarks_filter = request.args.get('remarks', '')
-        date_from = request.args.get('date_from', '')
-        date_to = request.args.get('date_to', '')
-        
-        # Build query
-        query = PlateAdjustmentRequest.query
-        
-        # Apply filters
-        if status_filter:
-            if status_filter == 'selesai':
-                query = query.filter(PlateAdjustmentRequest.status.in_(['selesai', 'menunggu_adjustment_pdnd']))
-            else:
-                query = query.filter(PlateAdjustmentRequest.status == status_filter)
-        
-        if remarks_filter:
-            query = query.filter(PlateAdjustmentRequest.remarks.ilike(f'%{remarks_filter}%'))
-        
-        if date_from:
-            query = query.filter(PlateAdjustmentRequest.tanggal >= date_from)
-        if date_to:
-            query = query.filter(PlateAdjustmentRequest.tanggal <= date_to)
-        
-        # Get data sorted by date (newest first)
-        adjustments = query.order_by(PlateAdjustmentRequest.tanggal.desc(), PlateAdjustmentRequest.id.desc()).all()
-        
-        # Create an in-memory Excel workbook and worksheet
-        workbook = openpyxl.Workbook()
-        worksheet = workbook.active
-        worksheet.title = "PDND Adjustment Data"
-        
-        # Write headers
-        headers = [
-            'ID', 'Tanggal', 'Mesin Cetak', 'PIC', 'Remarks', 'WO Number', 'MC Number', 
-            'Run Length', 'Item Name', 'Jumlah Plate', 'Note', 'Machine Off At',
-            'PDND Start At', 'PDND Finish At', 'PDND By',
-            'Mounting Start At', 'Mounting Finish At', 'Mounting By',
-            'Plate Start At', 'Plate Finish At', 'Plate Delivered At', 'CTP By', 'Status'
-        ]
-        worksheet.append(headers)
-        
-        # Write data rows
-        for adj in adjustments:
-            row_data = [
-                str(adj.id or ''),
-                adj.tanggal.strftime('%Y-%m-%d') if adj.tanggal else '',
-                str(adj.mesin_cetak or ''),
-                str(adj.pic or ''),
-                str(adj.remarks or ''),
-                str(adj.wo_number or ''),
-                str(adj.mc_number or ''),
-                str(adj.run_length or ''),
-                str(adj.item_name or ''),
-                str(adj.jumlah_plate or ''),
-                str(adj.note or ''),
-                adj.machine_off_at.strftime('%Y-%m-%d %H:%M:%S') if adj.machine_off_at else '',
-                adj.pdnd_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.pdnd_start_at else '',
-                adj.pdnd_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.pdnd_finish_at else '',
-                str(adj.pdnd_by or ''),
-                adj.adjustment_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_start_at else '',
-                adj.adjustment_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_finish_at else '',
-                str(adj.adjustment_by or ''),
-                adj.plate_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_start_at else '',
-                adj.plate_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_finish_at else '',
-                adj.plate_delivered_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_delivered_at else '',
-                str(adj.ctp_by or ''),
-                str(adj.status or '')
-            ]
-            worksheet.append(row_data)
-        
-        # Create response with proper Excel headers
-        output = io.BytesIO()
-        workbook.save(output)
-        output.seek(0)
-        
-        response = make_response(output.getvalue())
-        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        response.headers['Content-Disposition'] = f'attachment; filename=pdnd_adjustment_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
-        
-        return response
-        
-    except Exception as e:
-        print(f"Error exporting data: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
 # --- Curve Data Adjustment Routes ---
 @app.route('/curve-data-adjustment')
 @login_required
@@ -4507,7 +3021,6 @@ def get_curve_adjustment_data():
         })
     except Exception as e:
         print(f"Error fetching curve adjustment data: {e}")
-        import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -4573,103 +3086,7 @@ def finish_adjustment_curve():
     except Exception as e:
         print(f"Error finishing adjustment: {e}")
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/export-curve-adjustment', methods=['GET'])
-def export_curve_adjustment():
-    try:
-        from flask import make_response, request, jsonify
-        import io
-        import openpyxl
-        from datetime import datetime
-        
-        # Get filter parameters
-        status_filter = request.args.get('status', '')
-        remarks_filter = request.args.get('remarks', '')
-        date_from = request.args.get('date_from', '')
-        date_to = request.args.get('date_to', '')
-        
-        # Build query
-        query = PlateAdjustmentRequest.query
-        
-        # Apply filters
-        if status_filter:
-            if status_filter == 'selesai':
-                query = query.filter(PlateAdjustmentRequest.status.in_(['selesai', 'menunggu_adjustment_curve']))
-            else:
-                query = query.filter(PlateAdjustmentRequest.status == status_filter)
-        
-        if remarks_filter:
-            query = query.filter(PlateAdjustmentRequest.remarks.ilike(f'%{remarks_filter}%'))
-        
-        if date_from:
-            query = query.filter(PlateAdjustmentRequest.tanggal >= date_from)
-        if date_to:
-            query = query.filter(PlateAdjustmentRequest.tanggal <= date_to)
-        
-        # Get data sorted by date (newest first)
-        adjustments = query.order_by(PlateAdjustmentRequest.tanggal.desc(), PlateAdjustmentRequest.id.desc()).all()
-        
-        # Create an in-memory Excel workbook and worksheet
-        workbook = openpyxl.Workbook()
-        worksheet = workbook.active
-        worksheet.title = "Curve Adjustment Data"
-        
-        # Write headers
-        headers = [
-            'ID', 'Tanggal', 'Mesin Cetak', 'PIC', 'Remarks', 'WO Number', 'MC Number', 
-            'Run Length', 'Item Name', 'Jumlah Plate', 'Note', 'Machine Off At',
-            'Curve Start At', 'Curve Finish At', 'Curve By',
-            'Mounting Start At', 'Mounting Finish At', 'Mounting By', 
-            'Plate Start At', 'Plate Finish At', 'Plate Delivered At', 'CTP By', 'Status'
-        ]
-        worksheet.append(headers)
-        
-        # Write data rows
-        for adj in adjustments:
-            row_data = [
-                str(adj.id or ''),
-                adj.tanggal.strftime('%Y-%m-%d') if adj.tanggal else '',
-                str(adj.mesin_cetak or ''),
-                str(adj.pic or ''),
-                str(adj.remarks or ''),
-                str(adj.wo_number or ''),
-                str(adj.mc_number or ''),
-                str(adj.run_length or ''),
-                str(adj.item_name or ''),
-                str(adj.jumlah_plate or ''),
-                str(adj.note or ''),
-                adj.machine_off_at.strftime('%Y-%m-%d %H:%M:%S') if adj.machine_off_at else '',
-                adj.curve_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.curve_start_at else '',
-                adj.curve_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.curve_finish_at else '',
-                str(adj.curve_by or ''),
-                adj.adjustment_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_start_at else '',
-                adj.adjustment_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_finish_at else '',
-                str(adj.adjustment_by or ''),
-                adj.plate_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_start_at else '',
-                adj.plate_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_finish_at else '',
-                adj.plate_delivered_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_delivered_at else '',
-                str(adj.ctp_by or ''),
-                str(adj.status or '')
-            ]
-            worksheet.append(row_data)
-        
-        # Create response with proper Excel headers
-        output = io.BytesIO()
-        workbook.save(output)
-        output.seek(0)
-        
-        response = make_response(output.getvalue())
-        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        response.headers['Content-Disposition'] = f'attachment; filename=curve_adjustment_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
-        
-        return response
-        
-    except Exception as e:
-        print(f"Error exporting data: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500    
+        return jsonify({'success': False, 'error': str(e)}), 500   
 
 # --- Design Production Routes ---
 @app.route('/design-data-adjustment')
@@ -4704,7 +3121,6 @@ def get_design_adjustment_data():
         })
     except Exception as e:
         print(f"Error fetching design adjustment data: {e}")
-        import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -4770,106 +3186,6 @@ def finish_adjustment_design():
     except Exception as e:
         print(f"Error finishing adjustment: {e}")
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/export-design-adjustment', methods=['GET'])
-def export_design_adjustment():
-    try:
-        from flask import make_response, request, jsonify
-        import io
-        import openpyxl
-        from datetime import datetime
-        
-        # Get filter parameters
-        status_filter = request.args.get('status', '')
-        remarks_filter = request.args.get('remarks', '')
-        date_from = request.args.get('date_from', '')
-        date_to = request.args.get('date_to', '')
-        
-        # Build query
-        query = PlateAdjustmentRequest.query
-        
-        # Apply filters
-        if status_filter:
-            if status_filter == 'selesai':
-                query = query.filter(PlateAdjustmentRequest.status.in_(['selesai', 'menunggu_adjustment_design']))
-            else:
-                query = query.filter(PlateAdjustmentRequest.status == status_filter)
-        
-        if remarks_filter:
-            query = query.filter(PlateAdjustmentRequest.remarks.ilike(f'%{remarks_filter}%'))
-        
-        if date_from:
-            query = query.filter(PlateAdjustmentRequest.tanggal >= date_from)
-        if date_to:
-            query = query.filter(PlateAdjustmentRequest.tanggal <= date_to)
-        
-        # Get data sorted by date (newest first)
-        adjustments = query.order_by(PlateAdjustmentRequest.tanggal.desc(), PlateAdjustmentRequest.id.desc()).all()
-        
-        # Create an in-memory Excel workbook and worksheet
-        workbook = openpyxl.Workbook()
-        worksheet = workbook.active
-        worksheet.title = "Design Adjustment Data"
-        
-        # Write headers
-        headers = [
-            'ID', 'Tanggal', 'Mesin Cetak', 'PIC', 'Remarks', 'WO Number', 'MC Number', 
-            'Run Length', 'Item Name', 'Jumlah Plate', 'Note', 'Machine Off At',
-            'PDND Start At', 'PDND Finish At', 'PDND By',
-            'Design Start At', 'Design Finish At', 'Design By',
-            'Adjustment Start At', 'Adjustment Finish At', 'Adjustment By', 
-            'Plate Start At', 'Plate Finish At', 'Plate Delivered At', 'CTP By', 'Status'
-        ]
-        worksheet.append(headers)
-        
-        # Write data rows
-        for adj in adjustments:
-            row_data = [
-                str(adj.id or ''),
-                adj.tanggal.strftime('%Y-%m-%d') if adj.tanggal else '',
-                str(adj.mesin_cetak or ''),
-                str(adj.pic or ''),
-                str(adj.remarks or ''),
-                str(adj.wo_number or ''),
-                str(adj.mc_number or ''),
-                str(adj.run_length or ''),
-                str(adj.item_name or ''),
-                str(adj.jumlah_plate or ''),
-                str(adj.note or ''),
-                adj.machine_off_at.strftime('%Y-%m-%d %H:%M:%S') if adj.machine_off_at else '',
-                adj.pdnd_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.pdnd_start_at else '',
-                adj.pdnd_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.pdnd_finish_at else '',
-                str(adj.pdnd_by or ''),
-                adj.design_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.design_start_at else '',
-                adj.design_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.design_finish_at else '',
-                str(adj.design_by or ''),
-                adj.adjustment_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_start_at else '',
-                adj.adjustment_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_finish_at else '',
-                str(adj.adjustment_by or ''),
-                adj.plate_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_start_at else '',
-                adj.plate_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_finish_at else '',
-                adj.plate_delivered_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_delivered_at else '',
-                str(adj.ctp_by or ''),
-                str(adj.status or '')
-            ]
-            worksheet.append(row_data)
-        
-        # Create response with proper Excel headers
-        output = io.BytesIO()
-        workbook.save(output)
-        output.seek(0)
-        
-        response = make_response(output.getvalue())
-        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        response.headers['Content-Disposition'] = f'attachment; filename=design_adjustment_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
-        
-        return response
-        
-    except Exception as e:
-        print(f"Error exporting data: {e}")
-        import traceback
-        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # --- CTP Production Routes ---
@@ -5048,407 +3364,6 @@ def get_stock_opname_data():
             'error': str(e)
         }), 500
 
-from flask import send_file
-
-from flask import request, send_file, jsonify
-from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font, Border, Side
-from openpyxl.utils import get_column_letter
-import io
-from datetime import datetime
-import traceback
-
-# Asumsi Anda sudah mengimpor db, login_required, require_ctp_access, dan CTPProductionLog
-# from your_app import db, login_required, require_ctp_access
-# from .models import CTPProductionLog 
-
-from flask import request, send_file, jsonify
-from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font, Border, Side
-from openpyxl.utils import get_column_letter
-import io
-from datetime import datetime
-import traceback
-
-# Asumsi Anda sudah mengimpor db, login_required, require_ctp_access, dan CTPProductionLog
-# from your_app import db, login_required, require_ctp_access
-# from .models import CTPProductionLog 
-
-from flask import request, send_file, jsonify
-from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font, Border, Side
-from openpyxl.utils import get_column_letter
-import io
-from datetime import datetime
-import locale
-import traceback
-
-@app.route('/export-stock-opname')
-@login_required
-@require_ctp_access
-def export_stock_opname():
-    try:
-        # Set locale to Indonesian for date formatting
-        try:
-            locale.setlocale(locale.LC_TIME, 'id_ID.UTF-8')
-        except locale.Error:
-            try:
-                locale.setlocale(locale.LC_TIME, 'id_ID')
-            except locale.Error:
-                # Fallback if specific locale not found, often on Windows systems
-                locale.setlocale(locale.LC_TIME, 'Indonesian_Indonesia.1252') # Common for Windows
-                
-        # Get filter parameters
-        date_from_str = request.args.get('date_from', '')
-        date_to_str = request.args.get('date_to', '')
-        jenis_plate = request.args.get('jenis_plate', '')
-
-        # Parse dates and format them for display in headers
-        date_from_formatted = ""
-        date_to_formatted = ""
-        if date_from_str:
-            date_from_obj = datetime.strptime(date_from_str, '%Y-%m-%d')
-            date_from_formatted = date_from_obj.strftime('%d %B %Y')
-        if date_to_str:
-            date_to_obj = datetime.strptime(date_to_str, '%Y-%m-%d')
-            date_to_formatted = date_to_obj.strftime('%d %B %Y')
-
-        # Mapping data untuk setiap jenis plate (Didefinisikan di dalam route)
-        plate_details = {
-            'SAPHIRA 1030': {
-                'size': '1030 X 790 MM',
-                'item_code': '02-049-000-0000002',
-                'item_name': '(SUT1.PAO1SX1) SAPHIRA PA.27 27x1030x790 PKT50 (BOX 50PCS)'
-            },
-            'SAPHIRA 1055': {
-                'size': '1055 X 811 MM',
-                'item_code': '02-049-000-0000003',
-                'item_name': '(SUT1.PAO1SY3) SAPHIRA PA.27 27X1055X811 PKT50 (BOX 50PCS)'
-            },
-            'SAPHIRA 1055 PN': {
-                'size': '1055 X 811 MM',
-                'item_code': '02-049-000-0000011',
-                'item_name': '(SUT1.PNO7U8C) SAPHIRA PN 30 1055 X 811 MM PKT40 (BOX 40PCS)'
-            },
-            'SAPHIRA 1630': {
-                'size': '1630 X 1325 MM',
-                'item_code': '02-049-000-0000001',
-                'item_name': '(SUT1.PNOQXG8) SAPHIRA PN 40 1630 1325 PKT 30 (BOX 30PCS)'
-            },
-            'FUJI 1030': {
-                'size': '1030 X 790 MM',
-                'item_code': '02-049-000-0000008',
-                'item_name': 'PLATE FUJI LH-PK 1030x790x0.3 (BOX 30PCS)'
-            },
-            'FUJI 1030 UV': {
-                'size': '1030 X 790 MM',
-                'item_code': '02-023-000-0000007',
-                'item_name': 'PLATE FUJI LH-PJ2 1030x790x0.3 (BOX 30PCS)'
-            },
-            'FUJI 1055': {
-                'size': '1055 X 811 MM',
-                'item_code': '02-049-000-0000010',
-                'item_name': 'PLATE FUJI LH-PK 1055x811x0.3 (BOX 30PCS)'
-            },
-            'FUJI 1055 LHPL': {
-                'size': '1055 X 811 MM',
-                'item_code': '02-049-000-0000013',
-                'item_name': 'PLATE FUJI LH-PL 1055x811x0.3 (BOX 30PCS)'
-            },
-            'FUJI 1055 UV': {
-                'size': '1055 X 811 MM',
-                'item_code': '02-049-000-0000012',
-                'item_name': 'PLATE FUJI LH-PJ2 1055x811x0.3 (BOX 30PCS)'
-            },
-            'FUJI 1630': {
-                'size': '1630 X 1325 MM',
-                'item_code': '02-049-000-0000009',
-                'item_name': 'PLATE FUJI LH-PJ2 1630x1325x0.4 (BOX 15PCS)'
-            }
-        }
-
-        # Define styles (Didefinisikan di dalam route)
-        title_font = Font(bold=True, size=24)
-        subtitle_font = Font(bold=True, size=18)
-        info_font = Font(bold=True, size=11)
-        header_font = Font(bold=True)
-        center_alignment = Alignment(horizontal='center', vertical='center')
-        left_alignment = Alignment(horizontal='left', vertical='center')
-        border = Border(
-            left=Side(style='thin'),
-            right=Side(style='thin'),
-            top=Side(style='thin'),
-            bottom=Side(style='thin')
-        )
-        header_fill = PatternFill(start_color='E0E0E0', end_color='E0E0E0', fill_type='solid')
-        total_row_fill_green = PatternFill(start_color='99FF99', end_color='99FF99', fill_type='solid')
-        total_row_fill_grey = PatternFill(start_color='808080', end_color='808080', fill_type='solid')
-
-        wb = Workbook()
-
-        # Helper function untuk menambahkan baris "Total Pemakaian" (Didefinisikan di dalam route)
-        def insert_total_pemakaian_row_local(ws, row_num, total_qty_ok, total_qty_ng):
-            # Merge A-E for "Total Pemakaian"
-            ws.merge_cells(start_row=row_num, end_row=row_num, start_column=1, end_column=5)
-            total_text_cell = ws.cell(row=row_num, column=1, value="Total Pemakaian")
-            total_text_cell.font = Font(bold=True)
-            total_text_cell.alignment = center_alignment 
-            total_text_cell.border = border
-            total_text_cell.fill = total_row_fill_green
-
-            # Merge F-H for total quantity
-            ws.merge_cells(start_row=row_num, end_row=row_num, start_column=6, end_column=8)
-            qty_total_cell = ws.cell(row=row_num, column=6, value=total_qty_ok + total_qty_ng)
-            qty_total_cell.font = Font(bold=True)
-            qty_total_cell.alignment = center_alignment 
-            qty_total_cell.border = border
-            qty_total_cell.fill = total_row_fill_green
-
-            # Merge I-J for border fill (grey)
-            ws.merge_cells(start_row=row_num, end_row=row_num, start_column=9, end_column=10)
-            fill_cell_i = ws.cell(row=row_num, column=9) 
-            fill_cell_i.border = border
-            fill_cell_i.fill = total_row_fill_grey
-            
-            # Ensure the last column of the merged range also has a border, though fill is applied to the first cell
-            fill_cell_j = ws.cell(row=row_num, column=10)
-            fill_cell_j.border = border
-
-        # Helper function untuk menulis data ke sheet (Didefinisikan di dalam route)
-        def write_sheet_data_local(ws, records, plate_type_current, date_from_formatted, date_to_formatted):
-            # Add header information
-            ws.cell(row=1, column=1, value="Laporan Stock Opname").font = title_font
-            ws.merge_cells('A1:J1')
-            ws.cell(row=1, column=1).alignment = center_alignment
-
-            ws.cell(row=2, column=1, value=plate_type_current).font = subtitle_font
-            ws.merge_cells('A2:J2')
-            ws.cell(row=2, column=1).alignment = center_alignment
-
-            date_range_text = f"{date_from_formatted} - {date_to_formatted}"
-            ws.cell(row=3, column=1, value=date_range_text).font = subtitle_font
-            ws.merge_cells('A3:J3')
-            ws.cell(row=3, column=1).alignment = center_alignment
-
-            details = plate_details.get(plate_type_current, {})
-            ws.cell(row=4, column=1, value="Size").font = info_font
-            ws.cell(row=4, column=2, value=f": {details.get('size', '')}").font = info_font
-            ws.cell(row=5, column=1, value="Item Code").font = info_font
-            ws.cell(row=5, column=2, value=f": {details.get('item_code', '')}").font = info_font
-            ws.cell(row=6, column=1, value="Item Name").font = info_font
-            ws.cell(row=6, column=2, value=f": {details.get('item_name', '')}").font = info_font
-
-            # Write headers on row 8
-            headers = [
-                'Tanggal', 'No WO', 'Mesin CTP', 'Mesin Cetak', 'Nama Item',
-                'Qty OK', 'Qty NG', 'Total', 'Keterangan Not Good', 'Catatan'
-            ]
-            for col, header in enumerate(headers, 1):
-                cell = ws.cell(row=8, column=col)
-                cell.value = header
-                cell.font = header_font
-                cell.alignment = center_alignment
-                cell.border = border
-                cell.fill = header_fill
-
-            current_row = 9
-            
-            if not records:
-                ws.cell(row=current_row, column=1, value="Tidak ada data untuk periode ini.").merge_cells(f"A{current_row}:J{current_row}")
-                ws.cell(row=current_row, column=1).alignment = center_alignment
-                # Apply border to the merged cell
-                for col_idx in range(1, 11):
-                    cell = ws.cell(row=current_row, column=col_idx)
-                    cell.border = border
-                return # Exit if no records
-
-            current_date = None
-            date_group_start_row = 0
-            date_group_total_qty_ok = 0
-            date_group_total_qty_ng = 0
-
-            for record_idx, record in enumerate(records):
-                record_formatted_date = record.log_date.strftime('%d %B %Y')
-
-                # Check if it's a new date group
-                if record_formatted_date != current_date:
-                    # If not the first group, finalize the previous group (merge date & add total row)
-                    if current_date is not None:
-                        # Merge date column for the previous group
-                        ws.merge_cells(start_row=date_group_start_row, end_row=current_row - 1, start_column=1, end_column=1)
-                        ws.cell(row=date_group_start_row, column=1).alignment = center_alignment
-                        
-                        # Add "Total Pemakaian" row for the previous group
-                        insert_total_pemakaian_row_local(
-                            ws, current_row, date_group_total_qty_ok, date_group_total_qty_ng
-                        )
-                        current_row += 1 # Increment for the total row
-
-                    # Start a new date group
-                    current_date = record_formatted_date
-                    date_group_start_row = current_row
-                    date_group_total_qty_ok = 0
-                    date_group_total_qty_ng = 0
-                
-                # Process current record
-                wo_numbers = record.wo_number.split(',') if record.wo_number else ['']
-                wo_numbers = [wo.strip() for wo in wo_numbers]
-                
-                qty_ok_record = record.num_plate_good or 0
-                qty_ng_record = record.num_plate_not_good or 0
-                total_record_qty = qty_ok_record + qty_ng_record
-
-                # Accumulate totals for the current date group
-                date_group_total_qty_ok += qty_ok_record
-                date_group_total_qty_ng += qty_ng_record
-
-                # Define columns that should be merged if num_rows > 1 (excluding Tanggal (1) and No WO (2))
-                record_specific_merge_cols = [3, 4, 5, 6, 7, 8, 9, 10]
-
-                if len(wo_numbers) > 1:
-                    # Perform merge for these columns for this record's multiple WO lines
-                    for col_idx in record_specific_merge_cols:
-                        ws.merge_cells(
-                            start_row=current_row,
-                            start_column=col_idx,
-                            end_row=current_row + len(wo_numbers) - 1,
-                            end_column=col_idx
-                        )
-                
-                # Write data for the first line of this record (including the first WO)
-                initial_row_values = [
-                    record_formatted_date, # This value is explicitly set below if it's the start of a date group
-                    wo_numbers[0],
-                    record.ctp_machine,
-                    record.print_machine,
-                    record.item_name,
-                    qty_ok_record,
-                    qty_ng_record,
-                    total_record_qty,
-                    record.not_good_reason or '',
-                    record.note or ''
-                ]
-
-                for col_idx, value in enumerate(initial_row_values, 1):
-                    cell = ws.cell(row=current_row, column=col_idx)
-                    # For Tanggal (Column 1): only set value if it's the start of a date group.
-                    # Otherwise, it's part of a merged cell, just apply styling.
-                    if col_idx == 1:
-                        if current_row == date_group_start_row:
-                            cell.value = value
-                        # Else: no value for merged cells (it inherits from the top-left merged cell)
-                    # For other columns (No WO, Mesin CTP, etc.): set value for the first line of the record.
-                    # If len(wo_numbers) > 1, these columns will be merged, so value only goes in the first row.
-                    else: 
-                        cell.value = value
-                    
-                    cell.alignment = center_alignment 
-                    cell.border = border
-
-
-                # Handle additional WO numbers for the same record (if wo_number is split)
-                for i, wo in enumerate(wo_numbers[1:], 1):
-                    current_row += 1
-                    
-                    # Column 1 (Tanggal): This cell is part of a date merged range. Only apply styling.
-                    cell = ws.cell(row=current_row, column=1)
-                    cell.alignment = center_alignment
-                    cell.border = border
-
-                    # Column 2 (No WO): Gets its specific WO number.
-                    wo_cell = ws.cell(row=current_row, column=2)
-                    wo_cell.value = wo
-                    wo_cell.alignment = center_alignment
-                    wo_cell.border = border
-                    
-                    # For other columns (3-10): these are merged for this record. Only apply styling.
-                    for col_idx in record_specific_merge_cols:
-                        cell = ws.cell(row=current_row, column=col_idx)
-                        cell.alignment = center_alignment
-                        cell.border = border
-                    
-                current_row += 1 # Move to the next row after all WO numbers for this record
-
-            # After the loop, finalize the very last date group
-            if current_date is not None:
-                ws.merge_cells(start_row=date_group_start_row, end_row=current_row - 1, start_column=1, end_column=1)
-                ws.cell(row=date_group_start_row, column=1).alignment = center_alignment
-                
-                insert_total_pemakaian_row_local(
-                    ws, current_row, date_group_total_qty_ok, date_group_total_qty_ng
-                )
-                current_row += 1 # Increment for the total row
-
-            # Set column widths
-            for col in range(1, len(headers) + 1):
-                ws.column_dimensions[get_column_letter(col)].width = 15
-
-
-        if not jenis_plate:
-            # Skenario: Semua Jenis Plate (banyak sheet)
-            unique_plates = db.session.query(CTPProductionLog.plate_type_material).distinct().all()
-            unique_plates = [p[0] for p in unique_plates if p[0] and p[0] in plate_details]
-            
-            # Mengurutkan jenis plate berdasarkan abjad
-            unique_plates.sort()
-
-            default_ws = wb.active
-            wb.remove(default_ws)
-
-            for plate_type in unique_plates:
-                ws = wb.create_sheet(title=plate_type[:31]) # Max 31 chars for sheet title
-
-                query = db.session.query(CTPProductionLog).filter(CTPProductionLog.plate_type_material == plate_type)
-                if date_from_str:
-                    query = query.filter(CTPProductionLog.log_date >= date_from_str)
-                if date_to_str:
-                    date_to_obj_end = datetime.strptime(date_to_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
-                    query = query.filter(CTPProductionLog.log_date <= date_to_obj_end)
-                
-                records = query.order_by(CTPProductionLog.log_date.desc(), CTPProductionLog.id.desc()).all()
-                
-                write_sheet_data_local(ws, records, plate_type, date_from_formatted, date_to_formatted)
-
-        else:
-            # Skenario: Satu Jenis Plate (satu sheet)
-            ws = wb.active
-            ws.title = jenis_plate[:31]
-
-            query = db.session.query(CTPProductionLog).filter(CTPProductionLog.plate_type_material == jenis_plate)
-            if date_from_str:
-                query = query.filter(CTPProductionLog.log_date >= date_from_str)
-            if date_to_str:
-                date_to_obj_end = datetime.strptime(date_to_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
-                query = query.filter(CTPProductionLog.log_date <= date_to_obj_end)
-            
-            records = query.order_by(CTPProductionLog.log_date.desc(), CTPProductionLog.id.desc()).all()
-
-            write_sheet_data_local(ws, records, jenis_plate, date_from_formatted, date_to_formatted)
-
-
-        # Save to BytesIO
-        excel_file = io.BytesIO()
-        wb.save(excel_file)
-        excel_file.seek(0)
-        
-        # Nama file
-        jenis_plate_str = f"_{jenis_plate.replace(' ', '_')}" if jenis_plate else "_all"
-
-        return send_file(
-            excel_file,
-            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            as_attachment=True,
-            download_name=f'stock_opname_ctp{jenis_plate_str}_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
-        )
-
-    except Exception as e:
-        print(f"Error exporting stock opname data: {e}")
-        traceback.print_exc() 
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
 @app.route('/ctp-data-adjustment')
 @login_required
 @require_ctp_access
@@ -5518,6 +3433,374 @@ def get_ctp_bon_data():
 @require_ctp_access
 def dashboard_ctp():
     return render_template('dashboard_ctp.html')
+
+
+# --- Log CTP Routes ---
+@app.route('/log-ctp')
+@login_required
+def log_ctp_overview_page():
+    if not (current_user.can_access_ctp() or current_user.role == 'admin'):
+        flash('Anda tidak memiliki akses ke halaman ini', 'danger')
+        return redirect(url_for('index'))
+    
+    return render_template('log_ctp_overview.html')
+
+@app.route('/log-ctp/<machine_nickname>')
+@login_required
+def log_ctp_detail(machine_nickname):
+    if not (current_user.can_access_ctp() or current_user.role == 'admin'):
+        flash('Anda tidak memiliki akses ke halaman ini', 'danger')
+        return redirect(url_for('index'))
+    
+    # Get machine by nickname
+    machine = CTPMachine.query.filter_by(nickname=machine_nickname).first()
+    if not machine:
+        flash('Mesin tidak ditemukan', 'danger')
+        return redirect(url_for('log_ctp_overview_page'))
+    
+    return render_template('log_ctp_detail.html',
+                        machine=machine,
+                        machine_name=machine.name,
+                        machine_description=machine.description,
+                        machine_status=machine.status,
+                        machine_nickname=machine.nickname)
+
+# API Endpoints for CTP Log
+@app.route('/api/ctp-machines', methods=['GET'])
+@login_required
+def get_ctp_machines():
+    try:
+        machines = CTPMachine.query.all()
+        return jsonify({
+            'success': True,
+            'data': [{
+                'id': m.id,
+                'name': m.name,
+                'nickname': m.nickname,
+                'status': m.status,
+                'description': m.description
+            } for m in machines]
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/ctp-machines/<int:machine_id>/status', methods=['PUT'])
+@login_required
+def update_machine_status(machine_id):
+    try:
+        data = request.get_json()
+        new_status = data.get('status')
+        
+        # Validate status value
+        valid_statuses = ['active', 'maintenance', 'cleaning']
+        if new_status not in valid_statuses:
+            return jsonify({
+                'success': False,
+                'error': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'
+            }), 400
+        
+        # Find the machine
+        machine = CTPMachine.query.get(machine_id)
+        if not machine:
+            return jsonify({'success': False, 'error': 'Machine not found'}), 404
+        
+        # Update the status
+        machine.status = new_status
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Machine status updated to {new_status}',
+            'data': {
+                'id': machine.id,
+                'nickname': machine.nickname,
+                'status': machine.status
+            }
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# API endpoints for dynamic filter population
+@app.route('/api/ctp-production-logs/years', methods=['GET'])
+@login_required
+def get_ctp_production_logs_years():
+    """Get available years from ctp_production_logs table"""
+    try:
+        
+        # Query distinct years from log_date
+        years_query = db.session.query(
+            extract('year', CTPProductionLog.log_date).label('year')
+        ).distinct().order_by(
+            extract('year', CTPProductionLog.log_date).desc()
+        )
+        
+        years = [row.year for row in years_query.all()]
+        
+        return jsonify({
+            'success': True,
+            'years': years
+        })
+    except Exception as e:
+        print(f"Error fetching years from ctp_production_logs: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/ctp-production-logs/months', methods=['GET'])
+@login_required
+def get_ctp_production_logs_months():
+    """Get available months for a specific year from ctp_production_logs table"""
+    try:
+        
+        year = request.args.get('year')
+        if not year:
+            return jsonify({
+                'success': False,
+                'error': 'Year parameter is required'
+            }), 400
+        
+        # Query distinct months for the specified year
+        months_query = db.session.query(
+            extract('month', CTPProductionLog.log_date).label('month')
+        ).filter(
+            extract('year', CTPProductionLog.log_date) == int(year)
+        ).distinct().order_by(
+            extract('month', CTPProductionLog.log_date)
+        )
+        
+        months = [row.month for row in months_query.all()]
+        return jsonify({
+            'success': True,
+            'months': months
+        })
+    except Exception as e:
+        print(f"Error fetching months from ctp_production_logs: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/ctp-production-logs/not-good-details', methods=['GET'])
+@login_required
+def get_not_good_plate_details():
+    try:
+        
+        # Get filter parameters - handle as strings first to properly detect empty values
+        year_str = request.args.get('year', '').strip()
+        month_str = request.args.get('month', '').strip()
+        category = request.args.get('category', '').strip()
+        group = request.args.get('group', '').strip()
+        
+        # Convert to integers only if not empty
+        year = int(year_str) if year_str else None
+        month = int(month_str) if month_str else None
+        
+        # Build base query
+        query = CTPProductionLog.query.filter(
+            CTPProductionLog.num_plate_not_good > 0
+        )
+        
+        # Apply category filter if provided
+        if category:
+            query = query.filter(
+                CTPProductionLog.not_good_reason == category
+            )
+        
+        # Apply group filter if provided
+        if group:
+            query = query.filter(
+                CTPProductionLog.ctp_group == group
+            )
+        
+        # Apply date filters if provided - FIXED: Proper SQLAlchemy extract syntax
+        if year is not None:
+            query = query.filter(
+                extract('year', CTPProductionLog.log_date) == year
+            )
+        if month is not None:
+            query = query.filter(
+                extract('month', CTPProductionLog.log_date) == month
+            )
+        
+        # Order by date descending (most recent first)
+        logs = query.order_by(CTPProductionLog.log_date.desc()).all()
+        
+        
+        # Format response data
+        details = []
+        for log in logs:
+            details.append({
+                'log_date': log.log_date.strftime('%Y-%m-%d') if log.log_date else '',
+                'item_name': log.item_name or '',
+                'num_plate_not_good': log.num_plate_not_good or 0,
+                'detail_not_good': log.detail_not_good or '',
+                'not_good_reason': log.not_good_reason or '',  # Add for debugging
+                'ctp_group': log.ctp_group or '',  # Add group for debugging
+                'plate_type_material': log.plate_type_material or ''  # Add plate type material
+            })
+        
+        
+        return jsonify({
+            'success': True,
+            'data': details,
+            'debug': {
+                'filters_applied': {
+                    'year': year if year is not None else 'All',
+                    'month': month if month is not None else 'All',
+                    'category': category if category else 'All',
+                    'group': group if group else 'All'
+                },
+                'total_logs_found': len(logs)
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+
+@app.route('/api/chemical-bon-ctp/years', methods=['GET'])
+@login_required
+def get_chemical_bon_ctp_years():
+    """Get available years from chemical_bon_ctp table"""
+    print("=== API CALLED: /api/chemical-bon-ctp/years ===")
+    try:
+        
+        print("Querying distinct years from chemical_bon_ctp.tanggal...")
+        # Query distinct years from tanggal
+        years_query = db.session.query(
+            extract('year', ChemicalBonCTP.tanggal).label('year')
+        ).distinct().order_by(
+            extract('year', ChemicalBonCTP.tanggal).desc()
+        )
+        
+        years = [row.year for row in years_query.all()]
+        print(f"Found years: {years}")
+        
+        return jsonify({
+            'success': True,
+            'years': years
+        })
+    except Exception as e:
+        print(f"Error fetching years from chemical_bon_ctp: {e}")
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/chemical-bon-ctp/months', methods=['GET'])
+@login_required
+def get_chemical_bon_ctp_months():
+    """Get available months for a specific year from chemical_bon_ctp table"""
+    try:
+        
+        year = request.args.get('year')
+        if not year:
+            return jsonify({
+                'success': False,
+                'error': 'Year parameter is required'
+            }), 400
+        
+        # Query distinct months for the specified year
+        months_query = db.session.query(
+            extract('month', ChemicalBonCTP.tanggal).label('month')
+        ).filter(
+            extract('year', ChemicalBonCTP.tanggal) == int(year)
+        ).distinct().order_by(
+            extract('month', ChemicalBonCTP.tanggal)
+        )
+        
+        months = [row.month for row in months_query.all()]
+        
+        return jsonify({
+            'success': True,
+            'months': months
+        })
+    except Exception as e:
+        print(f"Error fetching months from chemical_bon_ctp: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/ctp-notifications', methods=['GET'])
+@login_required
+def get_ctp_notifications():
+    try:
+        notifications = CTPNotification.query.order_by(CTPNotification.created_at.desc()).limit(50).all()
+        
+        return jsonify({
+            'success': True,
+            'data': [{
+                'id': n.id,
+                'machine_name': n.machine.name,
+                'message': n.message,
+                'notification_type': n.notification_type,
+                'is_read': n.is_read,
+                'read_at': n.read_at.isoformat() if n.read_at else None,
+                'created_at': n.created_at.isoformat()
+            } for n in notifications]
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/ctp-notifications/<int:notification_id>/read', methods=['PUT'])
+@login_required
+def mark_notification_read(notification_id):
+    try:
+        notification = CTPNotification.query.get_or_404(notification_id)
+        notification.is_read = True
+        notification.read_at = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# Initialize CTP machines function
+def initialize_ctp_machines():
+    """Initialize CTP machines with default data"""
+    with app.app_context():
+        try:
+            machines = [
+                {
+                    'name': 'CTP 1 Suprasetter',
+                    'nickname': 'suprasetter',
+                    'status': 'Aktif',
+                    'description': 'Mesin CTP Suprasetter untuk produksi plate'
+                },
+                {
+                    'name': 'CTP 2 Platesetter',
+                    'nickname': 'platesetter',
+                    'status': 'Aktif',
+                    'description': 'Mesin CTP Platesetter untuk produksi plate'
+                },
+                {
+                    'name': 'CTP 3 Trendsetter',
+                    'nickname': 'trendsetter',
+                    'status': 'Aktif',
+                    'description': 'Mesin CTP Trendsetter untuk produksi plate'
+                }
+            ]
+            
+            for machine_data in machines:
+                existing = CTPMachine.query.filter_by(nickname=machine_data['nickname']).first()
+                if not existing:
+                    machine = CTPMachine(**machine_data)
+                    db.session.add(machine)
+            
+            db.session.commit()
+            print("CTP machines initialized successfully")
+        except Exception as e:
+            print(f"Error initializing CTP machines: {e}")
+            db.session.rollback()
 
 @app.route('/get-ctp-kpi-data')
 @login_required
@@ -5781,6 +4064,92 @@ def get_ctp_kpi_data():
             'error': str(e)
         }), 500
 
+@app.route('/api/ctp-not-good-by-machine')
+@login_required
+@require_ctp_access
+def get_ctp_not_good_by_machine():
+    """Aggregated num_plate_not_good by CTP machine and not_good_reason with optional year/month filters."""
+    try:
+        year_param = request.args.get('year', '')
+        month_param = request.args.get('month', '')
+
+        year = int(year_param) if year_param else None
+        month = int(month_param) if month_param else None
+
+        query = db.session.query(
+            CTPProductionLog.ctp_machine.label('machine'),
+            CTPProductionLog.not_good_reason.label('reason'),
+            func.coalesce(func.sum(CTPProductionLog.num_plate_not_good), 0).label('total')
+        ).filter(
+            CTPProductionLog.num_plate_not_good.isnot(None),
+            CTPProductionLog.num_plate_not_good > 0
+        )
+
+        if year:
+            query = query.filter(extract('year', CTPProductionLog.log_date) == year)
+        if month:
+            query = query.filter(extract('month', CTPProductionLog.log_date) == month)
+
+        rows = query.group_by('machine', 'reason').order_by('machine', 'reason').all()
+
+        machine_map = {}
+        for row in rows:
+            machine = row.machine or 'Tidak diketahui'
+            reason_raw = (row.reason or '').strip() or 'Lainnya'
+
+            # Normalize reason similar to group KPI breakdown
+            reason_lower = reason_raw.lower()
+            if 'rontok' in reason_lower or 'botak' in reason_lower:
+                reason = 'Plate Rontok / Botak'
+            elif 'baret' in reason_lower:
+                reason = 'Plate Baret'
+            elif 'penyok' in reason_lower:
+                reason = 'Plate Penyok'
+            elif 'kotor' in reason_lower:
+                reason = 'Plate Kotor'
+            elif 'bergaris' in reason_lower:
+                reason = 'Plate bergaris'
+            elif 'tidak sesuai dp' in reason_lower:
+                reason = 'Plate tidak sesuai DP'
+            elif 'nilai tidak sesuai' in reason_lower:
+                reason = 'Nilai tidak sesuai'
+            elif 'laser jump' in reason_lower:
+                reason = 'Laser Jump'
+            elif 'tidak masuk millar' in reason_lower:
+                reason = 'Tidak masuk millar'
+            elif 'error punch' in reason_lower or 'error mesin punch' in reason_lower:
+                reason = 'Error mesin Punch'
+            elif 'plate jump' in reason_lower:
+                reason = 'Plate Jump'
+            else:
+                reason = reason_raw
+
+            if machine not in machine_map:
+                machine_map[machine] = {
+                    'ctp_machine': machine,
+                    'total_not_good': 0,
+                    'reasons': {}
+                }
+
+            machine_entry = machine_map[machine]
+            val = int(row.total or 0)
+            machine_entry['total_not_good'] += val
+            machine_entry['reasons'][reason] = machine_entry['reasons'].get(reason, 0) + val
+
+        data = list(machine_map.values())
+
+        return jsonify({'success': True, 'data': data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============================================
+# API: Plate Usage Analytics (MVP)
+# GET /impact/get-ctp-plate-usage
+# - Query: ?year=&amp;month=
+# - Returns: trend (monthly/daily), by_type (plate_type_material), by_group (ctp_group)
+# - Data source: CTPProductionLog model (see [python.CTPProductionLog](app.py:651))
+# ============================================
+    
 @app.route('/start-ctp', methods=['POST'])
 def start_ctp():
     try:
@@ -6007,220 +4376,7 @@ def plate_delivered_bon():
         print(f"Error delivering plate: {e}")
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/export-ctp-adjustment', methods=['GET'])
-def export_ctp_adjustment():
-    try:
-        from flask import make_response, request, jsonify
-        import io
-        import openpyxl
-        from datetime import datetime
-
-        # Get filter parameters
-        status_filter = request.args.get('status', '')
-        mesin_filter = request.args.get('mesin', '')
-        remarks_filter = request.args.get('remarks', '')
-        search_filter = request.args.get('search', '')
-        date_from = request.args.get('date_from', '')
-        date_to = request.args.get('date_to', '')
-
-        # Build query for CTP adjustments
-        query = PlateAdjustmentRequest.query
-
-        # Apply filters
-        if status_filter:
-            if status_filter == 'selesai':
-                query = query.filter(PlateAdjustmentRequest.status.in_(['selesai', 'proses_ctp']))
-            else:
-                query = query.filter(PlateAdjustmentRequest.status == status_filter)
-
-        if mesin_filter:
-            query = query.filter(PlateAdjustmentRequest.mesin_cetak == mesin_filter)
-            
-        if remarks_filter:
-            query = query.filter(PlateAdjustmentRequest.remarks.ilike(f'%{remarks_filter}%'))
-            
-        if search_filter:
-            search_term = f'%{search_filter}%'
-            query = query.filter(
-                db.or_(
-                    PlateAdjustmentRequest.wo_number.ilike(search_term),
-                    PlateAdjustmentRequest.mc_number.ilike(search_term),
-                    PlateAdjustmentRequest.item_name.ilike(search_term),
-                    PlateAdjustmentRequest.mesin_cetak.ilike(search_term),
-                    PlateAdjustmentRequest.remarks.ilike(search_term)
-                )
-            )
-        
-        if date_from:
-            query = query.filter(PlateAdjustmentRequest.tanggal >= date_from)
-        if date_to:
-            query = query.filter(PlateAdjustmentRequest.tanggal <= date_to)
-        
-        # Get CTP data sorted by date (newest first)
-        adjustments = query.order_by(PlateAdjustmentRequest.tanggal.desc(), PlateAdjustmentRequest.id.desc()).all()
-        
-        # Create an in-memory Excel workbook and worksheet
-        workbook = openpyxl.Workbook()
-        worksheet = workbook.active
-        worksheet.title = "CTP Adjustment Data"
-
-        # Write headers
-        headers = [
-            'ID', 'Tanggal', 'Mesin Cetak', 'PIC', 'Remarks', 'WO Number', 'MC Number', 
-            'Run Length', 'Item Name', 'Jumlah Plate', 'Note', 'Machine Off At',
-            'PDND Start At', 'PDND Finish At', 'PDND By',
-            'Design Start At', 'Design Finish At', 'Design By',
-            'Adjustment Start At', 'Adjustment Finish At', 'Adjustment By', 
-            'Plate Start At', 'Plate Finish At', 'Plate Delivered At', 'CTP By', 'Status'
-        ]
-        worksheet.append(headers)
-
-        # Write data rows
-        for adj in adjustments:
-            row_data = [
-                str(adj.id or ''),
-                adj.tanggal.strftime('%Y-%m-%d') if adj.tanggal else '',
-                str(adj.mesin_cetak or ''),
-                str(adj.pic or ''),
-                str(adj.remarks or ''),
-                str(adj.wo_number or ''),
-                str(adj.mc_number or ''),
-                str(adj.run_length or ''),
-                str(adj.item_name or ''),
-                str(adj.jumlah_plate or ''),
-                str(adj.note or ''),
-                adj.machine_off_at.strftime('%Y-%m-%d %H:%M:%S') if adj.machine_off_at else '',
-                adj.pdnd_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.pdnd_start_at else '',
-                adj.pdnd_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.pdnd_finish_at else '',
-                str(adj.pdnd_by or ''),
-                adj.adjustment_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_start_at else '',
-                adj.adjustment_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_finish_at else '',
-                str(adj.adjustment_by or ''),
-                adj.plate_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_start_at else '',
-                adj.plate_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_finish_at else '',
-                adj.plate_delivered_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_delivered_at else '',
-                str(adj.ctp_by or ''),
-                str(adj.status or '')
-            ]
-            worksheet.append(row_data)
-        
-        # Create response with proper Excel headers
-        output = io.BytesIO()
-        workbook.save(output)
-        output.seek(0)
-        
-        response = make_response(output.getvalue())
-        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        response.headers['Content-Disposition'] = f'attachment; filename=ctp_adjustment_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
-        
-        return response
-        
-    except Exception as e:
-        print(f"Error exporting CTP data: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/export-mounting-adjustment', methods=['GET'])
-def export_mounting_adjustment():
-    try:
-        from flask import make_response, request, jsonify
-        import io
-        import openpyxl
-        from datetime import datetime
-        
-        # Get filter parameters
-        status_filter = request.args.get('status', '')
-        remarks_filter = request.args.get('remarks', '')
-        date_from = request.args.get('date_from', '')
-        date_to = request.args.get('date_to', '')
-        
-        # Build query
-        query = PlateAdjustmentRequest.query
-        
-        # Apply filters
-        if status_filter:
-            if status_filter == 'selesai':
-                query = query.filter(PlateAdjustmentRequest.status.in_(['selesai', 'proses_ctp']))
-            else:
-                query = query.filter(PlateAdjustmentRequest.status == status_filter)
-        
-        if remarks_filter:
-            query = query.filter(PlateAdjustmentRequest.remarks.ilike(f'%{remarks_filter}%'))
-        
-        if date_from:
-            query = query.filter(PlateAdjustmentRequest.tanggal >= date_from)
-        if date_to:
-            query = query.filter(PlateAdjustmentRequest.tanggal <= date_to)
-        
-        # Get data sorted by date (newest first)
-        adjustments = query.order_by(PlateAdjustmentRequest.tanggal.desc(), PlateAdjustmentRequest.id.desc()).all()
-        
-        # Create an in-memory Excel workbook and worksheet
-        workbook = openpyxl.Workbook()
-        worksheet = workbook.active
-        worksheet.title = "Mounting Adjustment Data"
-        
-        # Write headers
-        headers = [
-            'ID', 'Tanggal', 'Mesin Cetak', 'PIC', 'Remarks', 'WO Number', 'MC Number', 
-            'Run Length', 'Item Name', 'Jumlah Plate', 'Note', 'Machine Off At',
-            'PDND Start At', 'PDND Finish At', 'PDND By',
-            'Design Start At', 'Design Finish At', 'Design By',
-            'Adjustment Start At', 'Adjustment Finish At', 'Adjustment By', 
-            'Plate Start At', 'Plate Finish At', 'Plate Delivered At', 'CTP By', 'Status'
-        ]
-        worksheet.append(headers)
-        
-        # Write data rows
-        for adj in adjustments:
-            row_data = [
-                str(adj.id or ''),
-                adj.tanggal.strftime('%Y-%m-%d') if adj.tanggal else '',
-                str(adj.mesin_cetak or ''),
-                str(adj.pic or ''),
-                str(adj.remarks or ''),
-                str(adj.wo_number or ''),
-                str(adj.mc_number or ''),
-                str(adj.run_length or ''),
-                str(adj.item_name or ''),
-                str(adj.jumlah_plate or ''),
-                str(adj.note or ''),
-                adj.machine_off_at.strftime('%Y-%m-%d %H:%M:%S') if adj.machine_off_at else '',
-                adj.pdnd_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.pdnd_start_at else '',
-                adj.pdnd_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.pdnd_finish_at else '',
-                str(adj.pdnd_by or ''),
-                adj.adjustment_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_start_at else '',
-                adj.adjustment_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_finish_at else '',
-                str(adj.adjustment_by or ''),
-                adj.plate_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_start_at else '',
-                adj.plate_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_finish_at else '',
-                adj.plate_delivered_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_delivered_at else '',
-                str(adj.ctp_by or ''),
-                str(adj.status or '')
-            ]
-            worksheet.append(row_data)
-        
-        # Create response with proper Excel headers
-        output = io.BytesIO()
-        workbook.save(output)
-        output.seek(0)
-        
-        response = make_response(output.getvalue())
-        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        response.headers['Content-Disposition'] = f'attachment; filename=mounting_adjustment_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
-        
-        return response
-        
-    except Exception as e:
-        print(f"Error exporting data: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
     
-from flask import request, jsonify
-
 @app.route('/check-bon-request', methods=['GET'])
 def check_bon_request():
     try:
@@ -6253,630 +4409,6 @@ def check_bon_request():
             'success': False,
             'message': f'Terjadi kesalahan server: {str(e)}'
         }), 500
-
-@app.route('/export-ctp-adjustment-data', methods=['GET'])
-def export_ctp_adjustment_data():
-    try:
-        from flask import make_response, request, jsonify
-        import io
-        import openpyxl  # Import the openpyxl library
-        from datetime import datetime
-        
-        # Get filter parameters
-        status_filter = request.args.get('status', '')
-        remarks_filter = request.args.get('remarks', '')
-        start_date = request.args.get('start_date', '')
-        end_date = request.args.get('end_date', '')
-        
-        # Define the filename with .xlsx extension
-        filename = f'ctp_adjustment_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
-        
-        # Build query
-        query = PlateAdjustmentRequest.query
-        
-        # Apply filters
-        if status_filter:
-            if status_filter == 'selesai':
-                query = query.filter(PlateAdjustmentRequest.status == 'selesai')
-            else:
-                query = query.filter(PlateAdjustmentRequest.status == status_filter)
-        
-        if remarks_filter:
-            query = query.filter(PlateAdjustmentRequest.remarks.ilike(f'%{remarks_filter}%'))
-            
-        if start_date:
-            query = query.filter(PlateAdjustmentRequest.tanggal >= start_date)
-        if end_date:
-            query = query.filter(PlateAdjustmentRequest.tanggal <= end_date)
-        
-        # Get data sorted by date (newest first)
-        adjustment_requests = query.order_by(PlateAdjustmentRequest.tanggal.desc(), PlateAdjustmentRequest.id.desc()).all()
-        
-        # Create an in-memory Excel workbook and worksheet
-        workbook = openpyxl.Workbook()
-        worksheet = workbook.active
-        worksheet.title = "CTP Adjustment Data"
-        
-        # Write headers
-        headers = [
-            'ID', 'Tanggal', 'Mesin Cetak', 'PIC', 'Remarks', 'WO Number', 'MC Number', 
-            'Run Length', 'Item Name', 'Jumlah Plate', 'Note', 'Machine Off At',
-            'PDND Start At', 'PDND Finish At', 'PDND By',
-            'Design Start At', 'Design Finish At', 'Design By',
-            'Adjustment Start At', 'Adjustment Finish At', 'Adjustment By', 
-            'Plate Start At', 'Plate Finish At', 'Plate Delivered At', 'CTP By', 'Status'
-        ]
-        worksheet.append(headers)
-        
-        # Write data rows
-        for adj in adjustment_requests:
-            row_data = [
-                str(adj.id or ''),
-                adj.tanggal.strftime('%Y-%m-%d') if adj.tanggal else '',
-                str(adj.mesin_cetak or ''),
-                str(adj.pic or ''),
-                str(adj.remarks or ''),
-                str(adj.wo_number or ''),
-                str(adj.mc_number or ''),
-                str(adj.run_length or ''),
-                str(adj.item_name or ''),
-                str(adj.jumlah_plate or ''),
-                str(adj.note or ''),
-                adj.machine_off_at.strftime('%Y-%m-%d %H:%M:%S') if adj.machine_off_at else '',
-                adj.pdnd_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.pdnd_start_at else '',
-                adj.pdnd_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.pdnd_finish_at else '',
-                str(adj.pdnd_by or ''),
-                adj.adjustment_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_start_at else '',
-                adj.adjustment_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.adjustment_finish_at else '',
-                str(adj.adjustment_by or ''),
-                adj.plate_start_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_start_at else '',
-                adj.plate_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_finish_at else '',
-                adj.plate_delivered_at.strftime('%Y-%m-%d %H:%M:%S') if adj.plate_delivered_at else '',
-                str(adj.ctp_by or ''),
-                str(adj.status or '')
-            ]
-            worksheet.append(row_data)
-        
-        # Create response with proper Excel headers
-        output = io.BytesIO()
-        workbook.save(output)
-        output.seek(0)
-        
-        response = make_response(output.getvalue())
-        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        response.headers['Content-Disposition'] = f'attachment; filename={filename}'
-        
-        return response
-        
-    except Exception as e:
-        print(f"Error exporting CTP adjustment data: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/export-adjustment-press', methods=['GET'])
-def export_adjustment_press():
-    try:
-        from flask import make_response, request, jsonify
-        import io
-        import openpyxl  # Menggunakan openpyxl untuk XLSX
-        from datetime import datetime
-        
-        # Get filter parameters
-        date_from = request.args.get('date_from', '')
-        date_to = request.args.get('date_to', '')
-        mesin_cetak = request.args.get('mesin_cetak', '')
-
-        # Build query for Adjustment Press
-        query = PlateAdjustmentRequest.query
-        
-        # Apply filters
-        if date_from:
-            query = query.filter(PlateAdjustmentRequest.tanggal >= date_from)
-        if date_to:
-            query = query.filter(PlateAdjustmentRequest.tanggal <= date_to)
-        if mesin_cetak:
-            query = query.filter(PlateAdjustmentRequest.mesin_cetak == mesin_cetak)
-
-        # Get Adjustment Press sorted by date (newest first)
-        adjustment_data = query.order_by(PlateAdjustmentRequest.tanggal.desc(), PlateAdjustmentRequest.id.desc()).all()
-
-        # Create an in-memory Excel workbook and worksheet
-        workbook = openpyxl.Workbook()
-        worksheet = workbook.active
-        worksheet.title = "Adjustment Press Data"
-        
-        # Write headers
-        headers = [
-            'ID', 'Tanggal', 'PIC', 'Mesin Cetak', 'Remarks', 'Nomor WO', 'Nomor MC',
-            'Run Length', 'Nama Item', 'Jumlah Plate', 'Note', 'Mesin Off',
-            'PDND Start', 'PDND Selesai', 'PIC PDND',
-            'Design Start', 'Design Selesai', 'Design By',
-            'Adjustment Start', 'Adjustment Selesai', 'PIC Adjustment',
-            'Plate Start', 'Plate Selesai', 'Plate Sampai',
-            'PIC CTP', 'Grup CTP', 'Status', 'Total Downtime (jam)'
-        ]
-        worksheet.append(headers)
-        
-        # Write data rows
-        for adjustment in adjustment_data:
-            # Konversi string 'machine_off_at' ke objek datetime jika tidak kosong
-            machine_off_dt = None
-            if adjustment.machine_off_at:
-                try:
-                    # Asumsikan format string adalah 'YYYY-MM-DD HH:MM:SS'
-                    machine_off_dt = datetime.strptime(str(adjustment.machine_off_at), '%Y-%m-%d %H:%M:%S')
-                except (ValueError, TypeError):
-                    # Atau format lain, coba sesuaikan
-                    try:
-                        machine_off_dt = datetime.strptime(str(adjustment.machine_off_at), '%d/%m/%Y %H:%M')
-                    except (ValueError, TypeError):
-                        pass # Biarkan machine_off_dt tetap None jika konversi gagal
-
-            # Hitung downtime hanya jika kedua variabel adalah objek datetime yang valid
-            total_downtime_hours = ''
-            if adjustment.plate_delivered_at and machine_off_dt:
-                time_delta = adjustment.plate_delivered_at - machine_off_dt
-                total_downtime_hours = round(time_delta.total_seconds() / 3600, 2) # Dibulatkan 2 desimal
-
-            row_data = [
-                str(adjustment.id or ''),
-                adjustment.tanggal.strftime('%Y-%m-%d') if adjustment.tanggal else '',
-                str(adjustment.pic or ''),
-                str(adjustment.mesin_cetak or ''),
-                str(adjustment.remarks or ''),
-                str(adjustment.wo_number or ''),
-                str(adjustment.mc_number or ''),
-                str(adjustment.run_length or ''),
-                str(adjustment.item_name or ''),
-                str(adjustment.jumlah_plate or ''),
-                str(adjustment.note or ''),
-                str(adjustment.machine_off_at or ''),
-                adjustment.pdnd_start_at.strftime('%Y-%m-%d %H:%M:%S') if adjustment.pdnd_start_at else '',
-                adjustment.pdnd_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adjustment.pdnd_finish_at else '',
-                str(adjustment.pdnd_by or ''),
-                adjustment.design_start_at.strftime('%Y-%m-%d %H:%M:%S') if adjustment.design_start_at else '',
-                adjustment.design_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adjustment.design_finish_at else '',
-                str(adjustment.design_by or ''),
-                adjustment.adjustment_start_at.strftime('%Y-%m-%d %H:%M:%S') if adjustment.adjustment_start_at else '',
-                adjustment.adjustment_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adjustment.adjustment_finish_at else '',
-                str(adjustment.adjustment_by or ''),
-                adjustment.plate_start_at.strftime('%Y-%m-%d %H:%M:%S') if adjustment.plate_start_at else '',
-                adjustment.plate_finish_at.strftime('%Y-%m-%d %H:%M:%S') if adjustment.plate_finish_at else '',
-                adjustment.plate_delivered_at.strftime('%Y-%m-%d %H:%M:%S') if adjustment.plate_delivered_at else '',
-                str(adjustment.ctp_by or ''),
-                str(adjustment.ctp_group or ''),
-                str(adjustment.status or ''),
-                total_downtime_hours
-            ]
-            worksheet.append(row_data)
-        
-        # Create response with proper Excel headers
-        output = io.BytesIO()
-        workbook.save(output)
-        output.seek(0)
-        
-        response = make_response(output.getvalue())
-        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        response.headers['Content-Disposition'] = f'attachment; filename=adjustment_press_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
-        
-        return response
-        
-    except Exception as e:
-        print(f"Error exporting adjustment press data: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/export-bon-press', methods=['GET'])
-def export_bon_press():
-    try:
-        from flask import make_response, request, jsonify
-        import io
-        import openpyxl  # Menggunakan openpyxl untuk XLSX
-        from datetime import datetime
-        
-        # Get filter parameters
-        date_from = request.args.get('date_from', '')
-        date_to = request.args.get('date_to', '')
-        mesin_cetak = request.args.get('mesin_cetak', '')
-
-        # Build query for Bon Press
-        query = PlateBonRequest.query
-        
-        # Apply filters
-        if date_from:
-            query = query.filter(PlateBonRequest.tanggal >= date_from)
-        if date_to:
-            query = query.filter(PlateBonRequest.tanggal <= date_to)
-        if mesin_cetak:
-            query = query.filter(PlateBonRequest.mesin_cetak == mesin_cetak)
-
-        # Get Bon Press sorted by date (newest first)
-        bon_data = query.order_by(PlateBonRequest.tanggal.desc(), PlateBonRequest.id.desc()).all()
-
-        # Create an in-memory Excel workbook and worksheet
-        workbook = openpyxl.Workbook()
-        worksheet = workbook.active
-        worksheet.title = "Bon Press Data"
-        
-        # Write headers
-        headers = [
-            'Tanggal', 'PIC', 'Mesin Cetak', 'Remarks', 'Nomor WO', 'Nomor MC',
-            'Run Length', 'Nama Item', 'Jumlah Plate', 'Note',
-            'Mesin Off', 'Plate Start', 'Plate Selesai', 'Plate Sampai',
-            'PIC CTP', 'Grup CTP', 'Status', 'Total Downtime (jam)'
-        ]
-        worksheet.append(headers)
-        
-        # Write data rows
-        for bon in bon_data:
-            # Konversi string 'machine_off_at' ke objek datetime jika tidak kosong
-            machine_off_dt = None
-            if bon.machine_off_at:
-                try:
-                    # Asumsikan format string adalah 'YYYY-MM-DD HH:MM:SS'
-                    machine_off_dt = datetime.strptime(str(bon.machine_off_at), '%Y-%m-%d %H:%M:%S')
-                except (ValueError, TypeError):
-                    # Atau format lain jika diperlukan
-                    pass
-
-            # Hitung downtime hanya jika kedua variabel adalah objek datetime yang valid
-            total_downtime_hours = ''
-            if bon.plate_delivered_at and machine_off_dt:
-                time_delta = bon.plate_delivered_at - machine_off_dt
-                total_downtime_hours = round(time_delta.total_seconds() / 3600, 2) # Dibulatkan 2 desimal
-            
-            row_data = [
-                bon.tanggal.strftime('%Y-%m-%d') if bon.tanggal else '',
-                str(bon.pic or ''),
-                str(bon.mesin_cetak or ''),
-                str(bon.remarks or ''),
-                str(bon.wo_number or ''),
-                str(bon.mc_number or ''),
-                str(bon.run_length or ''),
-                str(bon.item_name or ''),
-                str(bon.jumlah_plate or ''),
-                str(bon.note or ''),
-                str(bon.machine_off_at or ''),
-                bon.plate_start_at.strftime('%Y-%m-%d %H:%M:%S') if bon.plate_start_at else '',
-                bon.plate_finish_at.strftime('%Y-%m-%d %H:%M:%S') if bon.plate_finish_at else '',
-                bon.plate_delivered_at.strftime('%Y-%m-%d %H:%M:%S') if bon.plate_delivered_at else '',
-                str(bon.ctp_by or ''),
-                str(bon.ctp_group or ''),
-                str(bon.status or ''),
-                total_downtime_hours
-            ]
-            worksheet.append(row_data)
-        
-        # Create response with proper Excel headers
-        output = io.BytesIO()
-        workbook.save(output)
-        output.seek(0)
-        
-        response = make_response(output.getvalue())
-        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        response.headers['Content-Disposition'] = f'attachment; filename=bon_press_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
-        
-        return response
-        
-    except Exception as e:
-        print(f"Error exporting bon press data: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
-    
-@app.route('/export-kpi-ctp', methods=['GET'])
-def export_kpi_ctp():
-    try:
-        from flask import make_response, request, jsonify
-        import io
-        import openpyxl
-        from datetime import datetime
-
-        # Get filter parameters
-        date_from = request.args.get('date_from', '')
-        date_to = request.args.get('date_to', '')
-        ctp_group = request.args.get('ctp_group', '')
-
-        # Build query for KPI CTP data
-        query = CTPProductionLog.query
-
-        # Apply filters
-        if date_from:
-            query = query.filter(CTPProductionLog.log_date >= date_from)
-        if date_to:
-            query = query.filter(CTPProductionLog.log_date <= date_to)
-        if ctp_group:
-            query = query.filter(CTPProductionLog.ctp_group == ctp_group)
-
-        # Get CTP data sorted by date (newest first)
-        kpi_data = query.order_by(CTPProductionLog.log_date.desc(), CTPProductionLog.id.desc()).all()
-
-        # Create an in-memory Excel workbook and worksheet
-        workbook = openpyxl.Workbook()
-        worksheet = workbook.active
-        worksheet.title = "KPI CTP Data"
-
-        # Write headers
-        headers = [
-            'Tanggal', 'Group CTP', 'Shift', 'PIC', 'Mesin CTP',
-            'Processor Temperature', 'Dwell Time', 'WO Number', 'MC Number',
-            'Run Length', 'Print Machine', 'Remarks Job', 'Item Name',
-            'Note', 'Plate Type Material', 'Raster',
-            'Plate Good', 'Plate Not Good', 'Not Good Reason',
-            'Cyan 25%', 'Cyan 50%', 'Cyan 75%',
-            'Magenta 25%', 'Magenta 50%', 'Magenta 75%',
-            'Yellow 25%', 'Yellow 50%', 'Yellow 75%',
-            'Black 25%', 'Black 50%', 'Black 75%',
-            'Spot Color 1 25%', 'Spot Color 1 50%', 'Spot Color 1 75%',
-            'Spot Color 2 25%', 'Spot Color 2 50%', 'Spot Color 2 75%',
-            'Spot Color 3 25%', 'Spot Color 3 50%', 'Spot Color 3 75%',
-            'Spot Color 4 25%', 'Spot Color 4 50%', 'Spot Color 4 75%',
-            'Spot Color 5 25%', 'Spot Color 5 50%', 'Spot Color 5 75%',
-            'Spot Color 6 25%', 'Spot Color 6 50%', 'Spot Color 6 75%',
-            'Spot Color 7 25%', 'Spot Color 7 50%', 'Spot Color 7 75%',
-            'Spot Color 8 25%', 'Spot Color 8 50%', 'Spot Color 8 75%',
-            'Start Time', 'Finish Time'
-        ]
-        worksheet.append(headers)
-
-        # Write data rows
-        for kpi in kpi_data:
-            row_data = [
-                kpi.log_date.strftime('%Y-%m-%d') if kpi.log_date else '',
-                str(kpi.ctp_group or ''),
-                str(kpi.ctp_shift or ''),
-                str(kpi.ctp_pic or ''),
-                str(kpi.ctp_machine or ''),
-                str(kpi.processor_temperature or ''),
-                str(kpi.dwell_time or ''),
-                str(kpi.wo_number or ''),
-                str(kpi.mc_number or ''),
-                str(kpi.run_length_sheet or ''),
-                str(kpi.print_machine or ''),
-                str(kpi.remarks_job or ''),
-                str(kpi.item_name or ''),
-                str(kpi.note or ''),
-                str(kpi.plate_type_material or ''),
-                str(kpi.paper_type or ''),
-                str(kpi.raster or ''),
-                str(kpi.num_plate_good or ''),
-                str(kpi.num_plate_not_good or ''),
-                str(kpi.not_good_reason or ''),
-                str(kpi.cyan_25_percent or ''),
-                str(kpi.cyan_50_percent or ''),
-                str(kpi.cyan_75_percent or ''),
-                str(kpi.magenta_25_percent or ''),
-                str(kpi.magenta_50_percent or ''),
-                str(kpi.magenta_75_percent or ''),
-                str(kpi.yellow_25_percent or ''),
-                str(kpi.yellow_50_percent or ''),
-                str(kpi.yellow_75_percent or ''),
-                str(kpi.black_25_percent or ''),
-                str(kpi.black_50_percent or ''),
-                str(kpi.black_75_percent or ''),
-                str(kpi.x_25_percent or ''),
-                str(kpi.x_50_percent or ''),
-                str(kpi.x_75_percent or ''),
-                str(kpi.z_25_percent or ''),
-                str(kpi.z_50_percent or ''),
-                str(kpi.z_75_percent or ''),
-                str(kpi.u_25_percent or ''),
-                str(kpi.u_50_percent or ''),
-                str(kpi.u_75_percent or ''),
-                str(kpi.v_25_percent or ''),
-                str(kpi.v_50_percent or ''),
-                str(kpi.v_75_percent or ''),
-                str(kpi.f_25_percent or ''),
-                str(kpi.f_50_percent or ''),
-                str(kpi.f_75_percent or ''),
-                str(kpi.g_25_percent or ''),
-                str(kpi.g_50_percent or ''),
-                str(kpi.g_75_percent or ''),
-                str(kpi.h_25_percent or ''),
-                str(kpi.h_50_percent or ''),
-                str(kpi.h_75_percent or ''),
-                str(kpi.j_25_percent or ''),
-                str(kpi.j_50_percent or ''),
-                str(kpi.j_75_percent or ''),
-                kpi.start_time.strftime('%H:%M') if kpi.start_time else '',
-                kpi.finish_time.strftime('%H:%M') if kpi.finish_time else ''
-            ]
-            worksheet.append(row_data)
-        
-        # Create response with proper Excel headers
-        output = io.BytesIO()
-        workbook.save(output)
-        output.seek(0)
-        
-        response = make_response(output.getvalue())
-        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        response.headers['Content-Disposition'] = f'attachment; filename=kpi_ctp_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
-        
-        return response
-    
-    except Exception as e:
-        print(f"Error exporting KPI CTP data: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/export-ctp-bon', methods=['GET'])
-def export_ctp_bon():
-    try:
-        from flask import make_response, request, jsonify
-        import io
-        import openpyxl  # Menggunakan openpyxl untuk XLSX
-        from datetime import datetime
-        
-        # Get filter parameters
-        status_filter = request.args.get('status', '')
-        remarks_filter = request.args.get('remarks', '')
-        date_from = request.args.get('date_from', '')
-        date_to = request.args.get('date_to', '')
-        
-        # Build query
-        query = PlateBonRequest.query
-        
-        # Apply filters
-        if status_filter:
-            query = query.filter(PlateBonRequest.status == status_filter)
-        
-        if remarks_filter:
-            query = query.filter(PlateBonRequest.remarks.ilike(f'%{remarks_filter}%'))
-            
-        if date_from:
-            query = query.filter(PlateBonRequest.tanggal >= date_from)
-        if date_to:
-            query = query.filter(PlateBonRequest.tanggal <= date_to)
-        
-        # Get data sorted by date (newest first)
-        bon_requests = query.order_by(PlateBonRequest.tanggal.desc(), PlateBonRequest.id.desc()).all()
-        
-        # Create an in-memory Excel workbook and worksheet
-        workbook = openpyxl.Workbook()
-        worksheet = workbook.active
-        worksheet.title = "CTP Bon Data"
-        
-        # Write headers
-        headers = [
-            'ID', 'Tanggal', 'Mesin Cetak', 'PIC', 'Remarks', 'WO Number', 'MC Number', 
-            'Run Length', 'Item Name', 'Jumlah Plate', 'Note', 'Machine Off At',
-            'Plate Start At', 'Plate Finish At', 'Plate Delivered At', 'CTP By', 'Status'
-        ]
-        worksheet.append(headers)
-        
-        # Write data rows
-        for bon in bon_requests:
-            row_data = [
-                str(bon.id or ''),
-                bon.tanggal.strftime('%Y-%m-%d') if bon.tanggal else '',
-                str(bon.mesin_cetak or ''),
-                str(bon.pic or ''),
-                str(bon.remarks or ''),
-                str(bon.wo_number or ''),
-                str(bon.mc_number or ''),
-                str(bon.run_length or ''),
-                str(bon.item_name or ''),
-                str(bon.jumlah_plate or ''),
-                str(bon.note or ''),
-                bon.machine_off_at.strftime('%Y-%m-%d %H:%M:%S') if bon.machine_off_at else '',
-                bon.plate_start_at.strftime('%Y-%m-%d %H:%M:%S') if bon.plate_start_at else '',
-                bon.plate_finish_at.strftime('%Y-%m-%d %H:%M:%S') if bon.plate_finish_at else '',
-                bon.plate_delivered_at.strftime('%Y-%m-%d %H:%M:%S') if bon.plate_delivered_at else '',
-                str(bon.ctp_by or ''),
-                str(bon.status or '')
-            ]
-            worksheet.append(row_data)
-        
-        # Create response with proper Excel headers
-        output = io.BytesIO()
-        workbook.save(output)
-        output.seek(0)
-        
-        response = make_response(output.getvalue())
-        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        response.headers['Content-Disposition'] = f'attachment; filename=ctp_bon_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
-        
-        return response
-        
-    except Exception as e:
-        print(f"Error exporting CTP bon data: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/export-ctp-bon-data', methods=['GET'])
-def export_ctp_bon_data():
-    try:
-        from flask import make_response, request, jsonify
-        import io
-        import openpyxl  # Menggunakan openpyxl untuk XLSX
-        from datetime import datetime
-        
-        # Get filter parameters
-        status_filter = request.args.get('status', '')
-        remarks_filter = request.args.get('remarks', '')
-        start_date = request.args.get('start_date', '')
-        end_date = request.args.get('end_date', '')
-        
-        # Define the filename with .xlsx extension
-        filename = f'ctp_bon_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
-        
-        # Build query
-        query = PlateBonRequest.query
-        
-        # Apply filters
-        if status_filter:
-            if status_filter == 'selesai':
-                query = query.filter(PlateBonRequest.status == 'selesai')
-            else:
-                query = query.filter(PlateBonRequest.status == status_filter)
-        
-        if remarks_filter:
-            query = query.filter(PlateBonRequest.remarks.ilike(f'%{remarks_filter}%'))
-            
-        if start_date:
-            query = query.filter(PlateBonRequest.tanggal >= start_date)
-        if end_date:
-            query = query.filter(PlateBonRequest.tanggal <= end_date)
-        
-        # Get data sorted by date (newest first)
-        bon_requests = query.order_by(PlateBonRequest.tanggal.desc(), PlateBonRequest.id.desc()).all()
-        
-        # Create an in-memory Excel workbook and worksheet
-        workbook = openpyxl.Workbook()
-        worksheet = workbook.active
-        worksheet.title = "CTP Bon Data"
-        
-        # Write headers
-        headers = [
-            'ID', 'Tanggal', 'Mesin Cetak', 'PIC', 'Remarks', 'WO Number', 'MC Number', 
-            'Run Length', 'Item Name', 'Jumlah Plate', 'Note', 'Machine Off At',
-            'Plate Start At', 'Plate Finish At', 'Plate Delivered At', 'CTP By', 'Status'
-        ]
-        worksheet.append(headers)
-        
-        # Write data rows
-        for bon in bon_requests:
-            row_data = [
-                str(bon.id or ''),
-                bon.tanggal.strftime('%Y-%m-%d') if bon.tanggal else '',
-                str(bon.mesin_cetak or ''),
-                str(bon.pic or ''),
-                str(bon.remarks or ''),
-                str(bon.wo_number or ''),
-                str(bon.mc_number or ''),
-                str(bon.run_length or ''),
-                str(bon.item_name or ''),
-                str(bon.jumlah_plate or ''),
-                str(bon.note or ''),
-                bon.machine_off_at.strftime('%Y-%m-%d %H:%M:%S') if bon.machine_off_at else '',
-                bon.plate_start_at.strftime('%Y-%m-%d %H:%M:%S') if bon.plate_start_at else '',
-                bon.plate_finish_at.strftime('%Y-%m-%d %H:%M:%S') if bon.plate_finish_at else '',
-                bon.plate_delivered_at.strftime('%Y-%m-%d %H:%M:%S') if bon.plate_delivered_at else '',
-                str(bon.ctp_by or ''),
-                str(bon.status or '')
-            ]
-            worksheet.append(row_data)
-        
-        # Create response with proper Excel headers
-        output = io.BytesIO()
-        workbook.save(output)
-        output.seek(0)
-        
-        response = make_response(output.getvalue())
-        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        response.headers['Content-Disposition'] = f'attachment; filename={filename}'
-        
-        return response
-        
-    except Exception as e:
-        print(f"Error exporting CTP bon data: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/get-plate-data')
 def get_plate_data():
@@ -7073,104 +4605,50 @@ def check_detail_adjustment(adjustment_id):
     except Exception as e:
         print(f"Error in check_detail_adjustment: {str(e)}")
         return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+@app.route('/api/current-user-role', methods=['GET'])
+@login_required
+def get_current_user_role():
+    """Get current user role information"""
     try:
-        # Query adjustment data with all related information
-        adj_query = text("""
-            SELECT
-                pa.id,
-                pa.tanggal,
-                pa.mesin_cetak,
-                pa.pic,
-                pa.remarks,
-                pa.status,
-                pa.machine_off_at,
-                pa.design_start_at,
-                pa.design_finish_at,
-                pa.design_by,
-                pa.pdnd_start_at,
-                pa.pdnd_finish_at,
-                pa.pdnd_by,
-                pa.curve_start_at,
-                pa.curve_finish_at,
-                pa.curve_by,
-                pa.adjustment_start_at,
-                pa.adjustment_finish_at,
-                pa.adjustment_by,
-                pa.plate_start_at,
-                pa.plate_finish_at,
-                pa.plate_delivered_at,
-                pa.ctp_by,
-                pa.note,
-                pa.item_name,
-                pa.wo_number,
-                pa.mc_number,
-                pa.jumlah_plate,
-                pa.run_length,
-                pa.is_epson,
-                pa.cancelled_at,
-                pa.cancelled_by,
-                pa.cancellation_reason,
-                pa.declined_at,
-                pa.decline_reason,
-                pa.declined_by
-            FROM plate_adjustment pa
-            WHERE pa.id = :adjustment_id
-        """)
-        
-        adj_result = db.session.execute(adj_query, {'adjustment_id': adjustment_id}).fetchone()
-        
-        if not adj_result:
-            return jsonify({'success': False, 'error': 'Adjustment not found'})
-        
-        # Convert to dictionary and format datetime properly
-        adj_data = {
-            'id': adj_result.id,
-            'tanggal': adj_result.tanggal.strftime('%Y-%m-%d') if adj_result.tanggal else '',
-            'mesin_cetak': adj_result.mesin_cetak or '',
-            'pic': adj_result.pic or '',
-            'remarks': adj_result.remarks or '',
-            'status': adj_result.status or '',
-            'machine_off_at': adj_result.machine_off_at.strftime('%d %B %Y - %H:%M') if adj_result.machine_off_at else '',
-            'design_start_at': adj_result.design_start_at.strftime('%d %B %Y - %H:%M') if adj_result.design_start_at else '',
-            'design_finish_at': adj_result.design_finish_at.strftime('%d %B %Y - %H:%M') if adj_result.design_finish_at else '',
-            'design_by': adj_result.design_by or '',
-            'pdnd_start_at': adj_result.pdnd_start_at.strftime('%d %B %Y - %H:%M') if adj_result.pdnd_start_at else '',
-            'pdnd_finish_at': adj_result.pdnd_finish_at.strftime('%d %B %Y - %H:%M') if adj_result.pdnd_finish_at else '',
-            'pdnd_by': adj_result.pdnd_by or '',
-            'curve_start_at': adj_result.curve_start_at.strftime('%d %B %Y - %H:%M') if adj_result.curve_start_at else '',
-            'curve_finish_at': adj_result.curve_finish_at.strftime('%d %B %Y - %H:%M') if adj_result.curve_finish_at else '',
-            'curve_by': adj_result.curve_by or '',
-            'adjustment_start_at': adj_result.adjustment_start_at.strftime('%d %B %Y - %H:%M') if adj_result.adjustment_start_at else '',
-            'adjustment_finish_at': adj_result.adjustment_finish_at.strftime('%d %B %Y - %H:%M') if adj_result.adjustment_finish_at else '',
-            'adjustment_by': adj_result.adjustment_by or '',
-            'plate_start_at': adj_result.plate_start_at.strftime('%d %B %Y - %H:%M') if adj_result.plate_start_at else '',
-            'plate_finish_at': adj_result.plate_finish_at.strftime('%d %B %Y - %H:%M') if adj_result.plate_finish_at else '',
-            'plate_delivered_at': adj_result.plate_delivered_at.strftime('%d %B %Y - %H:%M') if adj_result.plate_delivered_at else '',
-            'ctp_by': adj_result.ctp_by or '',
-            'note': adj_result.note or '',
-            'item_name': adj_result.item_name or '',
-            'wo_number': adj_result.wo_number or '',
-            'mc_number': adj_result.mc_number or '',
-            'jumlah_plate': adj_result.jumlah_plate or 0,
-            'run_length': adj_result.run_length or '',
-            'is_epson': bool(adj_result.is_epson) if adj_result.is_epson is not None else False,
-            'cancelled_at': adj_result.cancelled_at.strftime('%d %B %Y - %H:%M') if adj_result.cancelled_at else '',
-            'cancelled_by': adj_result.cancelled_by or '',
-            'cancellation_reason': adj_result.cancellation_reason or '',
-            'declined_at': adj_result.declined_at.strftime('%d %B %Y - %H:%M') if adj_result.declined_at else '',
-            'decline_reason': adj_result.decline_reason or '',
-            'declined_by': adj_result.declined_by or ''
-        }
-        
         return jsonify({
             'success': True,
-            'data': adj_data,
-            'timestamp': datetime.now().isoformat()
+            'role': current_user.role
         })
-        
     except Exception as e:
-        app.logger.error(f"Error in check_detail_adjustment: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)})
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/notifications')
+@login_required
+def notifications_page():
+    """Render the notifications page for viewing all notifications"""
+    return render_template('notifications.html')
 
 if __name__ == '__main__':
+    # Initialize CTP machines
+    initialize_ctp_machines()
+    
+    # x_for=1: Menerima X-Forwarded-For (IP Klien)
+    # x_prefix=1: Menerima X-Forwarded-Prefix (Path /impact) <--- INI PENTING
+    # x_host=1: Menerima X-Forwarded-Host (Nama host/IP)
+    
+    # PENTING: Gunakan konfigurasi ini untuk memastikan semua header proxy dibaca
+    app.wsgi_app = ProxyFix(
+        app.wsgi_app,
+        x_for=1,
+        x_proto=1,
+        x_host=1,
+        x_port=1,
+        x_prefix=1 # <--- PASTIKAN INI ADA
+    )
+    
+    # Jalankan aplikasi Anda di port 5021
+    # Route to serve uploaded files
+    @app.route('/uploads/<path:filename>')
+    def serve_uploaded_file(filename):
+        return send_from_directory(os.path.join(app.instance_path, 'uploads'), filename)
+    
     app.run(host='0.0.0.0', port=5021, debug=True)

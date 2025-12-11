@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const status = filterStatus.value;
         const mesin = filterMesin.value;
         const remarks = filterRemarks ? filterRemarks.value : '';
-        let url = `/get-adjustment-data?page=${currentPage}` +
+        let url = `/impact/get-adjustment-data?page=${currentPage}` +
             `&search=${encodeURIComponent(search)}` +
             `&sort_by=${encodeURIComponent(currentSortColumn)}` +
             `&sort_order=${encodeURIComponent(currentSortOrder)}`;
@@ -112,11 +112,11 @@ function renderTable(rows) {
             <td>${statusBadge}</td>            
             <td>${row.mesin_cetak || ''}</td>
             <td>${row.mc_number || ''}</td>
-            <td><a href="/detail-adjustment/${row.id}" class="text-decoration-none text-primary fw-bold">${row.item_name || ''}</a></td>
+            <td><a href="/impact/detail-adjustment/${row.id}" class="text-decoration-none text-primary fw-bold">${row.item_name || ''}</a></td>
             <td>${row.note || ''}</td>
             <td>${row.remarks || ''}</td>
             <td>
-                <a href="/detail-adjustment/${row.id}" class="btn btn-sm btn-outline-primary">
+                <a href="/impact/detail-adjustment/${row.id}" class="btn btn-sm btn-outline-primary">
                     <i class="fas fa-eye me-1"></i>Detail
                 </a>
             </td>
@@ -144,7 +144,7 @@ function cancelAdjustmentPlate(adjustmentId, reason) {
     }
     
     // Send cancel request
-    fetch('/cancel-adjustment-plate', { 
+    fetch('/impact/cancel-adjustment-plate', { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -250,7 +250,7 @@ function showContextMenu(rowElement, x, y, row) {
     document.body.appendChild(contextMenu);
 
     contextMenu.querySelector('[data-action="detail"]').addEventListener('click', function() {
-        window.location.href = `/detail-adjustment/${row.id}`;
+        window.location.href = `/impact/detail-adjustment/${row.id}`;
         hideContextMenu();
     });
 

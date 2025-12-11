@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prepress Impact</title>
+    <title>Impact 360</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <style>
         /* CTP Theme - Orange gradient seperti ctp_data_adjustment.html */
         .page-header {
@@ -21,12 +22,12 @@
         .form-section {
             background: white;
             border-radius: 15px;
-            padding: 2rem;
+            padding: 2.5rem;
             box-shadow: 0 2px 10px rgba(0,0,0,0.08);
             margin-bottom: 2rem;
         }
         
-                        .form-control-clean, .form-select-clean {
+        .form-control-clean, .form-select-clean {
             border: 2px solid #e9ecef;
             border-radius: 10px;
             padding: 0.75rem 1rem;
@@ -127,10 +128,103 @@
         }
         
         .form-label-small {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 500;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
             color: #666;
+        }
+        
+        .color-input-field {
+            font-size: 0.8rem !important;
+            padding: 0.4rem 0.2rem !important;
+            height: 38px !important;
+            text-align: center !important;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .linear-input-field {
+            font-size: 0.8rem !important;
+            padding: 0.4rem 0.5rem !important;
+            height: 38px !important;
+            text-align: center !important;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        /* Ensure labels are also centered */
+        .form-label-small {
+            font-size: 0.7rem;
+            font-weight: 500;
+            margin-bottom: 2px;
+            color: #666;
+            text-align: center !important;
+            display: block;
+            width: 100%;
+        }
+        
+        /* Custom column class for 5 equal columns */
+        .col-2-4 {
+            flex: 0 0 auto;
+            width: 20%;
+            max-width: 20%;
+            padding-right: 8px;
+            padding-left: 8px;
+        }
+        
+        /* Custom column class for 6 equal columns - FIXED FOR CENTER ALIGNMENT */
+        .col-2 {
+            flex: 0 0 auto;
+            width: 16.666667%;
+            max-width: 16.666667%;
+            padding-right: 4px;
+            padding-left: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Ensure proper centering for percentage input columns */
+        .row.w-100.text-center.g-2.mb-2 .col-2 {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Fix for row container to ensure proper centering */
+        .row.w-100.text-center.g-2.mb-2 {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            margin: 0 auto;
+        }
+        
+        /* Additional fix for all percentage input rows */
+        .row.w-100.text-center.g-2 {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            margin: 0 auto;
+        }
+        
+        /* Hide number input arrows for better visibility */
+        input[type=number]::-webkit-outer-spin-button,
+        input[type=number]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        input[type=number] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+        
+        input[type=number]:hover,
+        input[type=number]:focus {
+            -moz-appearance: number-input;
+            appearance: number-input;
         }
         
         .btn-ctp {
@@ -241,10 +335,11 @@
     </style>
 </head>
 <body>
-    <div class="d-flex" id="wrapper">
-        {% include '_sidebar.html' %}
-        <div id="page-content-wrapper">
-            <div class="container-fluid">
+    <div id="wrapper">
+        {% include '_top_header.html' %}
+        <div class="d-flex" id="content-wrapper">
+            {% include '_sidebar.html' %}
+            <div class="container-fluid pt-3">
                 <!-- Page Header dengan CTP theme -->
                 <div class="page-header">
                     <div class="container-fluid">
@@ -254,7 +349,7 @@
                                 <p class="mb-0 opacity-75">Kelola data produksi CTP dengan mudah dan efisien</p>
                             </div>
                             <div class="text-end">
-                                <a href="/tabel-kpi-ctp" class="btn btn-light">
+                                <a href="/impact/tabel-kpi-ctp" class="btn btn-light">
                                     <i class="fas fa-table me-1"></i> Lihat Tabel KPI
                                 </a>
                             </div>
@@ -263,7 +358,7 @@
                 </div>
 
             <div class="container-fluid py-4">
-        <div class="col-12 mx-auto" style="max-width: 1400px;">
+        <div class="col-12 mx-auto" style="max-width: 1800px;">
             <!-- Alert Section -->
             <div id="alertContainer" class="mb-3" style="display: none;">
                 <div class="alert" role="alert">
@@ -354,6 +449,7 @@
                             <select class="form-select form-select-clean" name="plate_type_material" id="plate_type_material" required>
                                 <option value="">Pilih Jenis Plate</option>
                                 <option value="FUJI 1030">FUJI 1030</option>
+                                <option value="FUJI 1030 LHPJA">FUJI 1030 LHPJA</option>                                
                                 <option value="FUJI 1030 UV">FUJI 1030 UV</option>
                                 <option value="FUJI 1055">FUJI 1055</option>
                                 <option value="FUJI 1055 UV">FUJI 1055 UV</option>
@@ -374,9 +470,9 @@
                             <input type="number" class="form-control form-control-clean" name="num_plate_not_good" id="num_plate_not_good">
                         </div>
                         <div class="col-md-4 d-none" id="notGoodReasonGroup">
-                            <label class="info-label">Alasan Not Good</label>
+                            <label class="info-label">Kategori NG</label>
                             <select class="form-select form-select-clean" id="not_good_reason" name="not_good_reason">
-                                <option value="">Pilih Alasan</option>
+                                <option value="">Pilih Kategori</option>
                                 <option value="Plate Rontok / Botak">Plate Rontok / Botak</option>
                                 <option value="Plate Baret">Plate Baret</option>
                                 <option value="Plate Penyok">Plate Penyok</option>
@@ -389,6 +485,10 @@
                                 <option value="Error mesin Punch">Error mesin Punch</option>
                                 <option value="Plate Jump">Plate Jump</option>
                             </select>
+                        </div>
+                        <div class="col-md-4 d-none" id="notGoodDetailGroup">
+                            <label class="info-label">Detail Keterangan NG</label>
+                            <textarea class="form-control form-control-clean" id="detail_not_good" name="detail_not_good" rows="3" placeholder="Jelaskan secara rinci mengapa plate tidak good..."></textarea>
                         </div>
                     </div>
                     <!-- Informasi Produk Section -->
@@ -467,18 +567,36 @@
                             <div class="color-header color-cyan">
                                 CYAN
                             </div>
-                            <div class="row w-100 text-center g-2">
-                                <div class="col-4">
+                            <div class="row w-100 text-center g-2 mb-2">
+                                <div class="col-2">
+                                    <label for="cyan_20_percent" class="form-label-small">20%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="cyan_20_percent" name="cyan_20_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="cyan_25_percent" class="form-label-small">25%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="cyan_25_percent" name="cyan_25_percent" style="min-height: 45px;">
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="cyan_25_percent" name="cyan_25_percent">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-2">
+                                    <label for="cyan_40_percent" class="form-label-small">40%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="cyan_40_percent" name="cyan_40_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="cyan_50_percent" class="form-label-small">50%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="cyan_50_percent" name="cyan_50_percent" style="min-height: 45px;">
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="cyan_50_percent" name="cyan_50_percent">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-2">
                                     <label for="cyan_75_percent" class="form-label-small">75%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="cyan_75_percent" name="cyan_75_percent" style="min-height: 45px;">
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="cyan_75_percent" name="cyan_75_percent">
+                                </div>
+                                <div class="col-2">
+                                    <label for="cyan_80_percent" class="form-label-small">80%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="cyan_80_percent" name="cyan_80_percent">
+                                </div>
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-12">
+                                    <label for="cyan_linear" class="form-label-small">Linear</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center linear-input-field" id="cyan_linear" name="cyan_linear" placeholder="Nilai Linear">
                                 </div>
                             </div>
                         </div>
@@ -487,18 +605,36 @@
                             <div class="color-header color-magenta">
                                 MAGENTA
                             </div>
-                            <div class="row w-100 text-center g-2">
-                                <div class="col-4">
+                            <div class="row w-100 text-center g-2 mb-2">
+                                <div class="col-2">
+                                    <label for="magenta_20_percent" class="form-label-small">20%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="magenta_20_percent" name="magenta_20_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="magenta_25_percent" class="form-label-small">25%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="magenta_25_percent" name="magenta_25_percent" style="min-height: 45px;">
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="magenta_25_percent" name="magenta_25_percent">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-2">
+                                    <label for="magenta_40_percent" class="form-label-small">40%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="magenta_40_percent" name="magenta_40_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="magenta_50_percent" class="form-label-small">50%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="magenta_50_percent" name="magenta_50_percent" style="min-height: 45px;">
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="magenta_50_percent" name="magenta_50_percent">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-2">
                                     <label for="magenta_75_percent" class="form-label-small">75%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="magenta_75_percent" name="magenta_75_percent" style="min-height: 45px;">
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="magenta_75_percent" name="magenta_75_percent">
+                                </div>
+                                <div class="col-2">
+                                    <label for="magenta_80_percent" class="form-label-small">80%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="magenta_80_percent" name="magenta_80_percent">
+                                </div>
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-12">
+                                    <label for="magenta_linear" class="form-label-small">Linear</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center linear-input-field" id="magenta_linear" name="magenta_linear" placeholder="Nilai Linear">
                                 </div>
                             </div>
                         </div>
@@ -507,18 +643,36 @@
                             <div class="color-header color-yellow">
                                 YELLOW
                             </div>
-                            <div class="row w-100 text-center g-2">
-                                <div class="col-4">
+                            <div class="row w-100 text-center g-2 mb-2">
+                                <div class="col-2">
+                                    <label for="yellow_20_percent" class="form-label-small">20%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="yellow_20_percent" name="yellow_20_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="yellow_25_percent" class="form-label-small">25%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="yellow_25_percent" name="yellow_25_percent" style="min-height: 45px;">
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="yellow_25_percent" name="yellow_25_percent">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-2">
+                                    <label for="yellow_40_percent" class="form-label-small">40%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="yellow_40_percent" name="yellow_40_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="yellow_50_percent" class="form-label-small">50%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="yellow_50_percent" name="yellow_50_percent" style="min-height: 45px;">
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="yellow_50_percent" name="yellow_50_percent">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-2">
                                     <label for="yellow_75_percent" class="form-label-small">75%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="yellow_75_percent" name="yellow_75_percent" style="min-height: 45px;">
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="yellow_75_percent" name="yellow_75_percent">
+                                </div>
+                                <div class="col-2">
+                                    <label for="yellow_80_percent" class="form-label-small">80%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="yellow_80_percent" name="yellow_80_percent">
+                                </div>
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-12">
+                                    <label for="yellow_linear" class="form-label-small">Linear</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center linear-input-field" id="yellow_linear" name="yellow_linear" placeholder="Nilai Linear">
                                 </div>
                             </div>
                         </div>
@@ -527,18 +681,36 @@
                             <div class="color-header color-black">
                                 BLACK
                             </div>
-                            <div class="row w-100 text-center g-2">
-                                <div class="col-4">
+                            <div class="row w-100 text-center g-2 mb-2">
+                                <div class="col-2">
+                                    <label for="black_20_percent" class="form-label-small">20%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="black_20_percent" name="black_20_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="black_25_percent" class="form-label-small">25%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="black_25_percent" name="black_25_percent" style="min-height: 45px;">
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="black_25_percent" name="black_25_percent">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-2">
+                                    <label for="black_40_percent" class="form-label-small">40%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="black_40_percent" name="black_40_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="black_50_percent" class="form-label-small">50%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="black_50_percent" name="black_50_percent" style="min-height: 45px;">
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="black_50_percent" name="black_50_percent">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-2">
                                     <label for="black_75_percent" class="form-label-small">75%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="black_75_percent" name="black_75_percent" style="min-height: 45px;">
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="black_75_percent" name="black_75_percent">
+                                </div>
+                                <div class="col-2">
+                                    <label for="black_80_percent" class="form-label-small">80%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="black_80_percent" name="black_80_percent">
+                                </div>
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-12">
+                                    <label for="black_linear" class="form-label-small">Linear</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center linear-input-field" id="black_linear" name="black_linear" placeholder="Nilai Linear">
                                 </div>
                             </div>
                         </div>
@@ -550,19 +722,37 @@
                             <div class="color-header color-spot1">
                                 SPOT COLOR 1
                             </div>
-                            <div class="row w-100 text-center g-2">
-                                <div class="col-4">
-                                    <label for="x_25_percent" class="form-label-small">25%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="x_25_percent" name="x_25_percent" style="min-height: 45px;">
+                            <div class="row w-100 text-center g-2 mb-2">
+                                <div class="col-2">
+                                    <label for="x_20_percent" class="form-label-small">20%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="x_20_percent" name="x_20_percent">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-2">
+                                    <label for="x_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="x_25_percent" name="x_25_percent">
+                                </div>
+                                <div class="col-2">
+                                    <label for="x_40_percent" class="form-label-small">40%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="x_40_percent" name="x_40_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="x_50_percent" class="form-label-small">50%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="x_50_percent" name="x_50_percent" style="min-height: 45px;">
-                                </div>                                  
-                                <div class="col-4">
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="x_50_percent" name="x_50_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="x_75_percent" class="form-label-small">75%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="x_75_percent" name="x_75_percent" style="min-height: 45px;">
-                                </div> 
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="x_75_percent" name="x_75_percent">
+                                </div>
+                                <div class="col-2">
+                                    <label for="x_80_percent" class="form-label-small">80%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="x_80_percent" name="x_80_percent">
+                                </div>
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-12">
+                                    <label for="x_linear" class="form-label-small">Linear</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center linear-input-field" id="x_linear" name="x_linear" placeholder="Nilai Linear">
+                                </div>
                             </div>
                         </div>
                         <!-- SPOT COLOR 2 -->
@@ -570,39 +760,75 @@
                             <div class="color-header color-spot2">
                                 SPOT COLOR 2
                             </div>
-                            <div class="row w-100 text-center g-2">
-                                <div class="col-4">
-                                    <label for="z_25_percent" class="form-label-small">25%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="z_25_percent" name="z_25_percent" style="min-height: 45px;">
+                            <div class="row w-100 text-center g-2 mb-2">
+                                <div class="col-2">
+                                    <label for="z_20_percent" class="form-label-small">20%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="z_20_percent" name="z_20_percent">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-2">
+                                    <label for="z_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="z_25_percent" name="z_25_percent">
+                                </div>
+                                <div class="col-2">
+                                    <label for="z_40_percent" class="form-label-small">40%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="z_40_percent" name="z_40_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="z_50_percent" class="form-label-small">50%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="z_50_percent" name="z_50_percent" style="min-height: 45px;">
-                                </div>                                  
-                                <div class="col-4">
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="z_50_percent" name="z_50_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="z_75_percent" class="form-label-small">75%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="z_75_percent" name="z_75_percent" style="min-height: 45px;">
-                                </div> 
-                            </div> 
-                        </div> 
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="z_75_percent" name="z_75_percent">
+                                </div>
+                                <div class="col-2">
+                                    <label for="z_80_percent" class="form-label-small">80%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="z_80_percent" name="z_80_percent">
+                                </div>
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-12">
+                                    <label for="z_linear" class="form-label-small">Linear</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center linear-input-field" id="z_linear" name="z_linear" placeholder="Nilai Linear">
+                                </div>
+                            </div>
+                        </div>
                         <!-- SPOT COLOR 3 -->
                         <div class="col-lg-3 col-md-6 d-flex flex-column align-items-center mb-4">
                             <div class="color-header color-spot3">
                                 SPOT COLOR 3
                             </div>
-                            <div class="row w-100 text-center g-2">
-                                <div class="col-4">
-                                    <label for="u_25_percent" class="form-label-small">25%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="u_25_percent" name="u_25_percent" style="min-height: 45px;">
+                            <div class="row w-100 text-center g-2 mb-2">
+                                <div class="col-2">
+                                    <label for="u_20_percent" class="form-label-small">20%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="u_20_percent" name="u_20_percent">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-2">
+                                    <label for="u_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="u_25_percent" name="u_25_percent">
+                                </div>
+                                <div class="col-2">
+                                    <label for="u_40_percent" class="form-label-small">40%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="u_40_percent" name="u_40_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="u_50_percent" class="form-label-small">50%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="u_50_percent" name="u_50_percent" style="min-height: 45px;">
-                                </div>                                  
-                                <div class="col-4">
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="u_50_percent" name="u_50_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="u_75_percent" class="form-label-small">75%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="u_75_percent" name="u_75_percent" style="min-height: 45px;">
-                                </div> 
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="u_75_percent" name="u_75_percent">
+                                </div>
+                                <div class="col-2">
+                                    <label for="u_80_percent" class="form-label-small">80%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="u_80_percent" name="u_80_percent">
+                                </div>
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-12">
+                                    <label for="u_linear" class="form-label-small">Linear</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center linear-input-field" id="u_linear" name="u_linear" placeholder="Nilai Linear">
+                                </div>
                             </div>
                         </div>
                         <!-- SPOT COLOR 4 -->
@@ -610,19 +836,37 @@
                             <div class="color-header color-spot4">
                                 SPOT COLOR 4
                             </div>
-                            <div class="row w-100 text-center g-2">
-                                <div class="col-4">
-                                    <label for="v_25_percent" class="form-label-small">25%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="v_25_percent" name="v_25_percent" style="min-height: 45px;">
+                            <div class="row w-100 text-center g-2 mb-2">
+                                <div class="col-2">
+                                    <label for="v_20_percent" class="form-label-small">20%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="v_20_percent" name="v_20_percent">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-2">
+                                    <label for="v_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="v_25_percent" name="v_25_percent">
+                                </div>
+                                <div class="col-2">
+                                    <label for="v_40_percent" class="form-label-small">40%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="v_40_percent" name="v_40_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="v_50_percent" class="form-label-small">50%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="v_50_percent" name="v_50_percent" style="min-height: 45px;">
-                                </div>                                  
-                                <div class="col-4">
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="v_50_percent" name="v_50_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="v_75_percent" class="form-label-small">75%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="v_75_percent" name="v_75_percent" style="min-height: 45px;">
-                                </div> 
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="v_75_percent" name="v_75_percent">
+                                </div>
+                                <div class="col-2">
+                                    <label for="v_80_percent" class="form-label-small">80%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="v_80_percent" name="v_80_percent">
+                                </div>
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-12">
+                                    <label for="v_linear" class="form-label-small">Linear</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center linear-input-field" id="v_linear" name="v_linear" placeholder="Nilai Linear">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -633,19 +877,37 @@
                             <div class="color-header color-spot5">
                                 SPOT COLOR 5
                             </div>
-                            <div class="row w-100 text-center g-2">
-                                <div class="col-4">
-                                    <label for="f_25_percent" class="form-label-small">25%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="f_25_percent" name="f_25_percent" style="min-height: 45px;">
+                            <div class="row w-100 text-center g-2 mb-2">
+                                <div class="col-2">
+                                    <label for="f_20_percent" class="form-label-small">20%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="f_20_percent" name="f_20_percent">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-2">
+                                    <label for="f_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="f_25_percent" name="f_25_percent">
+                                </div>
+                                <div class="col-2">
+                                    <label for="f_40_percent" class="form-label-small">40%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="f_40_percent" name="f_40_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="f_50_percent" class="form-label-small">50%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="f_50_percent" name="f_50_percent" style="min-height: 45px;">
-                                </div>                                  
-                                <div class="col-4">
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="f_50_percent" name="f_50_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="f_75_percent" class="form-label-small">75%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="f_75_percent" name="f_75_percent" style="min-height: 45px;">
-                                </div> 
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="f_75_percent" name="f_75_percent">
+                                </div>
+                                <div class="col-2">
+                                    <label for="f_80_percent" class="form-label-small">80%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="f_80_percent" name="f_80_percent">
+                                </div>
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-12">
+                                    <label for="f_linear" class="form-label-small">Linear</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center linear-input-field" id="f_linear" name="f_linear" placeholder="Nilai Linear">
+                                </div>
                             </div>
                         </div>
                         <!-- SPOT COLOR 6 -->
@@ -653,39 +915,75 @@
                             <div class="color-header color-spot6">
                                 SPOT COLOR 6
                             </div>
-                            <div class="row w-100 text-center g-2">
-                                <div class="col-4">
-                                    <label for="g_25_percent" class="form-label-small">25%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="g_25_percent" name="g_25_percent" style="min-height: 45px;">
+                            <div class="row w-100 text-center g-2 mb-2">
+                                <div class="col-2">
+                                    <label for="g_20_percent" class="form-label-small">20%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="g_20_percent" name="g_20_percent">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-2">
+                                    <label for="g_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="g_25_percent" name="g_25_percent">
+                                </div>
+                                <div class="col-2">
+                                    <label for="g_40_percent" class="form-label-small">40%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="g_40_percent" name="g_40_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="g_50_percent" class="form-label-small">50%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="g_50_percent" name="g_50_percent" style="min-height: 45px;">
-                                </div>                                  
-                                <div class="col-4">
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="g_50_percent" name="g_50_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="g_75_percent" class="form-label-small">75%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="g_75_percent" name="g_75_percent" style="min-height: 45px;">
-                                </div> 
-                            </div> 
-                        </div> 
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="g_75_percent" name="g_75_percent">
+                                </div>
+                                <div class="col-2">
+                                    <label for="g_80_percent" class="form-label-small">80%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="g_80_percent" name="g_80_percent">
+                                </div>
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-12">
+                                    <label for="g_linear" class="form-label-small">Linear</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center linear-input-field" id="g_linear" name="g_linear" placeholder="Nilai Linear">
+                                </div>
+                            </div>
+                        </div>
                         <!-- SPOT COLOR 7 -->
                         <div class="col-lg-3 col-md-6 d-flex flex-column align-items-center mb-4">
                             <div class="color-header color-spot7">
                                 SPOT COLOR 7
                             </div>
-                            <div class="row w-100 text-center g-2">
-                                <div class="col-4">
-                                    <label for="h_25_percent" class="form-label-small">25%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="h_25_percent" name="h_25_percent" style="min-height: 45px;">
+                            <div class="row w-100 text-center g-2 mb-2">
+                                <div class="col-2">
+                                    <label for="h_20_percent" class="form-label-small">20%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="h_20_percent" name="h_20_percent">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-2">
+                                    <label for="h_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="h_25_percent" name="h_25_percent">
+                                </div>
+                                <div class="col-2">
+                                    <label for="h_40_percent" class="form-label-small">40%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="h_40_percent" name="h_40_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="h_50_percent" class="form-label-small">50%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="h_50_percent" name="h_50_percent" style="min-height: 45px;">
-                                </div>                                  
-                                <div class="col-4">
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="h_50_percent" name="h_50_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="h_75_percent" class="form-label-small">75%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="h_75_percent" name="h_75_percent" style="min-height: 45px;">
-                                </div> 
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="h_75_percent" name="h_75_percent">
+                                </div>
+                                <div class="col-2">
+                                    <label for="h_80_percent" class="form-label-small">80%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="h_80_percent" name="h_80_percent">
+                                </div>
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-12">
+                                    <label for="h_linear" class="form-label-small">Linear</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center linear-input-field" id="h_linear" name="h_linear" placeholder="Nilai Linear">
+                                </div>
                             </div>
                         </div>
                         <!-- SPOT COLOR 8 -->
@@ -693,19 +991,37 @@
                             <div class="color-header color-spot8">
                                 SPOT COLOR 8
                             </div>
-                            <div class="row w-100 text-center g-2">
-                                <div class="col-4">
-                                    <label for="j_25_percent" class="form-label-small">25%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="j_25_percent" name="j_25_percent" style="min-height: 45px;">
+                            <div class="row w-100 text-center g-2 mb-2">
+                                <div class="col-2">
+                                    <label for="j_20_percent" class="form-label-small">20%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="j_20_percent" name="j_20_percent">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-2">
+                                    <label for="j_25_percent" class="form-label-small">25%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="j_25_percent" name="j_25_percent">
+                                </div>
+                                <div class="col-2">
+                                    <label for="j_40_percent" class="form-label-small">40%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="j_40_percent" name="j_40_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="j_50_percent" class="form-label-small">50%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="j_50_percent" name="j_50_percent" style="min-height: 45px;">
-                                </div>                                  
-                                <div class="col-4">
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="j_50_percent" name="j_50_percent">
+                                </div>
+                                <div class="col-2">
                                     <label for="j_75_percent" class="form-label-small">75%</label>
-                                    <input type="number" step="0.1" class="form-control form-control-clean text-center" id="j_75_percent" name="j_75_percent" style="min-height: 45px;">
-                                </div> 
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="j_75_percent" name="j_75_percent">
+                                </div>
+                                <div class="col-2">
+                                    <label for="j_80_percent" class="form-label-small">80%</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center color-input-field" id="j_80_percent" name="j_80_percent">
+                                </div>
+                            </div>
+                            <div class="row w-100 text-center g-2">
+                                <div class="col-12">
+                                    <label for="j_linear" class="form-label-small">Linear</label>
+                                    <input type="number" step="0.1" class="form-control form-control-clean text-center linear-input-field" id="j_linear" name="j_linear" placeholder="Nilai Linear">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -729,6 +1045,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
     <script src="{{ url_for('static', filename='js/kpi_ctp_handler.js') }}"></script>
     <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/notification_system.js') }}"></script>
     
     <div class="toast-container position-fixed bottom-0 end-0 p-3">
         <div id="liveToast" class="toast border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
@@ -747,15 +1064,22 @@
             const numPlateNotGoodInput = document.getElementById('num_plate_not_good');
             const notGoodReasonGroup = document.getElementById('notGoodReasonGroup');
             const notGoodReasonSelect = document.getElementById('not_good_reason');
+            const notGoodDetailGroup = document.getElementById('notGoodDetailGroup');
+            const detailNotGoodTextarea = document.getElementById('detail_not_good');
 
             function toggleNotGoodReason() {
                 if (parseInt(numPlateNotGoodInput.value) > 0) {
                     notGoodReasonGroup.classList.remove('d-none');
+                    notGoodDetailGroup.classList.remove('d-none');
                     notGoodReasonSelect.setAttribute('required', 'true');
+                    detailNotGoodTextarea.setAttribute('required', 'true');
                 } else {
                     notGoodReasonGroup.classList.add('d-none');
+                    notGoodDetailGroup.classList.add('d-none');
                     notGoodReasonSelect.removeAttribute('required');
+                    detailNotGoodTextarea.removeAttribute('required');
                     notGoodReasonSelect.value = ''; // Reset pilihan saat disembunyikan
+                    detailNotGoodTextarea.value = ''; // Reset textarea saat disembunyikan
                 }
             }
 

@@ -3,18 +3,14 @@ let selectedItems = new Map(); // To store selected items and their quantities
 
 // Initialize when document is ready
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize year filter with last 5 years
-    const yearSelect = document.getElementById('yearFilter');
-
-    const currentYear = new Date().getFullYear();
-    for (let year = currentYear; year >= currentYear - 4; year--) {
-        const option = document.createElement('option');
-        option.value = year;
-        option.textContent = year;
-        yearSelect.appendChild(option);
-    }
+    console.log('=== DOM CONTENT LOADED - CHEMICAL BON HANDLER ===');
+    
+    // Initialize dynamic year and month filters
+    console.log('Calling initializeDynamicFilters...');
+    initializeDynamicFilters();
     
     // Load initial table data
+    console.log('Calling filterTableData...');
     filterTableData();
     
     // Add event listeners for filters
@@ -71,6 +67,172 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('bonPeriode').value = `${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
 });
 
+// Initialize dynamic year and month filters
+async function initializeDynamicFilters() {
+    console.log('=== INITIALIZING DYNAMIC FILTERS ===');
+    try {
+        // Load available years from API
+        console.log('Loading available years...');
+        await loadAvailableYears();
+        
+        // Add event listener for year filter change to load months
+        const yearFilter = document.getElementById('yearFilter');
+        if (yearFilter) {
+            console.log('Adding year filter change listener');
+            yearFilter.addEventListener('change', async function() {
+                console.log('Year filter changed to:', this.value);
+                await loadAvailableMonths(this.value);
+            });
+        } else {
+            console.error('Year filter element not found');
+        }
+        
+    } catch (error) {
+        console.error('Error initializing dynamic filters:', error);
+        // Fallback to static year population if API fails
+        console.log('Falling back to static years...');
+        fallbackToStaticYears();
+    }
+}
+
+// Load available years from API
+async function loadAvailableYears() {
+    console.log('=== LOADING AVAILABLE YEARS ===');
+    try {
+        console.log('Fetching from /impact/api/chemical-bon-ctp/years...');
+        const response = await fetch('/impact/api/chemical-bon-ctp/years');
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        if (data.success && data.years) {
+            const yearSelect = document.getElementById('yearFilter');
+            if (yearSelect) {
+                yearSelect.innerHTML = '<option value="">Semua Tahun</option>';
+                
+                console.log('Available years:', data.years);
+                data.years.forEach(year => {
+                    const option = document.createElement('option');
+                    option.value = year;
+                    option.textContent = year;
+                    yearSelect.appendChild(option);
+                });
+                console.log('Year select options after population:', yearSelect.innerHTML);
+                
+                // NOTE: Removed automatic month loading for consistency with other templates
+                // Months should only load when user explicitly selects a year
+            } else {
+                console.error('Year filter element not found');
+            }
+        } else {
+            throw new Error('Failed to load years from API: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error loading years from API:', error);
+        throw error;
+    }
+}
+
+// Load available months for selected year
+async function loadAvailableMonths(year) {
+    console.log('=== LOADING AVAILABLE MONTHS FOR YEAR:', year, '===');
+    try {
+        const monthSelect = document.getElementById('monthFilter');
+        if (monthSelect) {
+            monthSelect.innerHTML = '<option value="">Semua Bulan</option>';
+        } else {
+            console.error('Month filter element not found');
+            return;
+        }
+        
+        if (!year) {
+            console.log('No year selected, skipping month loading');
+            return;
+        }
+        
+        console.log(`Fetching from /impact/api/chemical-bon-ctp/months?year=${year}...`);
+        const response = await fetch(`/impact/api/chemical-bon-ctp/months?year=${year}`);
+        console.log('Months response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Months response data:', data);
+        
+        if (data.success && data.months) {
+            const monthNames = [
+                'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            ];
+            
+            console.log('Available months:', data.months);
+            data.months.forEach(month => {
+                const option = document.createElement('option');
+                option.value = month;
+                option.textContent = monthNames[month - 1];
+                monthSelect.appendChild(option);
+            });
+            console.log('Month select options after population:', monthSelect.innerHTML);
+        } else {
+            throw new Error('Failed to load months from API: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error loading months from API:', error);
+        // Fallback to static months
+        console.log('Falling back to static months...');
+        fallbackToStaticMonths();
+        throw error;
+    }
+}
+
+// Fallback to static year population
+function fallbackToStaticYears() {
+    const yearSelect = document.getElementById('yearFilter');
+    yearSelect.innerHTML = '<option value="">Semua Tahun</option>';
+    
+    const currentYear = new Date().getFullYear();
+    for (let year = currentYear; year >= currentYear - 4; year--) {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        yearSelect.appendChild(option);
+    }
+    
+    // Load static months
+    fallbackToStaticMonths();
+}
+
+// Fallback to static month population
+function fallbackToStaticMonths() {
+    console.log('=== FALLING BACK TO STATIC MONTHS ===');
+    const monthSelect = document.getElementById('monthFilter');
+    if (monthSelect) {
+        monthSelect.innerHTML = '<option value="">Semua Bulan</option>';
+        
+        const monthNames = [
+            'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+        ];
+        
+        for (let i = 1; i <= 12; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = monthNames[i - 1];
+            monthSelect.appendChild(option);
+        }
+        console.log('Static months populated successfully');
+    } else {
+        console.error('Month filter element not found in fallback');
+    }
+}
+
 // Handle brand selection change
 async function handleBrandChange(event) {
     const brand = event.target.value;
@@ -86,7 +248,7 @@ async function handleBrandChange(event) {
     }
 
     try {
-        const response = await fetch(`/api/chemical-items/${brand}`);
+        const response = await fetch(`/impact/api/chemical-items/${brand}`);
         const data = await response.json();
 
         if (data.success && data.data.length > 0) {
@@ -195,7 +357,7 @@ async function handleFinalize() {
             items: items
         };
         
-        const response = await fetch('/api/chemical-bon-ctp/create', {
+        const response = await fetch('/impact/api/chemical-bon-ctp/create', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -317,7 +479,7 @@ async function filterTableData() {
         const currentPage = parseInt(urlParams.get('page')) || 1;
         const itemsPerPage = parseInt(urlParams.get('per_page')) || 10; 
 
-        const response = await fetch(`/api/chemical-bon-ctp/list?year=${year}&month=${month}&brand=${brand}&search=${searchInput}&page=${currentPage}&per_page=${itemsPerPage}`);
+        const response = await fetch(`/impact/api/chemical-bon-ctp/list?year=${year}&month=${month}&brand=${brand}&search=${searchInput}&page=${currentPage}&per_page=${itemsPerPage}`);
         const data = await response.json();
 
         const tableBody = document.getElementById('chemicalBonTableBody');
@@ -387,7 +549,7 @@ async function filterTableData() {
 async function printChemicalBon(bonId) {
     // Ambil data bon dari API
     try {
-        const response = await fetch(`/api/chemical-bon-ctp/${bonId}`);
+        const response = await fetch(`/impact/api/chemical-bon-ctp/${bonId}`);
         const result = await response.json();
         
         if (result.success) {
@@ -397,7 +559,7 @@ async function printChemicalBon(bonId) {
                 brand: bon.brand,
                 request_number: bon.request_number
             });
-            window.open(`/print-chemical-bon?${queryParams.toString()}`, '_blank');
+            window.open(`/impact/print-chemical-bon?${queryParams.toString()}`, '_blank');
         } else {
             showToast('Gagal mengambil data bon', 'error');
         }
@@ -461,7 +623,7 @@ document.getElementById('confirmExport').addEventListener('click', function() {
     if (brand) queryParams.push(`brand=${encodeURIComponent(brand)}`);
     const queryString = queryParams.length > 0 ? '?' + queryParams.join('&') : '';
 
-    window.open(`/export-chemical-bon${queryString}`, '_blank');
+    window.open(`/impact/export-chemical-bon${queryString}`, '_blank');
     bootstrap.Modal.getInstance(document.getElementById('exportModal')).hide();
     showToast('Export berhasil dimulai, file akan segera didownload', 'success');
 });

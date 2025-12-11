@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prepress Impact</title>
+    <title>Impact 360</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <style>
         /* Clean and Professional Styling */
         .page-header {
@@ -310,134 +311,137 @@
     </style>
 </head>
 <body>
-    <div class="d-flex" id="wrapper">
-        {% include '_sidebar.html' %}
-        <div id="page-content-wrapper">
-            <div class="container-fluid">
-                <!-- Page Header -->
-                <div class="page-header">
-                    <div class="container-fluid">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h2 class="mb-1 text-white">PDND - Adjustment Press</h2>
-                                <p class="mb-0 opacity-75">Kelola seluruh proses request adjustment dari Press</p>
-                            </div>
-                            <div class="text-end">
-                                <div class="small opacity-75">Sistem Monitoring Prepress</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Filter Section -->
-                <div class="filter-section">
-                    <div class="row align-items-end">
-                        <div class="col-md-2">
-                            <label class="form-label info-label">Filter Status</label>
-                            <select class="form-control form-control-clean" id="statusFilter">
-                                <option value="">Semua Status</option>
-                                <option value="menunggu_adjustment_pdnd">Menunggu PDND</option>
-                                <option value="proses_adjustment_pdnd">Proses PDND</option>
-                                <option value="ditolakmounting">Ditolak Mounting</option>
-                                <option value="selesai">Selesai PDND</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label info-label">Filter Mesin</label>
-                            <select class="form-control form-control-clean" id="mesinFilter">
-                                <option value="">Semua Mesin</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label info-label">Filter Remarks</label>
-                            <select class="form-control form-control-clean" id="remarksFilter">
-                                <option value="">Semua Remarks</option>
-                                <option value="ADJUSTMENT FA PROOF">FA Proof</option>
-                                <option value="ADJUSTMENT FA PRODUKSI">FA Produksi</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label info-label">Pencarian</label>
-                            <input type="text" class="form-control form-control-clean" id="searchInput" 
-                                   placeholder="Cari WO, Item, Mesin...">
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <div class="d-flex gap-2 justify-content-end align-items-end">
-                                <!-- Auto-refresh toggle -->
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
-                                    <label class="form-check-label small text-muted" for="autoRefresh">
-                                        <i class="fas fa-sync-alt me-1"></i>Auto (30s)
-                                    </label>
+    <div id="wrapper">
+        {% include '_top_header.html' %}
+        <div class="d-flex" id="content-wrapper">
+            {% include '_sidebar.html' %}
+            <div id="page-content-wrapper">
+                <div class="container-fluid pt-3">
+                    <!-- Page Header -->
+                    <div class="page-header">
+                        <div class="container-fluid">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h2 class="mb-1 text-white">PDND - Adjustment Press</h2>
+                                    <p class="mb-0 opacity-75">Kelola seluruh proses request adjustment dari Press</p>
                                 </div>
-                                <!-- Export button -->
-                                <button class="btn btn-success-clean btn-clean" id="exportData">
-                                    <i class="fas fa-download me-2"></i>Export Data
-                                </button>
-                                <!-- Refresh button -->
-                                <button class="btn btn-outline-clean btn-clean" id="refreshData">
-                                    <i class="fas fa-refresh me-2"></i>Refresh
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Summary Cards -->
-                <div class="row g-4 mb-4">
-                    <div class="col-lg-3 col-md-6 col-sm-6">
-                        <div class="card summary-card">
-                            <div class="card-body text-center">
-                                <div class="summary-icon icon-warning">
-                                    <i class="fas fa-clock text-white"></i>
+                                <div class="text-end">
+                                    <div class="small opacity-75">Sistem Monitoring Prepress</div>
                                 </div>
-                                <h3 class="mb-1" id="waitingCount">-</h3>
-                                <div class="info-label">Menunggu Adjustment</div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-3 col-md-6 col-sm-6">
-                        <div class="card summary-card">
-                            <div class="card-body text-center">
-                                <div class="summary-icon icon-success">
-                                    <i class="fas fa-check-circle text-white"></i>
-                                </div>
-                                <h3 class="mb-1" id="completedTodayCount">-</h3>
-                                <div class="info-label">Selesai Hari Ini</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-md-6 col-sm-6">
-                        <div class="card summary-card">
-                            <div class="card-body text-center">
-                                <div class="summary-icon icon-primary">
-                                    <i class="fas fa-bezier-curve text-white"></i>
-                                </div>
-                                <h3 class="mb-1" id="totalFaCount">-</h3>
-                                <div class="info-label">Total Adjustment FA</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Data Cards -->
-                <div class="row" id="adjustmentCards">
-                    <!-- Cards will be loaded here -->
-                </div>
 
-                <!-- Loading indicator -->
-                <div class="loading-clean" id="loadingIndicator">
-                    <div class="spinner-border text-primary mb-3" role="status">
-                        <span class="visually-hidden">Loading...</span>
+                    <!-- Filter Section -->
+                    <div class="filter-section">
+                        <div class="row align-items-end">
+                            <div class="col-md-2">
+                                <label class="form-label info-label">Filter Status</label>
+                                <select class="form-control form-control-clean" id="statusFilter">
+                                    <option value="">Semua Status</option>
+                                    <option value="menunggu_adjustment_pdnd">Menunggu PDND</option>
+                                    <option value="proses_adjustment_pdnd">Proses PDND</option>
+                                    <option value="ditolakmounting">Ditolak Mounting</option>
+                                    <option value="selesai">Selesai PDND</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label info-label">Filter Mesin</label>
+                                <select class="form-control form-control-clean" id="mesinFilter">
+                                    <option value="">Semua Mesin</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label info-label">Filter Remarks</label>
+                                <select class="form-control form-control-clean" id="remarksFilter">
+                                    <option value="">Semua Remarks</option>
+                                    <option value="ADJUSTMENT FA PROOF">FA Proof</option>
+                                    <option value="ADJUSTMENT FA PRODUKSI">FA Produksi</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label info-label">Pencarian</label>
+                                <input type="text" class="form-control form-control-clean" id="searchInput" 
+                                    placeholder="Cari WO, Item, Mesin...">
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <div class="d-flex gap-2 justify-content-end align-items-end">
+                                    <!-- Auto-refresh toggle -->
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
+                                        <label class="form-check-label small text-muted" for="autoRefresh">
+                                            <i class="fas fa-sync-alt me-1"></i>Auto (30s)
+                                        </label>
+                                    </div>
+                                    <!-- Export button -->
+                                    <button class="btn btn-success-clean btn-clean" id="exportData">
+                                        <i class="fas fa-download me-2"></i>Export Data
+                                    </button>
+                                    <!-- Refresh button -->
+                                    <button class="btn btn-outline-clean btn-clean" id="refreshData">
+                                        <i class="fas fa-refresh me-2"></i>Refresh
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <h5 class="text-muted">Memuat data adjustment...</h5>
-                    <p class="text-muted mb-0">Mohon tunggu sebentar</p>
-                </div>
 
-                <!-- No data message -->
-                <div class="no-data-clean d-none" id="noDataMessage">
-                    <i class="fas fa-inbox text-muted mb-3" style="font-size: 4rem; opacity: 0.5;"></i>
-                    <h4 class="text-muted mb-2">Tidak ada data adjustment</h4>
-                    <p class="text-muted mb-0">Belum ada request adjustment yang perlu ditangani saat ini</p>
+                    <!-- Summary Cards -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-lg-3 col-md-6 col-sm-6">
+                            <div class="card summary-card">
+                                <div class="card-body text-center">
+                                    <div class="summary-icon icon-warning">
+                                        <i class="fas fa-clock text-white"></i>
+                                    </div>
+                                    <h3 class="mb-1" id="waitingCount">-</h3>
+                                    <div class="info-label">Menunggu Adjustment</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 col-sm-6">
+                            <div class="card summary-card">
+                                <div class="card-body text-center">
+                                    <div class="summary-icon icon-success">
+                                        <i class="fas fa-check-circle text-white"></i>
+                                    </div>
+                                    <h3 class="mb-1" id="completedTodayCount">-</h3>
+                                    <div class="info-label">Selesai Hari Ini</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 col-sm-6">
+                            <div class="card summary-card">
+                                <div class="card-body text-center">
+                                    <div class="summary-icon icon-primary">
+                                        <i class="fas fa-bezier-curve text-white"></i>
+                                    </div>
+                                    <h3 class="mb-1" id="totalFaCount">-</h3>
+                                    <div class="info-label">Total Adjustment FA</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Data Cards -->
+                    <div class="row" id="adjustmentCards">
+                        <!-- Cards will be loaded here -->
+                    </div>
+
+                    <!-- Loading indicator -->
+                    <div class="loading-clean" id="loadingIndicator">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h5 class="text-muted">Memuat data adjustment...</h5>
+                        <p class="text-muted mb-0">Mohon tunggu sebentar</p>
+                    </div>
+
+                    <!-- No data message -->
+                    <div class="no-data-clean d-none" id="noDataMessage">
+                        <i class="fas fa-inbox text-muted mb-3" style="font-size: 4rem; opacity: 0.5;"></i>
+                        <h4 class="text-muted mb-2">Tidak ada data adjustment</h4>
+                        <p class="text-muted mb-0">Belum ada request adjustment yang perlu ditangani saat ini</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -594,6 +598,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
     <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
     <script src="{{ url_for('static', filename='js/badge_system.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/notification_system.js') }}"></script>
     <script>
         let adjustmentData = [];
         let currentAdjustmentId = null;
@@ -683,7 +688,7 @@
                 document.getElementById('loadingIndicator').style.display = 'block';
                 document.getElementById('noDataMessage').classList.add('d-none');
                 
-                const response = await fetch('/get-pdnd-adjustment-data');
+                const response = await fetch('/impact/get-pdnd-adjustment-data');
                 if (!response.ok) throw new Error('Failed to fetch data');
                 
                 const result = await response.json();
@@ -909,7 +914,7 @@
                                     <div class="col-12">
                                         <div class="d-flex align-items-center">
                                             <div class="bg-info rounded-circle me-2" style="width: 8px; height: 8px;"></div>
-                                            <small class="text-muted">Mulai Adjustment:</small>
+                                            <small class="text-muted">Mulai Adjustment PDND:</small>
                                             <small class="ms-auto fw-bold">${formatDateTimeIndonesia(item.pdnd_start_at)}</small>
                                         </div>
                                     </div>
@@ -918,7 +923,7 @@
                                     <div class="col-12">
                                         <div class="d-flex align-items-center">
                                             <div class="bg-success rounded-circle me-2" style="width: 8px; height: 8px;"></div>
-                                            <small class="text-muted">Selesai Adjustment:</small>
+                                            <small class="text-muted">Selesai Adjustment PDND:</small>
                                             <small class="ms-auto fw-bold">${formatDateTimeIndonesia(item.pdnd_finish_at)}</small>
                                         </div>
                                     </div>
@@ -931,7 +936,7 @@
                                 <div class="flex-grow-1">
                                     ${actionButtons}
                                 </div>
-                                <a href="/detail-adjustment/${item.id}" class="btn btn-outline-clean btn-clean">
+                                <a href="/impact/detail-adjustment/${item.id}" class="btn btn-outline-clean btn-clean">
                                     <i class="fas fa-eye me-1"></i>Detail
                                 </a>
                             </div>
@@ -1302,7 +1307,7 @@
                 const isReprocess = currentItem?.status === 'ditolakmounting';
                 
                 try {
-                    const response = await fetch('/start-adjustment-pdnd', {
+                    const response = await fetch('/impact/start-adjustment-pdnd', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -1328,7 +1333,7 @@
             // Confirm finish adjustment
             document.getElementById('confirmFinishAdjustment').addEventListener('click', async function() {
                 try {
-                    const response = await fetch('/finish-adjustment-pdnd', {
+                    const response = await fetch('/impact/finish-adjustment-pdnd', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -1411,7 +1416,7 @@
                 if (dateFrom) params.append('date_from', dateFrom);
                 if (dateTo) params.append('date_to', dateTo);
                 
-                const exportUrl = '/export-pdnd-adjustment?' + params.toString();
+                const exportUrl = '/impact/export-pdnd-adjustment?' + params.toString();
                 
                 // Create temporary link and trigger download
                 const link = document.createElement('a');
@@ -1461,18 +1466,18 @@
         }
 
         // Add audio element for notification sound
-        const notificationSound = new Audio('/static/sounds/adjustment.mp3');
+        const notificationSound = new Audio('/impact/static/sounds/adjustment.mp3');
 
         // Function to show browser notification
         function showBrowserNotification(title, options = {}) {
             if (Notification.permission === 'granted') {
                 const defaultOptions = {
-                    icon: '/static/img/prepress_impact_logo.png',
-                    badge: '/static/img/prepress_impact_logo.png',
+                    icon: '/impact/static/img/impact360.png',
+                    badge: '/impact/static/img/impact360.png',
                     vibrate: [200, 100, 200],
                     silent: false,
                     requireInteraction: false,
-                    sound: '/static/sounds/adjustment.mp3'  // Add sound URL
+                    sound: '/impact/static/sounds/adjustment.mp3'  // Add sound URL
                 };
 
                 // Create and show notification

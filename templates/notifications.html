@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Notifications - Impact 360</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    
+    <style>
+        .notifications-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .notifications-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        
+        .notification-table {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .notification-table table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 0;
+        }
+        
+        .notification-table th {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--dark-text);
+            border-bottom: 1px solid #e9ecef;
+            white-space: nowrap;
+        }
+        
+        .notification-table td {
+            padding: 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .notification-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .notification-table tr:hover {
+            background-color: rgba(13, 110, 253, 0.05);
+        }
+        
+        .notification-table tr.unread {
+            border-left: 4px solid var(--primary-color);
+            background: linear-gradient(135deg, rgba(13, 110, 253, 0.05) 0%, rgba(13, 110, 253, 0.02) 100%);
+        }
+        
+        .notification-table tr.read {
+            opacity: 0.7;
+        }
+        
+        .notification-table tr.read .notification-message {
+            color: var(--medium-text);
+        }
+        
+        .notification-machine {
+            font-weight: 600;
+            color: var(--dark-text);
+            font-size: 1rem;
+        }
+        
+        .notification-time {
+            color: var(--medium-text);
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        
+        .notification-message {
+            color: var(--dark-text);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            word-wrap: break-word;
+            max-width: 300px;
+        }
+        
+        .notification-type {
+            display: inline-block;
+            padding: 0.3rem 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+        
+        .notification-type.info {
+            background: linear-gradient(135deg, #d1ecf1 0%, #b8daff 100%);
+            color: #0c5460;
+        }
+        
+        .notification-type.warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            color: #856404;
+        }
+        
+        .notification-type.error {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            color: #721c24;
+        }
+        
+        .notification-type.new_problem {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            color: #856404;
+        }
+        
+        .notification-type.problem_resolved {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            color: #155724;
+        }
+        
+        .notification-actions {
+            display: flex;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+        
+        .btn-mark-read {
+            background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 0.375rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-mark-read:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--medium-text);
+        }
+        
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 1.5rem;
+            opacity: 0.5;
+        }
+        
+        .empty-state h3 {
+            color: var(--dark-text);
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+        
+        .filter-section {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+        
+        .filter-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+        
+        .filter-controls .form-select {
+            min-width: 200px;
+        }
+        
+        @media (max-width: 768px) {
+            .notifications-container {
+                padding: 1rem;
+            }
+            
+            .notifications-header {
+                padding: 1.5rem;
+            }
+            
+            .notification-table th,
+            .notification-table td {
+                padding: 0.75rem 0.5rem;
+                font-size: 0.85rem;
+            }
+            
+            .notification-message {
+                max-width: 200px;
+            }
+            
+            .filter-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filter-controls .form-select {
+                min-width: auto;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .notification-table {
+                font-size: 0.8rem;
+            }
+            
+            .notification-table th,
+            .notification-table td {
+                padding: 0.5rem 0.25rem;
+            }
+            
+            .notification-message {
+                max-width: 150px;
+            }
+            
+            .notification-actions {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% include '_top_header.html' %}
+    <div class="d-flex" id="content-wrapper">
+        {% include '_sidebar.html' %}
+        <div id="page-content-wrapper">
+            <div class="notifications-container">
+                <!-- Header -->
+                <div class="notifications-header">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h1 class="mb-0">
+                                <i class="fas fa-bell me-2"></i>
+                                All Notifications
+                            </h1>
+                            <p class="text-muted mb-0 mt-2">
+                                View and manage all your notifications in one place
+                            </p>
+                        </div>
+                        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                            <div class="d-flex gap-2 justify-content-md-end">
+                                <button class="btn btn-primary" id="markAllReadBtn">
+                                    <i class="fas fa-check-double me-2"></i>
+                                    Mark All as Read
+                                </button>
+                                <button class="btn btn-secondary" id="refreshBtn">
+                                    <i class="fas fa-sync-alt me-2"></i>
+                                    Refresh
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter Section -->
+                <div class="filter-section">
+                    <div class="filter-controls">
+                        <div>
+                            <label class="form-label">Filter by Type</label>
+                            <select class="form-select" id="filterType">
+                                <option value="">All Types</option>
+                                <option value="new_problem">New Problem</option>
+                                <option value="problem_resolved">Problem Resolved</option>
+                                <option value="warning">Warning</option>
+                                <option value="error">Error</option>
+                                <option value="info">Info</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Filter by Status</label>
+                            <select class="form-select" id="filterStatus">
+                                <option value="">All Status</option>
+                                <option value="unread">Unread</option>
+                                <option value="read">Read</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Filter by Machine</label>
+                            <select class="form-select" id="filterMachine">
+                                <option value="">All Machines</option>
+                                <option value="CTP 1 Suprasetter">CTP 1 Suprasetter</option>
+                                <option value="CTP 2 Platesetter">CTP 2 Platesetter</option>
+                                <option value="CTP 3 Trendsetter">CTP 3 Trendsetter</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notifications List -->
+                <div id="notificationsContainer">
+                    <div class="text-center p-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading notifications...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/notification_system.js') }}"></script>
+    <script>
+        let allNotifications = [];
+        let filteredNotifications = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllNotifications();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Mark all as read
+            document.getElementById('markAllReadBtn').addEventListener('click', markAllAsRead);
+            
+            // Refresh
+            document.getElementById('refreshBtn').addEventListener('click', loadAllNotifications);
+            
+            // Filters
+            document.getElementById('filterType').addEventListener('change', applyFilters);
+            document.getElementById('filterStatus').addEventListener('change', applyFilters);
+            document.getElementById('filterMachine').addEventListener('change', applyFilters);
+        }
+
+        async function loadAllNotifications() {
+            showLoading();
+            
+            try {
+                const response = await fetch('/impact/api/ctp-notifications', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    allNotifications = data.data || [];
+                    applyFilters();
+                } else {
+                    showError('Failed to load notifications: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+                showError('Error loading notifications. Please try again.');
+            }
+        }
+
+        function applyFilters() {
+            const typeFilter = document.getElementById('filterType').value;
+            const statusFilter = document.getElementById('filterStatus').value;
+            const machineFilter = document.getElementById('filterMachine').value;
+
+            filteredNotifications = allNotifications.filter(notification => {
+                let matchesType = !typeFilter || notification.notification_type === typeFilter;
+                let matchesStatus = true;
+                
+                if (statusFilter === 'unread') {
+                    matchesStatus = !notification.is_read;
+                } else if (statusFilter === 'read') {
+                    matchesStatus = notification.is_read;
+                }
+                // When statusFilter is empty (default), include both read and unread notifications
+                
+                let matchesMachine = !machineFilter || notification.machine_name === machineFilter;
+                
+                return matchesType && matchesStatus && matchesMachine;
+            });
+
+            renderNotifications();
+        }
+
+        function renderNotifications() {
+            const container = document.getElementById('notificationsContainer');
+            
+            if (filteredNotifications.length === 0) {
+                container.innerHTML = getEmptyStateHTML();
+                return;
+            }
+
+            const notificationsHTML = filteredNotifications.map(notification =>
+                getNotificationRowHTML(notification)
+            ).join('');
+
+            container.innerHTML = `
+                <div class="notification-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Machine</th>
+                                <th>Message</th>
+                                <th>Type</th>
+                                <th>Time</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${notificationsHTML}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            // Add click handlers
+            attachNotificationHandlers();
+        }
+
+        function getNotificationRowHTML(notification) {
+            const isUnread = !notification.is_read;
+            const isRead = notification.is_read;
+            const timeAgo = formatTimeAgo(notification.created_at);
+            const typeClass = getNotificationTypeClass(notification.notification_type);
+
+            return `
+                <tr class="${isUnread ? 'unread' : ''} ${isRead ? 'read' : ''}" data-notification-id="${notification.id}">
+                    <td>
+                        <div class="notification-machine">
+                            <i class="fas fa-cog me-2"></i>
+                            ${notification.machine_name}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="notification-message">${escapeHtml(notification.message)}</div>
+                    </td>
+                    <td>
+                        <span class="notification-type ${typeClass}">${getNotificationTypeLabel(notification.notification_type)}</span>
+                    </td>
+                    <td>
+                        <div class="notification-time">${timeAgo}</div>
+                    </td>
+                    <td>
+                        <div class="notification-actions">
+                            ${isUnread ? `
+                                <button class="btn btn-sm btn-mark-read" onclick="markAsRead(${notification.id})">
+                                    <i class="fas fa-check me-1"></i>
+                                    Mark as Read
+                                </button>
+                            ` : ''}
+                            <button class="btn btn-sm btn-outline-secondary" onclick="navigateToDetails(${notification.id})">
+                                <i class="fas fa-eye me-1"></i>
+                                View Details
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function getNotificationTypeClass(type) {
+            const typeMap = {
+                'new_problem': 'new_problem',
+                'problem_resolved': 'problem_resolved',
+                'warning': 'warning',
+                'error': 'error',
+                'info': 'info'
+            };
+            return typeMap[type] || 'info';
+        }
+
+        function getNotificationTypeLabel(type) {
+            const typeMap = {
+                'new_problem': 'Problem Baru',
+                'problem_resolved': 'Problem Selesai',
+                'warning': 'Peringatan',
+                'error': 'Error',
+                'info': 'Info'
+            };
+            return typeMap[type] || 'Info';
+        }
+
+        function getEmptyStateHTML() {
+            return `
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <h3>No Notifications Found</h3>
+                    <p>There are no notifications matching your current filters.</p>
+                    <button class="btn btn-primary" onclick="clearFilters()">
+                        <i class="fas fa-times me-2"></i>
+                        Clear Filters
+                    </button>
+                </div>
+            `;
+        }
+
+        function attachNotificationHandlers() {
+            const rows = document.querySelectorAll('.notification-table tbody tr');
+            rows.forEach(row => {
+                row.addEventListener('click', function(e) {
+                    if (!e.target.closest('.notification-actions')) {
+                        const notificationId = parseInt(this.dataset.notificationId);
+                        viewDetails(notificationId);
+                    }
+                });
+            });
+        }
+
+        async function markAsRead(notificationId) {
+            try {
+                const response = await fetch(`/impact/api/ctp-notifications/${notificationId}/read`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update local notification
+                    const notification = allNotifications.find(n => n.id === notificationId);
+                    if (notification) {
+                        notification.is_read = true;
+                        notification.read_at = new Date().toISOString();
+                    }
+                    
+                    applyFilters();
+                } else {
+                }
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+                showToast('Error marking notification as read', 'danger');
+            }
+        }
+
+        async function markAllAsRead() {
+            const unreadNotifications = allNotifications.filter(n => !n.is_read);
+            
+            if (unreadNotifications.length === 0) {
+                return;
+            }
+
+            try {
+                const promises = unreadNotifications.map(notification => 
+                    markAsRead(notification.id)
+                );
+
+                await Promise.all(promises);
+                await loadAllNotifications();
+            } catch (error) {
+                console.error('Error marking all notifications as read:', error);
+            }
+        }
+
+        function viewDetails(notificationId) {
+            const notification = allNotifications.find(n => n.id === notificationId);
+            
+            if (notification && !notification.is_read) {
+                markAsRead(notificationId);
+            }
+
+            // Don't redirect, just mark as read if needed
+            // Users can view details by clicking the "View Details" button if needed
+        function navigateToDetails(notificationId) {
+            const notification = allNotifications.find(n => n.id === notificationId);
+            
+            if (notification) {
+                // Navigate to specific CTP machine page based on machine name
+                let targetUrl = '/impact/log_ctp_overview'; // Default fallback
+                
+                if (notification.machine_name) {
+                    const machineName = notification.machine_name.toLowerCase();
+                    if (machineName.includes('ctp 1') || machineName.includes('suprasetter')) {
+                        targetUrl = '/impact/log-ctp/suprasetter';
+                    } else if (machineName.includes('ctp 2') || machineName.includes('platesetter')) {
+                        targetUrl = '/impact/log-ctp/platesetter';
+                    } else if (machineName.includes('ctp 3') || machineName.includes('trendsetter')) {
+                        targetUrl = '/impact/log-ctp/trendsetter';
+                    }
+                }
+                
+                window.location.href = targetUrl;
+            }
+        }
+        }
+
+        function clearFilters() {
+            document.getElementById('filterType').value = '';
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterMachine').value = '';
+            applyFilters();
+        }
+
+        function showLoading() {
+            const container = document.getElementById('notificationsContainer');
+            container.innerHTML = `
+                <div class="text-center p-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading notifications...</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showError(message) {
+            const container = document.getElementById('notificationsContainer');
+            container.innerHTML = `
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <h3>Error Loading Notifications</h3>
+                    <p>${message}</p>
+                    <button class="btn btn-primary" onclick="loadAllNotifications()">
+                        <i class="fas fa-redo me-2"></i>
+                        Try Again
+                    </button>
+                </div>
+            `;
+        }
+
+        function formatTimeAgo(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            if (diffMins < 1) {
+                return 'Baru saja';
+            } else if (diffMins < 60) {
+                return `${diffMins} menit yang lalu`;
+            } else if (diffHours < 24) {
+                return `${diffHours} jam yang lalu`;
+            } else if (diffDays < 7) {
+                return `${diffDays} hari yang lalu`;
+            } else {
+                return date.toLocaleDateString('id-ID');
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+    </script>
+</body>
+</html>

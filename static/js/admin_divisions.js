@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function fetchData() {
         const search = searchInput ? searchInput.value.trim() : '';
-        let url = `/get-divisions-data?page=${currentPage}` +
+        let url = `/impact/get-divisions-data?page=${currentPage}` +
             `&search=${encodeURIComponent(search)}` +
             `&sort_by=${encodeURIComponent(currentSortColumn)}` +
             `&sort_order=${encodeURIComponent(currentSortOrder)}`;
@@ -193,7 +193,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const editModal = new bootstrap.Modal(document.getElementById('editDivisionModal'));
         editModal.show();
         
-        fetch(`/admin/division/${divisionId}`)
+        fetch(`/impact/admin/division/${divisionId}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');

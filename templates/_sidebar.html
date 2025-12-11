@@ -1,254 +1,453 @@
 <style>
-    .sidebar-heading {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 18px 16px 14px 16px;
-        border-bottom: 1px solid #e9ecef;
-        box-shadow: 0 2px 12px 0 rgba(0,0,0,0.03);
-        white-space: nowrap;
-        background: none;
+    :root {
+        --sidebar-bg: #ffffff;
+        --sidebar-border: #e5e7eb;
+        --sidebar-text: #111827;
+        --sidebar-muted: #9ca3af;
+        --sidebar-hover-bg: #f3f4f6;
+        --sidebar-active-bg: #e0f2fe;
+        --sidebar-active-text: #0369a1;
+        --sidebar-icon-size: 0.95rem;
+        --sidebar-radius: 8px;
     }
-    .sidebar-logo {
-        width: 32px;
-        height: 32px;
-        border-radius: 6px;
-        background: #fff;
-        box-shadow: 0 2px 8px 0 rgba(0,181,226,0.10);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        flex-shrink: 0;
+
+    #sidebar-wrapper {
+        background: var(--sidebar-bg);
+        border-right: 1px solid var(--sidebar-border);
+        font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        padding: 6px 8px 10px 8px;
     }
-    .sidebar-title {
-        font-family: 'Segoe UI', 'Arial', sans-serif;
-        font-weight: 700;
-        font-size: 1.05rem;
-        letter-spacing: 1px;
-        color: #212529;
+
+    .sidebar-section-label {
+        padding: 6px 10px 2px 10px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.13em;
         text-transform: uppercase;
+        color: var(--sidebar-muted);
+        font-family: 'ArialMT', Arial, sans-serif;
+    }
+
+    .list-group-item {
+        border: none;
+        border-radius: var(--sidebar-radius);
+        padding: 6px 10px;
+        margin: 1px 2px;
+        color: var(--sidebar-text);
+        background: transparent;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        font-family: 'Segoe UI Semibold', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        transition: background-color 0.15s ease, color 0.15s ease, padding-left 0.15s ease;
+        justify-content: flex-start;
+        text-align: left;
+    }
+
+    .list-group-item:hover {
+        background: var(--sidebar-hover-bg);
+        color: var(--sidebar-text);
+    }
+
+    .list-group-item.active {
+        background: var(--sidebar-active-bg);
+        color: var(--sidebar-active-text);
+    }
+
+    .list-group-item.active i {
+        color: var(--sidebar-active-text);
+    }
+
+    .list-group-item.ps-4 {
+        padding-left: 1.7rem;
+        background: transparent;
+        font-weight: 600;
+    }
+
+    .list-group-item.ps-5 {
+        padding-left: 2.2rem;
+        font-size: 0.84rem;
+        font-weight: 500;
+    }
+
+    .log-ctp-submenu-parent.ps-5 {
+        padding-left: 2.2rem;
+        font-size: 0.84rem;
+        font-weight: 600;
+    }
+
+    #logCtpSubmenu .list-group-item.ps-5 {
+        padding-left: 2.5rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    #logCtpSubmenu .list-group-item.ps-5.active {
+        background-color: var(--sidebar-active-bg) !important;
+        color: var(--sidebar-active-text) !important;
+    }
+
+    .sidebar-chevron {
+        flex-shrink: 0;
+        transition: transform 0.22s ease-in-out;
+    }
+
+    .collapsed > .sidebar-chevron {
+        transform: rotate(0deg);
+    }
+
+    .sidebar-chevron.rotated,
+    .list-group-item:not(.collapsed) > .sidebar-chevron {
+        transform: rotate(90deg);
+    }
+
+    .list-group-item span {
+        flex: 1;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        line-height: 1.1;
     }
 </style>
 <div class="border-right" id="sidebar-wrapper">
-    <!-- Sidebar Header -->
-    <div class="sidebar-heading">
-        <span class="sidebar-logo">
-            <img src="{{ url_for('static', filename='img/prepress_impact_logo.png') }}" alt="Logo" style="width: 90%; height: 90%; object-fit: contain;">
-        </span>
-        <span class="sidebar-title">PREPRESS IMPACT</span>
-    </div>
-    
-    <!-- User Info Section - Clean design before Dashboard -->
-    {% if current_user.is_authenticated %}
-    <div class="p-3 mb-2" style="margin: 0 12px;">
-        <div class="text-center">
-            <!-- User Profile Icon - Circle -->
-            <div class="d-flex justify-content-center mb-2">
-                <div class="rounded-circle d-flex align-items-center justify-content-center" 
-                     style="width: 50px; height: 50px; background-color: #e7f3ff; border: 2px solid #007bff;">
-                    <i class="fas fa-user text-primary" style="font-size: 1.5rem;"></i>
-                </div>
-            </div>
-            
-            <!-- User Name -->
-            <div class="fw-bold text-dark mb-2" style="font-size: 1rem;">
-                {{ current_user.name }}
-            </div>
-            
-            <!-- Clean Badges -->
-            <div class="d-flex flex-wrap justify-content-center gap-1">
-                <!-- Role Badge -->
-                <span class="badge badge-{{ current_user.role.lower() }}" style="font-size: 0.75rem;">
-                    {{ current_user.role.title() }}
-                </span>
-                
-                <!-- Division Badge -->
-                {% if current_user.division %}
-                <span class="badge badge-{{ current_user.division.name.lower() }}" style="font-size: 0.75rem;">
-                    {{ current_user.division.name }}
-                </span>
-                {% endif %}
-                
-                <!-- Group Badge -->
-                {% if current_user.grup %}
-                <span class="badge badge-grup" style="font-size: 0.75rem;">
-                    Grup {{ current_user.grup }}
-                </span>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    
-    <!-- Separator -->
-    <hr style="margin: 0 12px; color: #dee2e6;">
-    {% endif %}
-    
     <div class="list-group list-group-flush">
-        <a href="/" class="list-group-item list-group-item-action" id="dashboardUtama">
-            <i class="fas fa-chart-line me-2"></i> Dashboard Impact
+
+        <div class="sidebar-section-label">Console</div>
+        <a href="/impact/" class="list-group-item list-group-item-action" id="dashboardUtama">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 13l4-4 4 4 6-6"/>
+                <path d="M13 7h7v7"/>
+                <rect x="3" y="13" width="7" height="8" rx="1.5"/>
+                <rect x="14" y="13" width="7" height="8" rx="1.5"/>
+            </svg>
+            <span>Dashboard Impact</span>
         </a>
 
-        <!-- CTP Production Menu - Only show if user can access CTP -->
-        {% if current_user.can_access_ctp() %}
-        <a href="#ctpSubmenu" data-bs-toggle="collapse" aria-expanded="false" 
-           class="list-group-item list-group-item-action ctp-submenu-parent collapsed" 
-           style="display: flex; align-items: center; justify-content: space-between;">
-            <div style="display: flex; align-items: center;">
-                <i class="fas fa-print me-2"></i>
-                <span>CTP Production</span> </div>
-            <i class="fas fa-chevron-right"></i> </a>
-        <div class="collapse" id="ctpSubmenu">
-            <a href="/dashboard-ctp" class="list-group-item list-group-item-action ps-5" id="dashboardKpiCtpLink">
-                <i class="fas fa-chart-pie me-2"></i>Dashboard
+        {% if current_user.role == 'admin' %}
+        <a href="#adminSubmenu" data-bs-toggle="collapse" aria-expanded="false"
+           class="list-group-item list-group-item-action admin-submenu-parent collapsed">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="8" r="3.2"/>
+                <path d="M5 20.5c.7-2.8 3.1-4.5 7-4.5s6.3 1.7 7 4.5"/>
+            </svg>
+            <span>Administrator</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="sidebar-chevron" aria-hidden="true">
+                <polyline points="9 6 15 12 9 18"/>
+            </svg>
+        </a>
+        <div class="collapse" id="adminSubmenu">
+            <a href="/impact/admin/users" class="list-group-item list-group-item-action ps-5" id="adminUsersLink">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 3l7 3v4c0 4.4-2.6 8.3-7 10-4.4-1.7-7-5.6-7-10V6l7-3z"/>
+                    <path d="M10 11.5l1.8 1.8L15 10"/>
+                </svg>
+                <span>Kelola User</span>
             </a>
-            <a href="/tabel-kpi-ctp" class="list-group-item list-group-item-action ps-5" id="inputKpiCtpLink">
-                <i class="fas fa-table me-2"></i>KPI CTP
+            <a href="/impact/admin/divisions" class="list-group-item list-group-item-action ps-5" id="adminDivisionsLink">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="7" width="7" height="13" rx="1.3"/>
+                    <rect x="14" y="3" width="7" height="17" rx="1.3"/>
+                    <path d="M6.5 10h.01M6.5 13h.01M6.5 16h.01M17.5 6h.01M17.5 9h.01M17.5 12h.01M17.5 15h.01"/>
+                </svg>
+                <span>Kelola Divisi</span>
             </a>
-            <a href="/ctp-data-adjustment" class="list-group-item list-group-item-action ps-5" id="ctpDataAdjustmentLink">
-                <i class="fas fa-layer-group me-2"></i>Adjustment Press
+        </div>
+        {% endif %}
+
+        <div class="sidebar-section-label mt-2">Production</div>
+
+        <!-- Prepress Production Menu - Only show if user can access CTP, Mounting, or Design -->
+        {% if current_user.can_access_ctp() or current_user.can_access_mounting() or current_user.can_access_design() or current_user.can_access_rnd() %}
+        <a href="#prepressSubmenu" data-bs-toggle="collapse" aria-expanded="false"
+           class="list-group-item list-group-item-action prepress-submenu-parent collapsed">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="6" rx="1.5"/>
+                <rect x="3" y="14" width="18" height="6" rx="1.5"/>
+            </svg>
+            <span>Prepress</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="sidebar-chevron" aria-hidden="true">
+                <polyline points="9 6 15 12 9 18"/>
+            </svg>
+        </a>
+        <div class="collapse" id="prepressSubmenu" style="padding-bottom: 8px;">
+            
+            <!-- CTP Production Submenu - Only show if user can access CTP -->
+            {% if current_user.can_access_ctp() %}
+            <a href="#ctpSubmenu" data-bs-toggle="collapse" aria-expanded="false"
+               class="list-group-item list-group-item-action ctp-submenu-parent collapsed ps-4">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="4" y="3" width="16" height="6" rx="1.5"/>
+                    <rect x="6" y="13" width="12" height="8" rx="1.5"/>
+                    <path d="M4 11h16"/>
+                </svg>
+                <span>CTP</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="sidebar-chevron" aria-hidden="true">
+                    <polyline points="9 6 15 12 9 18"/>
+                </svg>
             </a>
-            <a href="/ctp-data-bon" class="list-group-item list-group-item-action ps-5" id="ctpDataBonLink">
-                <i class="fas fa-layer-group me-2"></i>Bon Press
+            <div class="collapse" id="ctpSubmenu">
+                <a href="/impact/dashboard-ctp" class="list-group-item list-group-item-action ps-4" id="dashboardKpiCtpLink">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M11 3a9 9 0 1 0 9 9h-8z"/>
+                        <path d="M12 3v9l7.5-7.5"/>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/impact/tabel-kpi-ctp" class="list-group-item list-group-item-action ps-4" id="inputKpiCtpLink">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="3" y="5" width="18" height="14" rx="1.5"/>
+                        <path d="M9 5v14M15 5v14M3 11h18"/>
+                    </svg>
+                    <span>KPI CTP</span>
+                </a>
+                <a href="/impact/ctp-data-adjustment" class="list-group-item list-group-item-action ps-4" id="ctpDataAdjustmentLink">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 3l9 4.5-9 4.5L3 7.5 12 3z"/>
+                        <path d="M3 12l9 4.5L21 12"/>
+                        <path d="M3 16.5L12 21l9-4.5"/>
+                    </svg>
+                    <span>Adjustment Press</span>
+                </a>
+                <a href="/impact/ctp-data-bon" class="list-group-item list-group-item-action ps-4" id="ctpDataBonLink">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M4 4h10l6 6v10H4z"/>
+                        <path d="M14 4v6h6"/>
+                    </svg>
+                    <span>Bon Press</span>
+                </a>
+                <a href="/impact/stock-opname-ctp" class="list-group-item list-group-item-action ps-4" id="stockOpnameCtpLink">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="3" y="3" width="8" height="8" rx="1.4"/>
+                        <rect x="13" y="3" width="8" height="8" rx="1.4"/>
+                        <rect x="8" y="13" width="8" height="8" rx="1.4"/>
+                    </svg>
+                    <span>Stock Opname</span>
+                </a>
+                <a href="/impact/chemical-bon-ctp" class="list-group-item list-group-item-action ps-4" id="chemicalBonCtpLink">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M10 2h4"/>
+                        <path d="M11 2v5.2L6.6 15a4.1 4.1 0 0 0 3.5 6h3.8a4.1 4.1 0 0 0 3.5-6L13 7.2V2"/>
+                        <path d="M9 11h6"/>
+                    </svg>
+                    <span>Bon Chemical CTP</span>
+                </a>
+                <a href="/impact/kartu-stock-ctp" class="list-group-item list-group-item-action ps-4" id="kartuStockCtpLink">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="3" y="5" width="15" height="9" rx="1.5"/>
+                        <path d="M6 18h11"/>
+                        <circle cx="8" cy="20" r="1.2"/>
+                        <circle cx="16" cy="20" r="1.2"/>
+                    </svg>
+                    <span>Kartu Stock CTP</span>
+                </a>
+                <a href="#logCtpSubmenu" data-bs-toggle="collapse" aria-expanded="false"
+                   class="list-group-item list-group-item-action log-ctp-submenu-parent collapsed ps-4">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="5" y="3" width="14" height="18" rx="2"/>
+                        <path d="M9 7h6"/>
+                        <path d="M9 11h6"/>
+                        <path d="M9 15h3"/>
+                    </svg>
+                    <span>Log CTP</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="sidebar-chevron" aria-hidden="true">
+                        <polyline points="9 6 15 12 9 18"/>
+                    </svg>
+                </a>
+                <div class="collapse" id="logCtpSubmenu">
+                    <a href="/impact/log-ctp" class="list-group-item list-group-item-action ps-4" id="logCtpOverviewLink">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="5" y="3" width="14" height="18" rx="2"/>
+                            <path d="M9 7h6"/>
+                            <path d="M9 11h6"/>
+                            <path d="M9 15h3"/>
+                        </svg>
+                        <span>Overview</span>
+                    </a>
+                    <a href="/impact/log-ctp/suprasetter" class="list-group-item list-group-item-action ps-4" id="logCtpSuprasetterLink">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="5" y="3" width="14" height="18" rx="2"/>
+                            <path d="M9 7h6"/>
+                            <path d="M9 11h6"/>
+                            <path d="M9 15h3"/>
+                        </svg>
+                        <span>CTP 1 Suprasetter</span>
+                    </a>
+                    <a href="/impact/log-ctp/platesetter" class="list-group-item list-group-item-action ps-4" id="logCtpPlatesetterLink">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="5" y="3" width="14" height="18" rx="2"/>
+                            <path d="M9 7h6"/>
+                            <path d="M9 11h6"/>
+                            <path d="M9 15h3"/>
+                        </svg>
+                        <span>CTP 2 Platesetter</span>
+                    </a>
+                    <a href="/impact/log-ctp/trendsetter" class="list-group-item list-group-item-action ps-4" id="logCtpTrendsetterLink">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="5" y="3" width="14" height="18" rx="2"/>
+                            <path d="M9 7h6"/>
+                            <path d="M9 11h6"/>
+                            <path d="M9 15h3"/>
+                        </svg>
+                        <span>CTP 3 Trendsetter</span>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Mounting Production Submenu - Only show if user can access Mounting -->
+            {% if current_user.can_access_mounting() %}
+            <a href="#mountingSubmenu" data-bs-toggle="collapse" aria-expanded="false"
+               class="list-group-item list-group-item-action mounting-submenu-parent collapsed ps-4">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 19c4 0 4-6 8-6s4 6 8 6"/>
+                    <path d="M4 5v14M20 5v14"/>
+                </svg>
+                <span>Mounting</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="sidebar-chevron" aria-hidden="true">
+                    <polyline points="9 6 15 12 9 18"/>
+                </svg>
             </a>
-            <a href="/stock-opname-ctp" class="list-group-item list-group-item-action ps-5" id="stockOpnameCtpLink">
-                <i class="fas fa-boxes me-2"></i>Stock Opname
+            <div class="collapse" id="mountingSubmenu">
+                <a href="/impact/dashboard-mounting" class="list-group-item list-group-item-action ps-5" id="dashboardMountingLink">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M11 3a9 9 0 1 0 9 9h-8z"/>
+                        <path d="M12 3v9l7.5-7.5"/>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/impact/curve-data-adjustment" class="list-group-item list-group-item-action ps-5" id="curveDataAdjustmentLink">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 3l9 4.5-9 4.5L3 7.5 12 3z"/>
+                        <path d="M3 12l9 4.5L21 12"/>
+                        <path d="M3 16.5L12 21l9-4.5"/>
+                    </svg>
+                    <span>Adjustment Curve</span>
+                </a>
+                <a href="/impact/mounting-data-adjustment" class="list-group-item list-group-item-action ps-5" id="mountingDataAdjustmentLink">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 3l9 4.5-9 4.5L3 7.5 12 3z"/>
+                        <path d="M3 12l9 4.5L21 12"/>
+                    </svg>
+                    <span>Adjustment Press</span>
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- Design Production Submenu - Only show if user can access Design -->
+            {% if current_user.can_access_design() %}
+            <a href="#designSubmenu" data-bs-toggle="collapse" aria-expanded="false"
+               class="list-group-item list-group-item-action design-submenu-parent collapsed ps-4">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 19c4 0 4-6 8-6s4 6 8 6"/>
+                    <path d="M4 5v14M20 5v14"/>
+                </svg>
+                <span>Design</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="sidebar-chevron" aria-hidden="true">
+                    <polyline points="9 6 15 12 9 18"/>
+                </svg>
             </a>
-            <a href="/chemical-bon-ctp" class="list-group-item list-group-item-action ps-5" id="chemicalBonCtpLink">
-                <i class="fa-solid fa-flask me-2"></i>Bon Chemical CTP
+            <div class="collapse" id="designSubmenu">
+                <a href="/impact/design-data-adjustment" class="list-group-item list-group-item-action ps-5" id="designDataAdjustmentLink">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 3l9 4.5-9 4.5L3 7.5 12 3z"/>
+                        <path d="M3 12l9 4.5L21 12"/>
+                        <path d="M3 16.5L12 21l9-4.5"/>
+                    </svg>
+                    <span>Adjustment Press</span>
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- Design Production Submenu - Only show if user can access Design -->
+            {% if current_user.can_access_rnd() %}
+            <a href="#rndSubmenu" data-bs-toggle="collapse" aria-expanded="false"
+               class="list-group-item list-group-item-action rnd-submenu-parent collapsed ps-4">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 19c4 0 4-6 8-6s4 6 8 6"/>
+                    <path d="M4 5v14M20 5v14"/>
+                </svg>
+                <span>R&D</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="sidebar-chevron" aria-hidden="true">
+                    <polyline points="9 6 15 12 9 18"/>
+                </svg>
             </a>
-            <a href="/kartu-stock-ctp" class="list-group-item list-group-item-action ps-5" id="kartuStockCtpLink">
-                <i class="fa-solid fa-cart-flatbed me-2"></i>Kartu Stock CTP
-            </a>            
+            <div class="collapse" id="rndSubmenu">
+                <a href="/impact/cloudsphere" class="list-group-item list-group-item-action ps-5" id="cloudsphereLink">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        <path d="M12 8v8"/>
+                        <path d="M8 12h8"/>
+                    </svg>
+                    <span>Cloudsphere</span>
+                </a>
+            </div>
+            {% endif %}
+
         </div>
         {% endif %}
 
         <!-- Press Production Menu - Only show if user can access Press -->
         {% if current_user.can_access_press() or current_user.can_access_ctp() or current_user.can_access_mounting() or current_user.can_access_pdnd() or current_user.can_access_design() %}
             <a href="#pressSubmenu" data-bs-toggle="collapse" aria-expanded="false"
-             class="list-group-item list-group-item-action press-submenu-parent collapsed"
-             style="display: flex; align-items: center; justify-content: space-between;">
-              <div style="display: flex; align-items: center;">
-                <i class="fas fa-industry me-2"></i>
-                <span>Press Production</span>
-              </div>
-              <i class="fas fa-chevron-right"></i></a>
+             class="list-group-item list-group-item-action press-submenu-parent collapsed">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="9" width="18" height="11" rx="1.7"/>
+                    <path d="M7 9V5h10v4"/>
+                    <path d="M7 13h4"/>
+                </svg>
+                <span>Press</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="sidebar-chevron" aria-hidden="true">
+                    <polyline points="9 6 15 12 9 18"/>
+                </svg>
+            </a>
             <div class="collapse" id="pressSubmenu">
-                    <a href="/data-adjustment" class="list-group-item list-group-item-action ps-5" id="dataAdjustmentLink">
-                <i class="fas fa-layer-group me-2"></i>Adjustment Press
+                    <a href="/impact/data-adjustment" class="list-group-item list-group-item-action ps-5" id="dataAdjustmentLink">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 3l9 4.5-9 4.5L3 7.5 12 3z"/>
+                    <path d="M3 12l9 4.5L21 12"/>
+                    <path d="M3 16.5L12 21l9-4.5"/>
+                </svg>
+                <span>Adjustment Press</span>
               </a>
               
                     {% if current_user.can_access_ctp() or current_user.can_access_press() %}
-              <a href="/data-bon" class="list-group-item list-group-item-action ps-5" id="dataBonLink">
-                <i class="fas fa-layer-group me-2"></i>Bon Press
+              <a href="/impact/data-bon" class="list-group-item list-group-item-action ps-5" id="dataBonLink">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 4h10l6 6v10H4z"/>
+                    <path d="M14 4v6h6"/>
+                </svg>
+                <span>Bon Press</span>
               </a>
               {% endif %}
 
             </div>
         {% endif %}
 
-        <!-- Mounting Production Menu - Only show if user can access Mounting -->
-        {% if current_user.can_access_mounting() %}
-        <a href="#mountingSubmenu" data-bs-toggle="collapse" aria-expanded="false"
-           class="list-group-item list-group-item-action mounting-submenu-parent collapsed"
-           style="display: flex; align-items: center; justify-content: space-between;">
-            <div style="display: flex; align-items: center;">
-                <i class="fas fa-bezier-curve me-2"></i>
-                <span>Mounting Production</span>
-            </div>
-            <i class="fas fa-chevron-right"></i></a>
-        <div class="collapse" id="mountingSubmenu">
-            <a href="/dashboard-mounting" class="list-group-item list-group-item-action ps-5" id="dashboardMountingLink">
-                <i class="fas fa-chart-pie me-2"></i>Dashboard
-            </a>
-            <a href="/curve-data-adjustment" class="list-group-item list-group-item-action ps-5" id="curveDataAdjustmentLink">
-                <i class="fas fa-layer-group me-2"></i>Adjustment Curve
-            </a>
-            <a href="/mounting-data-adjustment" class="list-group-item list-group-item-action ps-5" id="mountingDataAdjustmentLink">
-                <i class="fas fa-layer-group me-2"></i>Adjustment Press
-            </a>
-        </div>
-        {% endif %}
-
         <!-- PDND Production Menu - Only show if user can access PDND -->
         {% if current_user.can_access_pdnd() %}
         <a href="#pdndSubmenu" data-bs-toggle="collapse" aria-expanded="false"
-           class="list-group-item list-group-item-action pdnd-submenu-parent collapsed"
-           style="display: flex; align-items: center; justify-content: space-between;">
-            <div style="display: flex; align-items: center;">
-                <i class="fas fa-bezier-curve me-2"></i>
-                <span>PDND Production</span>
-            </div>
-            <i class="fas fa-chevron-right"></i></a>
-        <div class="collapse" id="pdndSubmenu">
-            <a href="/pdnd-data-adjustment" class="list-group-item list-group-item-action ps-5" id="pdndDataAdjustmentLink">
-                <i class="fas fa-layer-group me-2"></i>Adjustment Press
-            </a>
-        </div>
-        {% endif %}        
-
-        <!-- DESIGN Production Menu - Only show if user can access DESIGN -->
-        {% if current_user.can_access_design() %}
-        <a href="#designSubmenu" data-bs-toggle="collapse" aria-expanded="false"
-           class="list-group-item list-group-item-action design-submenu-parent collapsed"
-           style="display: flex; align-items: center; justify-content: space-between;">
-            <div style="display: flex; align-items: center;">
-                <i class="fas fa-bezier-curve me-2"></i>
-                <span>Design Production</span>
-            </div>
-            <i class="fas fa-chevron-right"></i></a>
-        <div class="collapse" id="designSubmenu">
-            <a href="/design-data-adjustment" class="list-group-item list-group-item-action ps-5" id="designDataAdjustmentLink">
-                <i class="fas fa-layer-group me-2"></i>Adjustment Press
-            </a>
-        </div>
-        {% endif %}  
-
-        <!-- Administrator Menu - Only show if user is admin -->
-        {% if current_user.role == 'admin' %}
-        <a href="#adminSubmenu" data-bs-toggle="collapse" aria-expanded="false"
-           class="list-group-item list-group-item-action admin-submenu-parent collapsed"
-           style="display: flex; align-items: center; justify-content: space-between;">
-            <div style="display: flex; align-items: center;">
-                <i class="fas fa-users-cog me-2"></i>
-                <span>Administrator</span>
-            </div>
-            <i class="fas fa-chevron-right"></i></a>
-        <div class="collapse" id="adminSubmenu">
-            <a href="/admin/users" class="list-group-item list-group-item-action ps-5" id="adminUsersLink">
-                <i class="fas fa-user-shield me-2"></i>Kelola User
-            </a>
-            <a href="/admin/divisions" class="list-group-item list-group-item-action ps-5" id="adminDivisionsLink">
-                <i class="fas fa-building me-2"></i>Kelola Divisi
-            </a>
-        </div>
-        {% endif %}
-        
-        <!-- Settings Menu - Available for all authenticated users -->
-        {% if current_user.is_authenticated %}
-        <a href="#settingsSubmenu" data-bs-toggle="collapse" aria-expanded="false"
-           class="list-group-item list-group-item-action settings-submenu-parent collapsed"
-           style="display: flex; align-items: center; justify-content: space-between;">
-            <div style="display: flex; align-items: center;">
-                <i class="fas fa-cog me-2"></i>
-                <span>Settings</span>
-            </div>
-            <i class="fas fa-chevron-right"></i></a>
-        <div class="collapse" id="settingsSubmenu">
-            <a href="/settings/change-password" class="list-group-item list-group-item-action ps-5" id="changePasswordLink">
-                <i class="fas fa-key me-2"></i>Ubah Password
-            </a>
-        </div>
-
-        <!-- Logout Button at the end -->
-        <a href="{{ url_for('logout') }}" class="list-group-item list-group-item-action text-danger" 
-           style="border-top: 1px solid #dee2e6; margin-top: 10px;">
-            <i class="fas fa-sign-out-alt me-2"></i>Logout
+           class="list-group-item list-group-item-action pdnd-submenu-parent collapsed">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 19c4 0 4-6 8-6s4 6 8 6"/>
+                <path d="M4 5v14M20 5v14"/>
+            </svg>
+            <span>PDND</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="sidebar-chevron" aria-hidden="true">
+                <polyline points="9 6 15 12 9 18"/>
+            </svg>
         </a>
+        <div class="collapse" id="pdndSubmenu">
+            <a href="/impact/pdnd-data-adjustment" class="list-group-item list-group-item-action ps-5" id="pdndDataAdjustmentLink">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 3l9 4.5-9 4.5L3 7.5 12 3z"/>
+                    <path d="M3 12l9 4.5L21 12"/>
+                    <path d="M3 16.5L12 21l9-4.5"/>
+                </svg>
+                <span>Adjustment Press</span>
+            </a>
+        </div>
         {% endif %}
     </div>
 </div>

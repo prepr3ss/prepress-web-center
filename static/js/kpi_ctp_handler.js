@@ -90,7 +90,7 @@ async function loadKpiData() {
     const groupValue = filterGroup.value;
     const yearValue = filterYear.value;
 
-    let url = `/get-kpi-data?search=${encodeURIComponent(searchValue)}&month=${encodeURIComponent(monthValue)}&group=${encodeURIComponent(groupValue)}&year=${encodeURIComponent(yearValue)}&sort_by=${encodeURIComponent(currentSortColumn)}&sort_order=${encodeURIComponent(currentSortOrder)}&page=${currentPage}&per_page=${perPage}`;
+    let url = `/impact/get-kpi-data?search=${encodeURIComponent(searchValue)}&month=${encodeURIComponent(monthValue)}&group=${encodeURIComponent(groupValue)}&year=${encodeURIComponent(yearValue)}&sort_by=${encodeURIComponent(currentSortColumn)}&sort_order=${encodeURIComponent(currentSortOrder)}&page=${currentPage}&per_page=${perPage}`;
 
     try {
         const response = await fetch(url);
@@ -116,24 +116,12 @@ async function loadKpiData() {
                     cellNo.textContent = reversedIndex;
 
                     const columns = [
-                        'log_date', 'start_time', 'finish_time',
+                        'log_date',
                         'ctp_group', 'ctp_shift', 'ctp_pic', 'ctp_machine',
                         'wo_number', 'mc_number',
-                        'run_length_sheet', 'print_machine', 'remarks_job', 'note', 'item_name', 'plate_type_material', 'paper_type', 'raster',
-                        'num_plate_good', 'num_plate_not_good', 'not_good_reason',
-                        'cyan_25_percent', 'cyan_50_percent', 'cyan_75_percent',
-                        'magenta_25_percent', 'magenta_50_percent', 'magenta_75_percent',
-                        'yellow_25_percent', 'yellow_50_percent', 'yellow_75_percent',
-                        'black_25_percent', 'black_50_percent', 'black_75_percent',
-                        'x_25_percent', 'x_50_percent', 'x_75_percent',
-                        'z_25_percent', 'z_50_percent', 'z_75_percent',
-                        'u_25_percent', 'u_50_percent', 'u_75_percent',
-                        'v_25_percent', 'v_50_percent', 'v_75_percent',
-                        'f_25_percent', 'f_50_percent', 'f_75_percent',
-                        'g_25_percent', 'g_50_percent', 'g_75_percent',
-                        'h_25_percent', 'h_50_percent', 'h_75_percent',
-                        'j_25_percent', 'j_50_percent', 'j_75_percent',
-                        'created_at', 'updated_at'
+                        'print_machine', 'remarks_job', 'item_name', 'plate_type_material',
+                        'num_plate_good', 'num_plate_not_good', 'paper_type', 'raster',
+                        'created_at'  // Tambahkan created_at agar tersedia di DOM
                     ];
 
                     columns.forEach(col => {
@@ -146,7 +134,16 @@ async function loadKpiData() {
                                 month: 'long',
                                 day: 'numeric'
                             }) : '';
-                        } else if (col === 'created_at' || col === 'updated_at') {
+                        } else if (col === 'created_at') {
+                            // Untuk created_at, simpan nilai asli dalam atribut data untuk context menu
+                            // tapi jangan tampilkan di layar karena kolomnya hidden
+                            if (value) {
+                                cell.setAttribute('data-created-at', value);
+                                cell.textContent = ''; // Kosongkan karena kolom tersembunyi
+                            } else {
+                                cell.textContent = '';
+                            }
+                        } else if (col === 'updated_at') {
                             value = value ? new Date(value).toLocaleString('id-ID', {
                                 year: 'numeric',
                                 month: 'long',
@@ -179,7 +176,16 @@ async function loadKpiData() {
                             }
                         }
 
-                        cell.textContent = value !== null && value !== undefined ? value : '';
+                        // Special handling for wo_number to make it clickable
+                        if (col === 'wo_number') {
+                            if (value && value.trim() !== '') {
+                                cell.innerHTML = `<a href="#" class="wo-number-link text-primary text-decoration-none" data-id="${item.id}" onclick="showKpiDetail(${item.id}); return false;">${value}</a>`;
+                            } else {
+                                cell.textContent = value !== null && value !== undefined ? value : '';
+                            }
+                        } else {
+                            cell.textContent = value !== null && value !== undefined ? value : '';
+                        }
                     });
                 });
                 // Setelah render, baru assign ke global
@@ -325,34 +331,30 @@ function showContextMenu(rowElement, x, y, rowData) {
         if (rowData && rowData.created_at) {
             let createdAt = null;
             let str = rowData.created_at.trim();
+            
             // Coba parse berbagai format tanggal
-            if (/^\d{2}\/\d{2}\/\d{4}/.test(str)) {
-                // Format dd/mm/yyyy atau dd/mm/yyyy HH:MM
-                const parts = str.split(/[\/ :]/);
-                const d = parts[0], m = parts[1], y = parts[2];
-                let h = parts[3] || '00', min = parts[4] || '00';
-                createdAt = new Date(`${y}-${m}-${d}T${h}:${min}:00`);
-            } else if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
-                // yyyy-mm-dd atau yyyy-mm-dd HH:MM:SS
+            if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(str)) {
+                // ISO format: yyyy-mm-ddTHH:MM:SS
+                createdAt = new Date(str);
+            } else if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(str)) {
+                // Format: yyyy-mm-dd HH:MM:SS
                 createdAt = new Date(str.replace(' ', 'T'));
-            } else if (/\d{1,2} [A-Za-z]+ \d{4}/.test(str)) {
-                // Format "12 Agustus 2025, 10.00" (locale)
-                const match = str.match(/(\d{1,2}) ([A-Za-z]+) (\d{4})(?:, (\d{2})\.(\d{2}))?/);
-                if (match) {
-                    const bulanIndo = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-                    const d = match[1], m = bulanIndo.indexOf(match[2]) + 1, y = match[3];
-                    let h = match[4] || '00', min = match[5] || '00';
-                    createdAt = new Date(`${y}-${m.toString().padStart(2,'0')}-${d.padStart(2,'0')}T${h}:${min}:00`);
-                }
+            } else if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+                // Format: yyyy-mm-dd
+                createdAt = new Date(str);
             } else if (/T/.test(str)) {
+                // Format dengan T tapi mungkin tidak lengkap
                 createdAt = new Date(str);
             } else {
+                // Coba parse dengan fallback
                 createdAt = new Date(str);
             }
+            
             if (createdAt && !isNaN(createdAt.getTime())) {
                 const now = new Date();
                 const diffMs = now - createdAt;
                 const diffHours = diffMs / (1000 * 60 * 60);
+                
                 if (diffHours <= 24) {
                     showEditDelete = true;
                 }
@@ -371,7 +373,7 @@ function showContextMenu(rowElement, x, y, rowData) {
         `;
         document.body.appendChild(contextMenu);
         contextMenu.querySelector('[data-action="edit"]').addEventListener('click', function() {
-            window.location.href = `/edit-kpi-ctp/${dataId}`;
+            window.location.href = `/impact/edit-kpi-ctp/${dataId}`;
             hideContextMenu();
         });
         contextMenu.querySelector('[data-action="delete"]').addEventListener('click', function() {
@@ -380,7 +382,10 @@ function showContextMenu(rowElement, x, y, rowData) {
         });
     } else {
         // Jangan tampilkan menu sama sekali jika tidak ada tombol
-        contextMenu.remove();
+        if (contextMenu && document.body.contains(contextMenu)) {
+            document.body.removeChild(contextMenu);
+        }
+        contextMenu = null;
     }
 }
 
@@ -430,7 +435,7 @@ function showDeleteConfirmation(id) {
 async function deleteKpiData(id) {
     console.log(`Mengirim permintaan DELETE untuk ID: ${id}`);
     try {
-        const response = await fetch(`/api/kpi_ctp/${id}`, {
+        const response = await fetch(`/impact/api/kpi_ctp/${id}`, {
             method: 'DELETE'
         });
         const result = await response.json();
@@ -453,6 +458,220 @@ async function deleteKpiData(id) {
         // Toast error jaringan saat delete
         showBootstrapToast('Kesalahan jaringan saat menghapus data: ' + error.message, 'Error!', 'danger');
     }
+}
+
+// --- Fungsi untuk menampilkan modal detail KPI ---
+async function showKpiDetail(id) {
+    try {
+        // Tampilkan loading
+        showLoading();
+        
+        // Fetch data detail dari API
+        const response = await fetch(`/impact/api/kpi_ctp/${id}`);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Gagal mengambil data detail KPI');
+        }
+        
+        const data = await response.json();
+        
+        // Debug: log data untuk memastikan struktur benar
+        console.log('KPI Detail Data:', data);
+        
+        // Debug: Log untuk mendiagnosis masalah layout
+        console.log('=== DEBUG MODAL LAYOUT ===');
+        console.log('Modal element:', document.getElementById('kpiDetailModal'));
+        
+        // Populate modal dengan data
+        populateKpiDetailModal(data);
+        
+        // Debug: Log setelah populate
+        setTimeout(() => {
+            const modalElement = document.getElementById('kpiDetailModal');
+            if (modalElement) {
+                const modalBody = modalElement.querySelector('.modal-body');
+                const tables = modalElement.querySelectorAll('table');
+                const colorTables = modalElement.querySelectorAll('.color-table');
+                
+                console.log('Modal body width:', modalBody ? modalBody.offsetWidth : 'not found');
+                console.log('Total tables found:', tables.length);
+                console.log('Color tables found:', colorTables.length);
+                
+                // Check each table width
+                tables.forEach((table, index) => {
+                    console.log(`Table ${index} width:`, table.offsetWidth);
+                    console.log(`Table ${index} parent width:`, table.parentElement ? table.parentElement.offsetWidth : 'no parent');
+                });
+                
+                // Check first column widths
+                const firstColumns = modalElement.querySelectorAll('td:first-child');
+                firstColumns.forEach((col, index) => {
+                    if (index < 5) { // Only check first 5 to avoid spam
+                        console.log(`First column ${index} width:`, col.offsetWidth, 'content:', col.textContent);
+                        console.log(`  - Computed style:`, window.getComputedStyle(col));
+                        console.log(`  - Parent width:`, col.parentElement.offsetWidth);
+                        console.log(`  - Table width:`, col.closest('table').offsetWidth);
+                    }
+                });
+                
+                // Check second column widths
+                const secondColumns = modalElement.querySelectorAll('td:nth-child(2)');
+                secondColumns.forEach((col, index) => {
+                    if (index < 5) { // Only check first 5 to avoid spam
+                        console.log(`Second column ${index} width:`, col.offsetWidth, 'content:', col.textContent);
+                        console.log(`  - Computed style:`, window.getComputedStyle(col));
+                    }
+                });
+                
+                // Check table calculations
+                const infoTables = modalElement.querySelectorAll('.modal-info-table');
+                infoTables.forEach((table, index) => {
+                    console.log(`Info table ${index}:`);
+                    console.log(`  - Table width:`, table.offsetWidth);
+                    console.log(`  - Table computed width:`, window.getComputedStyle(table).width);
+                    console.log(`  - Parent width:`, table.parentElement.offsetWidth);
+                });
+            }
+        }, 500);
+        
+        // Tampilkan modal
+        const modal = new bootstrap.Modal(document.getElementById('kpiDetailModal'));
+        modal.show();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        showBootstrapToast('Gagal memuat detail KPI: ' + error.message, 'Error!', 'danger');
+    } finally {
+        // Sembunyikan loading
+        hideLoading();
+    }
+}
+
+// --- Fungsi untuk mengisi modal dengan data KPI ---
+function populateKpiDetailModal(data) {
+    // Update modal title with item name
+    const modalItemNameElement = document.getElementById('modalItemName');
+    if (modalItemNameElement) {
+        modalItemNameElement.textContent = data.item_name || 'Unknown Item';
+    }
+    
+    // Format tanggal
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '-';
+        return new Date(dateStr).toLocaleDateString('id-ID', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    };
+    
+    // Format datetime
+    const formatDateTime = (dateStr) => {
+        if (!dateStr) return '-';
+        return new Date(dateStr).toLocaleString('id-ID', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+    
+    // Format time
+    const formatTime = (timeStr) => {
+        if (!timeStr) return '-';
+        const timeParts = timeStr.split(':');
+        if (timeParts.length >= 2) {
+            const hour = timeParts[0].padStart(2, '0');
+            const minute = timeParts[1].padStart(2, '0');
+            return `${hour}:${minute}`;
+        }
+        return timeStr;
+    };
+    
+    // Populate Informasi Umum tab
+    document.getElementById('detail-log_date').textContent = formatDate(data.log_date);
+    document.getElementById('detail-start_time').textContent = formatTime(data.start_time);
+    document.getElementById('detail-finish_time').textContent = formatTime(data.finish_time);
+    document.getElementById('detail-ctp_group').textContent = data.ctp_group || '-';
+    document.getElementById('detail-ctp_shift').textContent = data.ctp_shift || '-';
+    document.getElementById('detail-ctp_pic').textContent = data.ctp_pic || '-';
+    document.getElementById('detail-ctp_machine').textContent = data.ctp_machine || '-';
+    document.getElementById('detail-wo_number').textContent = data.wo_number || '-';
+    document.getElementById('detail-mc_number').textContent = data.mc_number || '-';
+    document.getElementById('detail-run_length_sheet').textContent = data.run_length_sheet || '-';
+    
+    // Populate Detail Job tab
+    document.getElementById('detail-item_name').textContent = data.item_name || '-';
+    document.getElementById('detail-print_machine').textContent = data.print_machine || '-';
+    document.getElementById('detail-run_length_sheet_job').textContent = data.run_length_sheet || '-';
+    document.getElementById('detail-remarks_job').textContent = data.remarks_job || '-';
+    document.getElementById('detail-note').textContent = data.note || '-';
+    
+    // Populate Informasi Plate tab
+    document.getElementById('detail-plate_type_material').textContent = data.plate_type_material || '-';
+    document.getElementById('detail-paper_type').textContent = data.paper_type || '-';
+    document.getElementById('detail-raster').textContent = data.raster || '-';
+    
+    const plateGoodEl = document.getElementById('detail-num_plate_good');
+    const plateNotGoodEl = document.getElementById('detail-num_plate_not_good');
+    
+    if (data.num_plate_good && parseInt(data.num_plate_good) > 0) {
+        plateGoodEl.textContent = data.num_plate_good;
+        plateGoodEl.className = 'text-success fw-bold';
+    } else {
+        plateGoodEl.textContent = data.num_plate_good || '0';
+        plateGoodEl.className = '';
+    }
+    
+    if (data.num_plate_not_good && parseInt(data.num_plate_not_good) > 0) {
+        plateNotGoodEl.textContent = data.num_plate_not_good;
+        plateNotGoodEl.className = 'text-danger fw-bold';
+    } else {
+        plateNotGoodEl.textContent = data.num_plate_not_good || '0';
+        plateNotGoodEl.className = '';
+    }
+    
+    document.getElementById('detail-not_good_reason').textContent = data.not_good_reason || '-';
+    document.getElementById('detail-detail_not_good').textContent = data.detail_not_good || '-';
+    
+    // Populate Data Warna tab
+    const colorFields = [
+        'cyan_20_percent', 'cyan_25_percent', 'cyan_40_percent', 'cyan_50_percent', 'cyan_80_percent', 'cyan_75_percent', 'cyan_linear',
+        'magenta_20_percent', 'magenta_25_percent', 'magenta_40_percent', 'magenta_50_percent', 'magenta_80_percent', 'magenta_75_percent', 'magenta_linear',
+        'yellow_20_percent', 'yellow_25_percent', 'yellow_40_percent', 'yellow_50_percent', 'yellow_80_percent', 'yellow_75_percent', 'yellow_linear',
+        'black_20_percent', 'black_25_percent', 'black_40_percent', 'black_50_percent', 'black_80_percent', 'black_75_percent', 'black_linear',
+        'x_20_percent', 'x_25_percent', 'x_40_percent', 'x_50_percent', 'x_80_percent', 'x_75_percent', 'x_linear',
+        'z_20_percent', 'z_25_percent', 'z_40_percent', 'z_50_percent', 'z_80_percent', 'z_75_percent', 'z_linear',
+        'u_20_percent', 'u_25_percent', 'u_40_percent', 'u_50_percent', 'u_80_percent', 'u_75_percent', 'u_linear',
+        'v_20_percent', 'v_25_percent', 'v_40_percent', 'v_50_percent', 'v_80_percent', 'v_75_percent', 'v_linear',
+        'f_20_percent', 'f_25_percent', 'f_40_percent', 'f_50_percent', 'f_80_percent', 'f_75_percent', 'f_linear',
+        'g_20_percent', 'g_25_percent', 'g_40_percent', 'g_50_percent', 'g_80_percent', 'g_75_percent', 'g_linear',
+        'h_20_percent', 'h_25_percent', 'h_40_percent', 'h_50_percent', 'h_80_percent', 'h_75_percent', 'h_linear',
+        'j_20_percent', 'j_25_percent', 'j_40_percent', 'j_50_percent', 'j_80_percent', 'j_75_percent', 'j_linear'
+    ];
+    
+    colorFields.forEach(field => {
+        const element = document.getElementById(`detail-${field}`);
+        if (element) {
+            let value = data[field];
+            // Handle different data types
+            if (value !== null && value !== undefined && value !== '') {
+                // If it's a number, format it properly
+                if (typeof value === 'number') {
+                    value = value.toFixed(2);
+                }
+                element.textContent = value;
+            } else {
+                // Tampilkan nilai kosong tanpa tanda "-"
+                element.textContent = '';
+            }
+        }
+    });
+    
+    // Populate Log Sistem tab
+    document.getElementById('detail-created_at').textContent = formatDateTime(data.created_at);
+    document.getElementById('detail-updated_at').textContent = formatDateTime(data.updated_at);
 }
 
 // --- DOMContentLoaded Event Listener ---
@@ -499,11 +718,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- NEW: Fungsi untuk mengisi form dengan data yang ada (khusus mode edit) ---
     async function populateForm(id) {
         try {
-            const response = await fetch(`/api/kpi_ctp/${id}`);
+            const response = await fetch(`/impact/api/kpi_ctp/${id}`);
             if (!response.ok) {
                 const contentType = response.headers.get("content-type");
                 if (contentType && contentType.indexOf("text/html") !== -1) {
-                    throw new Error('Endpoint /api/kpi_ctp/id not found or returned HTML, not JSON. Check your Flask route.');
+                    throw new Error('Endpoint /impact/api/kpi_ctp/id not found or returned HTML, not JSON. Check your Flask route.');
                 }
                 const errorData = await response.json();
                 throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
@@ -525,6 +744,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('num_plate_good').value = data.num_plate_good || '0';
             document.getElementById('num_plate_not_good').value = data.num_plate_not_good || '0';
             document.getElementById('not_good_reason').value = data.not_good_reason || '';
+            document.getElementById('detail_not_good').value = data.detail_not_good || '';
             document.getElementById('print_machine').value = data.print_machine || '';
             document.getElementById('remarks_job').value = data.remarks_job || '';
             document.getElementById('wo_number').value = data.wo_number || '';
@@ -534,18 +754,18 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('note').value = data.note || '';
 
             const rasterFields = [
-                'cyan_25_percent', 'cyan_50_percent', 'cyan_75_percent',
-                'magenta_25_percent', 'magenta_50_percent', 'magenta_75_percent',
-                'yellow_25_percent', 'yellow_50_percent', 'yellow_75_percent',
-                'black_25_percent', 'black_50_percent', 'black_75_percent',
-                'x_25_percent', 'x_50_percent', 'x_75_percent',
-                'z_25_percent', 'z_50_percent', 'z_75_percent',
-                'u_25_percent', 'u_50_percent', 'u_75_percent',
-                'v_25_percent', 'v_50_percent', 'v_75_percent',
-                'f_25_percent', 'f_50_percent', 'f_75_percent',
-                'g_25_percent', 'g_50_percent', 'g_75_percent',
-                'h_25_percent', 'h_50_percent', 'h_75_percent',
-                'j_25_percent', 'j_50_percent', 'j_75_percent'              
+                'cyan_20_percent', 'cyan_25_percent', 'cyan_40_percent', 'cyan_50_percent', 'cyan_80_percent', 'cyan_75_percent', 'cyan_linear',
+                'magenta_20_percent', 'magenta_25_percent', 'magenta_40_percent', 'magenta_50_percent', 'magenta_80_percent', 'magenta_75_percent', 'magenta_linear',
+                'yellow_20_percent', 'yellow_25_percent', 'yellow_40_percent', 'yellow_50_percent', 'yellow_80_percent', 'yellow_75_percent', 'yellow_linear',
+                'black_20_percent', 'black_25_percent', 'black_40_percent', 'black_50_percent', 'black_80_percent', 'black_75_percent', 'black_linear',
+                'x_20_percent', 'x_25_percent', 'x_40_percent', 'x_50_percent', 'x_80_percent', 'x_75_percent', 'x_linear',
+                'z_20_percent', 'z_25_percent', 'z_40_percent', 'z_50_percent', 'z_80_percent', 'z_75_percent', 'z_linear',
+                'u_20_percent', 'u_25_percent', 'u_40_percent', 'u_50_percent', 'u_80_percent', 'u_75_percent', 'u_linear',
+                'v_20_percent', 'v_25_percent', 'v_40_percent', 'v_50_percent', 'v_80_percent', 'v_75_percent', 'v_linear',
+                'f_20_percent', 'f_25_percent', 'f_40_percent', 'f_50_percent', 'f_80_percent', 'f_75_percent', 'f_linear',
+                'g_20_percent', 'g_25_percent', 'g_40_percent', 'g_50_percent', 'g_80_percent', 'g_75_percent', 'g_linear',
+                'h_20_percent', 'h_25_percent', 'h_40_percent', 'h_50_percent', 'h_80_percent', 'h_75_percent', 'h_linear',
+                'j_20_percent', 'j_25_percent', 'j_40_percent', 'j_50_percent', 'j_80_percent', 'j_75_percent', 'j_linear'
 
             ];
             rasterFields.forEach(field => {
@@ -565,14 +785,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Logika untuk menampilkan/menyembunyikan alasan plate not good ---
     function toggleNotGoodReason() {
+        const notGoodDetailGroup = document.getElementById('notGoodDetailGroup');
+        const detailNotGoodTextarea = document.getElementById('detail_not_good');
+        
         if (numPlateNotGoodInput && notGoodReasonGroup && notGoodReasonSelect) {
             if (parseInt(numPlateNotGoodInput.value) > 0) {
                 notGoodReasonGroup.classList.remove('d-none');
+                if (notGoodDetailGroup) notGoodDetailGroup.classList.remove('d-none');
                 notGoodReasonSelect.setAttribute('required', 'true');
+                if (detailNotGoodTextarea) detailNotGoodTextarea.setAttribute('required', 'true');
             } else {
                 notGoodReasonGroup.classList.add('d-none');
+                if (notGoodDetailGroup) notGoodDetailGroup.classList.add('d-none');
                 notGoodReasonSelect.removeAttribute('required');
+                if (detailNotGoodTextarea) detailNotGoodTextarea.removeAttribute('required');
                 notGoodReasonSelect.value = ''; // Clear selection
+                if (detailNotGoodTextarea) detailNotGoodTextarea.value = ''; // Clear textarea
             }
         }
     }
@@ -597,18 +825,18 @@ document.addEventListener('DOMContentLoaded', function() {
             data.dwell_time = parseFloat(data.dwell_time) || null;
 
             const floatFields = [
-                'cyan_25_percent', 'cyan_50_percent', 'cyan_75_percent',
-                'magenta_25_percent', 'magenta_50_percent', 'magenta_75_percent',
-                'yellow_25_percent', 'yellow_50_percent', 'yellow_75_percent',
-                'black_25_percent', 'black_50_percent', 'black_75_percent',
-                'x_25_percent', 'x_50_percent', 'x_75_percent',
-                'z_25_percent', 'z_50_percent', 'z_75_percent',
-                'u_25_percent', 'u_50_percent', 'u_75_percent',
-                'v_25_percent', 'v_50_percent', 'v_75_percent',
-                'f_25_percent', 'f_50_percent', 'f_75_percent',
-                'g_25_percent', 'g_50_percent', 'g_75_percent',
-                'h_25_percent', 'h_50_percent', 'h_75_percent',
-                'j_25_percent', 'j_50_percent', 'j_75_percent'               
+                'cyan_20_percent', 'cyan_25_percent', 'cyan_40_percent', 'cyan_50_percent', 'cyan_80_percent', 'cyan_75_percent', 'cyan_linear',
+                'magenta_20_percent', 'magenta_25_percent', 'magenta_40_percent', 'magenta_50_percent', 'magenta_80_percent', 'magenta_75_percent', 'magenta_linear',
+                'yellow_20_percent', 'yellow_25_percent', 'yellow_40_percent', 'yellow_50_percent', 'yellow_80_percent', 'yellow_75_percent', 'yellow_linear',
+                'black_20_percent', 'black_25_percent', 'black_40_percent', 'black_50_percent', 'black_80_percent', 'black_75_percent', 'black_linear',
+                'x_20_percent', 'x_25_percent', 'x_40_percent', 'x_50_percent', 'x_80_percent', 'x_75_percent', 'x_linear',
+                'z_20_percent', 'z_25_percent', 'z_40_percent', 'z_50_percent', 'z_80_percent', 'z_75_percent', 'z_linear',
+                'u_20_percent', 'u_25_percent', 'u_40_percent', 'u_50_percent', 'u_80_percent', 'u_75_percent', 'u_linear',
+                'v_20_percent', 'v_25_percent', 'v_40_percent', 'v_50_percent', 'v_80_percent', 'v_75_percent', 'v_linear',
+                'f_20_percent', 'f_25_percent', 'f_40_percent', 'f_50_percent', 'f_80_percent', 'f_75_percent', 'f_linear',
+                'g_20_percent', 'g_25_percent', 'g_40_percent', 'g_50_percent', 'g_80_percent', 'g_75_percent', 'g_linear',
+                'h_20_percent', 'h_25_percent', 'h_40_percent', 'h_50_percent', 'h_80_percent', 'h_75_percent', 'h_linear',
+                'j_20_percent', 'j_25_percent', 'j_40_percent', 'j_50_percent', 'j_80_percent', 'j_75_percent', 'j_linear'
             ];
             floatFields.forEach(field => {
                 data[field] = data[field] ? parseFloat(data[field]) : null;
@@ -620,11 +848,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            let url = '/submit-kpi';
+            let url = '/impact/submit-kpi';
             let method = 'POST';
 
             if (dataId) {
-                url = `/api/kpi_ctp/${dataId}`;
+                url = `/impact/api/kpi_ctp/${dataId}`;
                 method = 'PUT';
             }
 
@@ -643,11 +871,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     showBootstrapToast(result.message, 'Berhasil!', 'success');
                     if (!dataId) {
                         ctpLogForm.reset();
+                        // Clear detail_not_good field manually since reset() might not clear it properly
+                        const detailNotGoodTextarea = document.getElementById('detail_not_good');
+                        if (detailNotGoodTextarea) {
+                            detailNotGoodTextarea.value = '';
+                        }
                         toggleNotGoodReason();
                     }
                     if (dataId) {
                         setTimeout(() => {
-                            window.location.href = '/tabel-kpi-ctp';
+                            window.location.href = '/impact/tabel-kpi-ctp';
                         }, 1500);
                     }
                 } else {
@@ -732,9 +965,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const clickedRow = e.target.closest('tr');
             if (clickedRow && clickedRow.dataset.id) {
                 e.preventDefault();
-                // Ambil created_at dari cell tabel (kolom kedua terakhir)
-                const createdAtCell = clickedRow.cells[clickedRow.cells.length - 2];
-                const rowData = { created_at: createdAtCell ? createdAtCell.textContent : null };
+                // Ambil data dari window.kpiTableData berdasarkan ID
+                const rowId = parseInt(clickedRow.dataset.id);
+                let rowData = null;
+                
+                if (window.kpiTableData && Array.isArray(window.kpiTableData)) {
+                    rowData = window.kpiTableData.find(item => item.id === rowId);
+                }
+                
                 showContextMenu(clickedRow, e.clientX, e.clientY, rowData);
             } else {
                 hideContextMenu();
@@ -759,7 +997,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Panggil loadKpiData saat DOM selesai dimuat (untuk halaman tabel) ---
     // Tambahkan delay saat pertama kali memuat data untuk menghindari toast "memuat data"
     // bertabrakan dengan toast dari operasi sebelumnya (misal redirect setelah submit form)
-    if (kpiTableBody && window.location.pathname.includes('/tabel-kpi-ctp')) {
+    if (kpiTableBody && window.location.pathname.includes('/impact/tabel-kpi-ctp')) {
         // Hapus toast 'Memuat data...' dari awal loadKpiData.
         // Sebaiknya, biarkan toast 'memuat data' jika memang ada proses loading yang signifikan.
         // Jika tidak, hilangkan saja.

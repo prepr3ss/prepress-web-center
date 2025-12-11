@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prepress Impact</title>
+    <title>Impact 360</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <style>
         /* Clean and Professional Styling for CTP */
         .page-header {
@@ -188,6 +188,27 @@
             background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
             color: white;
         }
+        
+        /* Modal styling fixes */
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.5) !important;
+        }
+        
+        .modal-content {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .modal-header {
+            border-radius: 15px 15px 0 0;
+            border: none;
+        }
+        
+        .modal-body {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
 
             .summary-5col-container {
                 width: 100%;
@@ -288,10 +309,11 @@
     </style>
 </head>
 <body>
-    <div class="d-flex" id="wrapper">
-        {% include '_sidebar.html' %}
-        <div id="page-content-wrapper">
-            <div class="container-fluid">
+    <div id="wrapper">
+        {% include '_top_header.html' %}
+        <div class="d-flex" id="content-wrapper">
+            {% include '_sidebar.html' %}
+            <div class="container-fluid pt-3">
                 <!-- Page Header dengan CTP theme -->
                 <div class="page-header">
                     <div class="container-fluid">
@@ -302,8 +324,13 @@
                             </div>
                             {% if current_user.is_authenticated and current_user.role == 'admin' %}
                             <div class="text-end">
-                                <button class="btn btn-light" id="btnInputTotalWaktu" data-bs-toggle="modal" data-bs-target="#modalInputTotalWaktu">
-                                    <i class="fas fa-plus-circle me-1"></i> Input Total Waktu
+                                <button class="btn btn-light d-inline-flex align-items-center" id="btnInputTotalWaktu" data-bs-toggle="modal" data-bs-target="#modalInputTotalWaktu">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="me-1" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="9" />
+                                        <line x1="12" y1="8" x2="12" y2="16" />
+                                        <line x1="8" y1="12" x2="16" y2="12" />
+                                    </svg>
+                                    Input Total Waktu
                                 </button>
                             </div>
                             {% endif %}
@@ -349,30 +376,55 @@
 <div class="summary-5col-container mb-4" id="overallKpiContainer">
     <div class="summary-5col">
         <div class="summary-item">
-            <div class="summary-icon icon-primary mb-2"><i class="fas fa-chart-pie"></i></div>
+            <div class="summary-icon icon-primary mb-2">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M11 3a9 9 0 1 0 9 9h-8z" />
+                    <path d="M12 3v9l7.5-7.5" />
+                </svg>
+            </div>
             <div class="fw-semibold mb-2">Total Output</div>
             <span class="h4 mb-0 fw-bold" id="overallTotal">0</span>
         </div>
         <div class="summary-item">
-            <div class="summary-icon icon-success mb-2"><i class="fas fa-check"></i></div>
+            <div class="summary-icon icon-success mb-2">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="4 12 9 17 20 6" />
+                </svg>
+            </div>
             <div class="fw-semibold mb-2">Output Rate</div>
             <span class="text-success fw-bold" id="overallOutputPercentage" style="font-size:1.3rem;">0%</span>
             <div class="text-muted small">(<span id="overallOutputGoodPlate">0</span> plate)</div>
         </div>
         <div class="summary-item">
-            <div class="summary-icon icon-warning mb-2"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="summary-icon icon-warning mb-2">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 3L2 20h20L12 3z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <circle cx="12" cy="17" r="1" />
+                </svg>
+            </div>
             <div class="fw-semibold mb-2">Not Good Rate</div>
             <span class="text-danger fw-bold" id="overallNotGoodPercentage" style="font-size:1.3rem;">0%</span>
             <div class="text-muted small">(<span id="overallOutputNotGoodPlate">0</span> plate)</div>
         </div>
         <div class="summary-item">
-            <div class="summary-icon icon-info mb-2"><i class="fas fa-clock"></i></div>
+            <div class="summary-icon icon-info mb-2">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" />
+                    <polyline points="12 7 12 12 15 14" />
+                </svg>
+            </div>
             <div class="fw-semibold mb-2">Downtime Proof</div>
             <span class="text-info fw-bold" id="overallDowntimeProofPercentage" style="font-size:1.3rem;">0%</span>
             <div class="text-muted small">(<span id="overallDowntimeProofHours">0</span> jam)</div>
         </div>
         <div class="summary-item">
-            <div class="summary-icon icon-info mb-2"><i class="fas fa-clock"></i></div>
+            <div class="summary-icon icon-info mb-2">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" />
+                    <polyline points="12 7 12 12 15 14" />
+                </svg>
+            </div>
             <div class="fw-semibold mb-2">Downtime Produksi</div>
             <span class="text-info fw-bold" id="overallDowntimeProduksiPercentage" style="font-size:1.3rem;">0%</span>
             <div class="text-muted small">(<span id="overallDowntimeProduksiHours">0</span> jam)</div>
@@ -385,23 +437,413 @@
     <!-- Cards will be inserted here -->
 </div>
 
+<!-- Plate Not Good Analysis By Machine and Reason | Plate Consumption Offset Machine -->
+<div class="row mt-4" id="plateAnalysisSection">
+    <!-- Plate Not Good Analysis By Machine and Reason -->
+    <div class="col-lg-6 mb-4">
+        <div class="data-card h-100" id="plateNotGoodMachineCard">
+            <div class="card-header-clean d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center justify-content-start">
+                    <div class="summary-icon icon-warning me-2" style="width: 35px; height: 35px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="3" y="3" width="18" height="18" rx="4" />
+                            <path d="M8 17v-6l4 3 4-3v6" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h6 class="card-title mb-0 fw-semibold">Plate Not Good Analysis By Machine and Reason</h6>
+                        <small class="text-muted">Distribusi jumlah plate not good per mesin berdasarkan kategori alasan</small>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-3">
+                <div id="plateNotGoodMachineNoData" class="text-center text-muted d-none" style="padding: 2rem 0;">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="mb-2" aria-hidden="true">
+                        <rect x="3" y="4" width="18" height="16" rx="2" />
+                        <path d="M3 10h18" />
+                    </svg>
+                    <div class="fw-semibold">Tidak ada data plate not good untuk periode ini</div>
+                </div>
+                <div class="chart-container" style="height: 320px">
+                    <canvas id="plateNotGoodByMachineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Plate Consumption Offset Machine -->
+    <div class="col-lg-6 mb-4">
+        <div class="data-card h-100" id="plateConsumptionMachineCard">
+            <div class="card-header-clean d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center justify-content-start">
+                    <div class="summary-icon icon-primary me-2" style="width: 35px; height: 35px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 3l9 4.5-9 4.5L3 7.5 12 3z" />
+                            <path d="M3 12l9 4.5L21 12" />
+                            <path d="M3 16.5L12 21l9-4.5" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h6 class="card-title mb-0 fw-semibold">Plate Consumption Offset Machine</h6>
+                        <small class="text-muted">Total pemakaian plate per mesin cetak</small>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-3">
+                <div id="plateConsumptionMachineNoData" class="text-center text-muted d-none" style="padding: 2rem 0;">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="mb-2" aria-hidden="true">
+                        <rect x="3" y="4" width="18" height="16" rx="2" />
+                        <path d="M3 10h18" />
+                    </svg>
+                    <div class="fw-semibold">Tidak ada data pemakaian plate untuk periode ini</div>
+                </div>
+                <div class="chart-container" style="height: 320px">
+                    <canvas id="plateConsumptionByMachineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analitik Pemakaian Plate -->
+<div class="row mt-4" id="plateUsageSection">
+    <!-- Trend Pemakaian Plate (Monthly/Daily) -->
+    <div class="col-lg-6 mb-4">
+        <div class="data-card h-100">
+            <div class="card-header-clean">
+                <div class="d-flex align-items-center justify-content-start">
+                    <div class="summary-icon icon-primary me-2" style="width: 35px; height: 35px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M3 17l6-6 4 4 7-7" />
+                            <path d="M21 21H3" />
+                        </svg>
+                    </div>
+                    <h6 class="card-title mb-0 fw-semibold">Trend Pemakaian Plate</h6>
+                </div>
+            </div>
+            <div class="card-body p-3">
+                <div class="chart-container" style="height: 280px">
+                    <canvas id="plateUsageTrend"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Donut Per Tipe Plate -->
+    <div class="col-lg-3 mb-4">
+        <div class="data-card h-100">
+            <div class="card-header-clean">
+                <div class="d-flex align-items-center justify-content-start">
+                    <div class="summary-icon icon-info me-2" style="width: 35px; height: 35px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="9" />
+                            <path d="M12 3v4" />
+                        </svg>
+                    </div>
+                    <h6 class="card-title mb-0 fw-semibold">Komposisi per Tipe Plate</h6>
+                </div>
+            </div>
+            <div class="card-body p-3">
+                <div class="chart-container" style="height: 280px">
+                    <canvas id="plateUsageByType"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stacked Bar per Grup -->
+    <div class="col-lg-3 mb-4">
+        <div class="data-card h-100">
+            <div class="card-header-clean">
+                <div class="d-flex align-items-center justify-content-start">
+                    <div class="summary-icon icon-warning me-2" style="width: 35px; height: 35px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 3l9 4.5-9 4.5L3 7.5 12 3z" />
+                            <path d="M3 12l9 4.5L21 12" />
+                            <path d="M3 16.5L12 21l9-4.5" />
+                        </svg>
+                    </div>
+                    <h6 class="card-title mb-0 fw-semibold">Pemakaian per Grup</h6>
+                </div>
+            </div>
+            <div class="card-body p-3">
+                <div class="chart-container" style="height: 280px">
+                    <canvas id="plateUsageByGroup"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trend per Tipe Plate (Multi-series) -->
+    <div class="col-lg-12 mb-4" id="plateTypeTrendCard">
+        <div class="data-card h-100">
+            <div class="card-header-clean">
+                <div class="d-flex align-items-center justify-content-start">
+                    <div class="summary-icon icon-primary me-2" style="width: 35px; height: 35px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="3 17 7 13 11 17 15 9 21 7" />
+                        </svg>
+                    </div>
+                    <h6 class="card-title mb-0 fw-semibold">Trend Pemakaian Plate per Tipe</h6>
+                </div>
+            </div>
+            <div class="card-body p-3">
+                <div class="chart-container" style="height: 320px">
+                    <canvas id="plateUsageTypeTrend"></canvas>
+                </div>
+                <!-- Average Usage Information -->
+                <div class="mt-4 pt-3 border-top" id="averageUsageInfo">
+                    <h6 class="text-muted mb-3">Rata-Rata Pemakaian per Tipe</h6>
+                    <div class="row" id="averageUsageContainer">
+                        <div class="col-12 text-center">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <div class="text-muted small mt-2">Memuat data rata-rata...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
 <!-- No data message -->
 <div class="no-data-clean d-none" id="noDataMessage" style="text-align: center; padding: 3rem 1rem;">
-    <i class="fas fa-chart-bar text-muted mb-3" style="font-size: 4rem; opacity: 0.5;"></i>
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="text-muted mb-3" style="opacity: 0.5;">
+        <line x1="3" y1="21" x2="21" y2="21" />
+        <rect x="4" y="10" width="3" height="8" rx="1" />
+        <rect x="10.5" y="6" width="3" height="12" rx="1" />
+        <rect x="17" y="3" width="3" height="15" rx="1" />
+    </svg>
     <h4 class="text-muted mb-2">Tidak ada data KPI CTP</h4>
     <p class="text-muted mb-0">Belum ada data KPI untuk periode yang dipilih</p>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     const yearFilter = document.getElementById('yearFilter');
     const monthFilter = document.getElementById('monthFilter');
     
-    // Populate year filter (last 5 years)
-    const currentYear = new Date().getFullYear();
-    for (let year = currentYear; year >= currentYear - 4; year--) {
-        const option = new Option(year, year);
-        yearFilter.add(option);
+    // Initialize dynamic filter population
+    try {
+        // Initialize year filter with dynamic data
+        await populateYearOptions();
+        
+        // Initialize month filter (will be populated when year changes)
+        if (monthFilter) {
+            monthFilter.innerHTML = '<option value="">Semua Bulan</option>';
+        }
+        
+        // Add event listener for year filter change
+        if (yearFilter) {
+            yearFilter.addEventListener('change', async function() {
+                const selectedYear = this.value;
+                try {
+                    await populateMonthOptions(selectedYear);
+                    // Trigger data reload
+                    loadKpiData();
+                } catch (error) {
+                    showToast('Gagal memperbarui filter bulan', 'danger');
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error initializing filters:', error);
+        // Fallback to static year options if dynamic loading fails
+        initializeStaticYearOptions();
+    }
+
+    async function populateYearOptions() {
+        try {
+            // Try to fetch from dedicated API endpoint first
+            const response = await fetch('/impact/api/ctp-production-logs/years');
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.success && data.years && data.years.length > 0) {
+                if (yearFilter) {
+                    yearFilter.innerHTML = '<option value="">Semua Tahun</option>';
+                    
+                    // Sort years in descending order (most recent first)
+                    const sortedYears = data.years.sort((a, b) => b - a);
+                    
+                    sortedYears.forEach(year => {
+                        const option = new Option(year, year);
+                        yearFilter.add(option);
+                    });
+                }
+                return {success: true, years: data.years.sort((a, b) => b - a)};
+            } else {
+                throw new Error('No years found or API failed');
+            }
+        } catch (error) {
+            console.error('Error loading years from API:', error);
+            console.log('Using fallback method for years');
+            // Fallback: extract years from existing data
+            return await extractYearsFromExistingData();
+        }
+    }
+
+    async function extractYearsFromExistingData() {
+        try {
+            // Fetch all data and extract unique years
+            const response = await fetch('/impact/get-ctp-kpi-data');
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.success && data.data && Array.isArray(data.data)) {
+                const years = new Set();
+                
+                data.data.forEach(item => {
+                    if (item.log_date) {
+                        try {
+                            const date = new Date(item.log_date);
+                            const year = date.getFullYear();
+                            if (!isNaN(year)) {
+                                years.add(year);
+                            }
+                        } catch (e) {
+                        }
+                    }
+                });
+                
+                if (yearFilter) {
+                    yearFilter.innerHTML = '<option value="">Semua Tahun</option>';
+                    
+                    // Sort years in descending order (most recent first)
+                    const sortedYears = Array.from(years).sort((a, b) => b - a);
+                    
+                    sortedYears.forEach(year => {
+                        const option = new Option(year, year);
+                        yearFilter.add(option);
+                    });
+                }
+                return {success: true, years: Array.from(years)};
+            } else {
+                throw new Error('No data found or API failed');
+            }
+        } catch (error) {
+            // Final fallback: use static years
+            initializeStaticYearOptions();
+            throw error;
+        }
+    }
+
+    async function populateMonthOptions(selectedYear = '') {
+        try {
+            if (monthFilter) {
+                monthFilter.innerHTML = '<option value="">Semua Bulan</option>';
+            }
+            
+            if (!selectedYear) {
+                return {success: true, months: []};
+            }
+            
+            // Try to fetch from dedicated API endpoint first
+            const response = await fetch(`/impact/api/ctp-production-logs/months?year=${selectedYear}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.success && data.months && data.months.length > 0) {
+                if (monthFilter) {
+                    const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                    
+                    data.months.forEach(month => {
+                        const monthName = monthNames[month - 1] || `Bulan ${month}`;
+                        const option = new Option(monthName, month);
+                        monthFilter.add(option);
+                    });
+                }
+                return {success: true, months: data.months};
+            } else {
+                throw new Error('No months found or API failed');
+            }
+        } catch (error) {
+            // Fallback: extract months from existing data
+            return await extractMonthsFromExistingData(selectedYear);
+        }
+    }
+
+    async function extractMonthsFromExistingData(selectedYear) {
+        try {
+            // Fetch all data and extract unique months for selected year
+            const response = await fetch('/impact/get-ctp-kpi-data');
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.success && data.data && Array.isArray(data.data)) {
+                const months = new Set();
+                data.data.forEach(item => {
+                    if (item.log_date) {
+                        try {
+                            const date = new Date(item.log_date);
+                            const year = date.getFullYear();
+                            if (year == selectedYear) {
+                                months.add(date.getMonth() + 1); // getMonth() returns 0-11, we need 1-12
+                            }
+                        } catch (e) {
+                        }
+                    }
+                });
+                
+                if (monthFilter) {
+                    const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                    
+                    // Sort months numerically
+                    Array.from(months).sort((a, b) => a - b).forEach(month => {
+                        const monthName = monthNames[month - 1] || `Bulan ${month}`;
+                        const option = new Option(monthName, month);
+                        monthFilter.add(option);
+                    });
+                }
+                return {success: true, months: Array.from(months)};
+            } else {
+                throw new Error('No data found or API failed');
+            }
+        } catch (error) {
+            // Final fallback: use static months
+            initializeStaticMonthOptions();
+            throw error;
+        }
+    }
+
+    function initializeStaticYearOptions() {
+        if (yearFilter) {
+            const currentYear = new Date().getFullYear();
+            yearFilter.innerHTML = '<option value="">Semua Tahun</option>';
+            for (let year = currentYear; year >= currentYear - 4; year--) {
+                const option = new Option(year, year);
+                yearFilter.add(option);
+            }
+        }
+    }
+
+    function initializeStaticMonthOptions() {
+        if (monthFilter) {
+            const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            monthFilter.innerHTML = '<option value="">Semua Bulan</option>';
+            monthNames.forEach((month, index) => {
+                const option = new Option(month, index + 1);
+                monthFilter.add(option);
+            });
+        }
     }
     
     function loadKpiData() {
@@ -428,46 +870,105 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('overallOutputPercentage').textContent = '-%';
         document.getElementById('overallNotGoodPercentage').textContent = '-%';
         
-        fetch(`/get-ctp-kpi-data?year=${year}&month=${month}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(result => {
-                if (!result.success) {
-                    throw new Error(result.error || 'Unknown error from server');
-                }
-                
-                // Check if there's no data
-                if (!result.data || result.data.length === 0) {
+        // Hide Plate Usage section while loading
+        const plateSection = document.getElementById('plateUsageSection');
+        if (plateSection) plateSection.classList.add('d-none');
+        
+        // Hide Plate Analysis section while loading
+        const plateAnalysisSection = document.getElementById('plateAnalysisSection');
+        if (plateAnalysisSection) plateAnalysisSection.classList.add('d-none');
+
+        Promise.all([
+            fetch(`/impact/get-ctp-kpi-data?year=${year}&month=${month}`),
+            fetch(`/impact/get-ctp-plate-usage?year=${year}&month=${month}`),
+            fetch(`/impact/get-ctp-plate-usage-by-type?year=${year}&month=${month}`),
+            fetch(`/impact/get-ctp-plate-usage-by-print-machine?year=${year}&month=${month}`)
+        ])
+            .then(async ([resKpi, resUsage, resTypeTrend, resPrintMachine]) => {
+                if (!resKpi.ok) throw new Error(`HTTP error KPI! status: ${resKpi.status}`);
+                if (!resUsage.ok) throw new Error(`HTTP error Plate Usage! status: ${resUsage.status}`);
+                if (!resTypeTrend.ok) throw new Error(`HTTP error Plate Type Trend! status: ${resTypeTrend.status}`);
+                if (!resPrintMachine.ok) throw new Error(`HTTP error Plate Print Machine! status: ${resPrintMachine.status}`);
+    
+                const kpi = await resKpi.json();
+                const usage = await resUsage.json();
+                const typeTrend = await resTypeTrend.json();
+                const printMachine = await resPrintMachine.json();
+    
+                if (!kpi.success) throw new Error(kpi.error || 'Unknown error from KPI server');
+                if (!usage.success) throw new Error(usage.error || 'Unknown error from Plate Usage server');
+                if (!printMachine.success) throw new Error(printMachine.error || 'Unknown error from Plate Print Machine server');
+    
+                // KPI data handling
+                if (!kpi.data || kpi.data.length === 0) {
                     cardsContainer.innerHTML = ''; // Clear loading state
                     document.getElementById('noDataMessage').classList.remove('d-none');
                     document.getElementById('overallKpiContainer').classList.add('d-none');
-                    return;
+                } else {
+                    // Show KPI data when we have data
+                    document.getElementById('noDataMessage').classList.add('d-none');
+                    document.getElementById('overallKpiContainer').classList.remove('d-none');
+                    updateKpiDisplay(kpi.data, kpi.overall);
                 }
-                
-                // Show KPI data when we have data
-                document.getElementById('noDataMessage').classList.add('d-none');
-                document.getElementById('overallKpiContainer').classList.remove('d-none');
-                
-                // Update the KPI display with the data
-                updateKpiDisplay(result.data, result.overall);
+    
+                // Plate usage handling
+                const hasTrend =
+                    (Array.isArray(usage?.trend?.total) && usage.trend.total.some(v => (v || 0) > 0)) ||
+                    (Array.isArray(usage?.trend?.good) && usage.trend.good.some(v => (v || 0) > 0)) ||
+                    (Array.isArray(usage?.trend?.not_good) && usage.trend.not_good.some(v => (v || 0) > 0));
+                const hasType = Array.isArray(usage?.by_type) && usage.by_type.length > 0;
+                const hasGroup = Array.isArray(usage?.by_group) && usage.by_group.length > 0;
+    
+                // Determine if type trend has any non-zero total values
+                const hasTypeTrend = Array.isArray(typeTrend?.series) && typeTrend.series.some(s => Array.isArray(s.total) && s.total.some(v => (v || 0) > 0));
+    
+                if ((hasTrend || hasType || hasGroup || hasTypeTrend) && plateSection) {
+                    plateSection.classList.remove('d-none');
+                    renderPlateUsageCharts(usage);
+                    renderPlateUsageTypeTrend(typeTrend);
+                } else if (plateSection) {
+                    // Hide section and destroy charts if no data
+                    plateSection.classList.add('d-none');
+                    if (window.plateTrendChart) { try { window.plateTrendChart.destroy(); } catch (e) {} window.plateTrendChart = null; }
+                    if (window.plateTypeChart) { try { window.plateTypeChart.destroy(); } catch (e) {} window.plateTypeChart = null; }
+                    if (window.plateGroupChart) { try { window.plateGroupChart.destroy(); } catch (e) {} window.plateGroupChart = null; }
+                    if (window.plateTypeTrendChart) { try { window.plateTypeTrendChart.destroy(); } catch (e) {} window.plateTypeTrendChart = null; }
+                }
+
+                // Show plate analysis section and render Plate Consumption by Print Machine chart
+                const plateAnalysisSection = document.getElementById('plateAnalysisSection');
+                if (plateAnalysisSection) {
+                    plateAnalysisSection.classList.remove('d-none');
+                }
+                renderPlateConsumptionByMachine(printMachine);
             })
             .catch(error => {
-                console.error('Error:', error);
                 cardsContainer.innerHTML = ''; // Clear loading state
                 document.getElementById('noDataMessage').classList.remove('d-none');
                 cardsContainer.innerHTML = `
                     <div class="col-12 text-center">
-                        <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Gagal memuat data KPI: ${error.message}
+                        <div class="alert alert-danger d-inline-flex align-items-center">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="me-2" aria-hidden="true">
+                                <path d="M12 3L2 20h20L12 3z" />
+                                <line x1="12" y1="9" x2="12" y2="13" />
+                                <circle cx="12" cy="17" r="1" />
+                            </svg>
+                            Gagal memuat data: ${error.message}
                         </div>
                     </div>
                 `;
-                showToast('Failed to load KPI data: ' + error.message, 'danger');
+                if (plateSection) plateSection.classList.add('d-none');
+                if (plateAnalysisSection) plateAnalysisSection.classList.add('d-none');
+                
+                // Destroy plate consumption machine chart on error
+                if (window.plateConsumptionMachineChart) {
+                    try {
+                        window.plateConsumptionMachineChart.destroy();
+                    } catch (e) {}
+                    window.plateConsumptionMachineChart = null;
+                }
+                
+                showToast('Failed to load data: ' + error.message, 'danger');
             });
     }
     
@@ -504,13 +1005,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Clear and update group cards
         cardsContainer.innerHTML = '';
         
-        // Debug: Log the data for each group
-        console.log('Data received from backend:', data);
-        
         // Create KPI cards for each group
         data.forEach(item => {
-            // Debug: Log individual group data
-            console.log('Group data:', item.group, item);
             
             const card = document.createElement('div');
             card.className = 'col-md-4 mb-4';
@@ -519,7 +1015,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="card-header-clean">
                         <div class="d-flex align-items-center justify-content-start">
                             <div class="summary-icon icon-info me-2" style="width: 35px; height: 35px;">
-                                <i class="fas fa-users-gear fa-xs"></i>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="8" cy="8" r="3" />
+                                    <circle cx="18" cy="8" r="3" />
+                                    <path d="M2 21a6 6 0 0 1 12 0" />
+                                    <path d="M14 21a6 6 0 0 1 8-5.5" />
+                                </svg>
                             </div>
                             <h6 class="card-title mb-0 fw-semibold">Grup ${item.group}</h6>
                         </div>
@@ -529,12 +1030,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="col-6">
                                 <div class="text-center p-3 rounded-3 h-100" style="background-color: #f8fff9;">
                                     <div class="summary-icon icon-success mb-2" style="width: 32px; height: 32px; margin: 0 auto;">
-                                        <i class="fas fa-check fa-sm"></i>
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <polyline points="4 12 9 17 20 6" />
+                                        </svg>
                                     </div>
                                     <div class="text-success h5 mb-1 fw-bold">${item.output_percentage}%</div>
                                     <div class="text-muted small mb-2">Output Rate</div>
                                     <div class="rounded p-2" style="background-color: rgba(255,255,255,0.7);">
-                                        <i class="fas fa-check-circle text-success me-1 fa-sm"></i>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="text-success me-1" aria-hidden="true">
+                                            <polyline points="4 12 9 17 20 6" />
+                                        </svg>
                                         <span class="text-dark small fw-medium">${item.good_plate.toLocaleString()}</span>
                                     </div>
                                 </div>
@@ -542,12 +1047,19 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="col-6">
                                 <div class="text-center p-3 rounded-3 h-100" style="background-color: #fff8f8;">
                                     <div class="summary-icon icon-warning mb-2" style="width: 32px; height: 32px; margin: 0 auto;">
-                                        <i class="fas fa-exclamation-triangle fa-sm"></i>
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M12 3L2 20h20L12 3z" />
+                                            <line x1="12" y1="9" x2="12" y2="13" />
+                                            <circle cx="12" cy="17" r="1" />
+                                        </svg>
                                     </div>
                                     <div class="text-danger h5 mb-1 fw-bold">${item.not_good_percentage}%</div>
                                     <div class="text-muted small mb-2">Not Good Rate</div>
                                     <div class="rounded p-2" style="background-color: rgba(255,255,255,0.7);">
-                                        <i class="fas fa-times-circle text-danger me-1 fa-sm"></i>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="text-danger me-1" aria-hidden="true">
+                                            <line x1="5" y1="5" x2="19" y2="19" />
+                                            <line x1="5" y1="19" x2="19" y2="5" />
+                                        </svg>
                                         <span class="text-dark small fw-medium">${item.not_good_plate.toLocaleString()}</span>
                                     </div>
                                 </div>
@@ -558,12 +1070,20 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <div class="col-6">
                                     <div class="text-center p-3 rounded-3 h-100" style="background-color: #f0f8ff;">
                                         <div class="summary-icon icon-info mb-2" style="width: 32px; height: 32px; margin: 0 auto;">
-                                            <i class="fas fa-clock fa-sm"></i>
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <circle cx="12" cy="12" r="9" />
+                                                <polyline points="12 7 12 12 15 14" />
+                                            </svg>
                                         </div>
                                         <div class="text-info h5 mb-1 fw-bold">${item.proof_downtime_percentage ?? 0}%</div>
                                         <div class="text-muted small mb-2">Downtime Proof</div>
                                         <div class="rounded p-2" style="background-color: rgba(255,255,255,0.7);">
-                                            <i class="fas fa-hourglass-half text-info me-1 fa-sm"></i>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="text-info me-1" aria-hidden="true">
+                                                <path d="M7 3h10" />
+                                                <path d="M7 21h10" />
+                                                <path d="M17 3v4l-3.5 3.5L17 14v4" />
+                                                <path d="M7 3v4l3.5 3.5L7 14v4" />
+                                            </svg>
                                             <span class="text-dark small fw-medium">${(item.proof_downtime_hours ?? 0).toFixed(1)} jam</span>
                                         </div>
                                     </div>
@@ -571,12 +1091,20 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <div class="col-6">
                                     <div class="text-center p-3 rounded-3 h-100" style="background-color: #f0f8ff;">
                                         <div class="summary-icon icon-info mb-2" style="width: 32px; height: 32px; margin: 0 auto;">
-                                            <i class="fas fa-clock fa-sm"></i>
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <circle cx="12" cy="12" r="9" />
+                                                <polyline points="12 7 12 12 15 14" />
+                                            </svg>
                                         </div>
                                         <div class="text-info h5 mb-1 fw-bold">${item.produksi_downtime_percentage ?? 0}%</div>
                                         <div class="text-muted small mb-2">Downtime Produksi</div>
                                         <div class="rounded p-2" style="background-color: rgba(255,255,255,0.7);">
-                                            <i class="fas fa-hourglass-half text-info me-1 fa-sm"></i>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="text-info me-1" aria-hidden="true">
+                                                <path d="M7 3h10" />
+                                                <path d="M7 21h10" />
+                                                <path d="M17 3v4l-3.5 3.5L17 14v4" />
+                                                <path d="M7 3v4l3.5 3.5L7 14v4" />
+                                            </svg>
                                             <span class="text-dark small fw-medium">${(item.produksi_downtime_hours ?? 0).toFixed(1)} jam</span>
                                         </div>
                                     </div>
@@ -592,7 +1120,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         </div>
                         <div class="mt-3 pt-3 border-top">
-                            <div class="text-muted small mb-2">Alasan Plate Not Good</div>
+                            <div class="text-muted small mb-2">Kategori Plate NG</div>
                             <div class="chart-container" style="height: 300px">
                                 <canvas id="notGoodChart_${item.group}"></canvas>
                             </div>
@@ -613,6 +1141,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 return isNaN(parsed) ? 0 : parsed;
             };
             
+            // Define the fixed order of categories that must always be displayed
+            const fixedCategories = [
+                'Plate Rontok / Botak',
+                'Plate Baret',
+                'Plate Penyok',
+                'Plate Kotor',
+                'Plate bergaris',
+                'Plate tidak sesuai DP',
+                'Nilai tidak sesuai',
+                'Laser Jump',
+                'Tidak masuk millar',
+                'Error mesin Punch',
+                'Plate Jump'
+            ];
+            
             // Prepare data using consistent field names from backend
             const reasons = [
                 { label: 'Plate Rontok / Botak', value: parseValue(item.reason_rontok) },
@@ -628,31 +1171,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 { label: 'Plate Jump', value: parseValue(item.reason_plate_jump) }
             ];
             
-            // Debug: Log the reasons array before filtering (remove in production)
-            // console.log('Reasons before filtering for group ' + item.group + ':', reasons);
+            // Create a map for quick lookup
+            const reasonMap = {};
+            reasons.forEach(reason => {
+                reasonMap[reason.label] = reason.value;
+            });
             
-            const filteredReasons = reasons.filter(reason => reason.value > 0);
+            // Create ordered data array with all categories, even those with zero values
+            const orderedReasons = fixedCategories.map(label => ({
+                label: label,
+                value: reasonMap[label] || 0
+            }));
             
-            // Debug: Log the filtered reasons (remove in production)
-            // console.log('Filtered reasons for group ' + item.group + ':', filteredReasons);
-
-            // Sort by value descending
-            filteredReasons.sort((a, b) => b.value - a.value);
-
-            // If no data, show "No Data" message
-            if (filteredReasons.length === 0) {
-                const container = document.getElementById('notGoodChart_' + item.group).parentNode;
-                container.innerHTML = `
-                    <div class="text-center text-muted" style="height: 100%; display: flex; align-items: center; justify-content: center;">
-                        <div>
-                            <i class="fas fa-chart-bar mb-2" style="font-size: 2rem;"></i>
-                            <p class="mb-0">Tidak ada data alasan plate not good</p>
-                        </div>
-                    </div>
-                `;
-                return;
-            }
-
             // Create chart with better error handling
             try {
                 const ctx = document.getElementById('notGoodChart_' + item.group);
@@ -662,13 +1192,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 const chartContext = ctx.getContext('2d');
-                new Chart(chartContext, {
+                const notGoodChart = new Chart(chartContext, {
                 type: 'bar',
                 data: {
-                    labels: filteredReasons.map(r => r.label),
+                    labels: orderedReasons.map(r => r.label),
                     datasets: [{
                         label: 'Jumlah Plate',
-                        data: filteredReasons.map(r => r.value),
+                        data: orderedReasons.map(r => r.value),
                         backgroundColor: [
                             'rgba(255, 99, 132, 0.7)',
                             'rgba(54, 162, 235, 0.7)',
@@ -765,13 +1295,54 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             
+            // Store chart reference globally for click handler access
+            window['notGoodChart_' + item.group] = notGoodChart;
+           
+            // Add click handler directly to this chart immediately after creation
+            const canvas = document.getElementById('notGoodChart_' + item.group);
+            if (canvas && notGoodChart) {
+                // Make the entire chart area clickable
+                canvas.style.cursor = 'pointer';
+                canvas.title = 'Klik untuk melihat detail plate not good';
+                
+                // Add click event listener directly to the canvas (don't clone to preserve chart)
+                canvas.addEventListener('click', function(event) {
+                    const activeElements = notGoodChart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, { axis: 'x' });
+                    
+                    if (activeElements && activeElements.length > 0) {
+                        const clickedElement = activeElements[0];
+                        const datasetIndex = clickedElement.datasetIndex;
+                        const index = clickedElement.index;
+                        
+                        // Check if this is the "Not Good" dataset (datasetIndex should be 0 since there's only one dataset)
+                        if (datasetIndex === 0) {
+                            // Get current filter values
+                            const yearFilter = document.getElementById('yearFilter');
+                            const monthFilter = document.getElementById('monthFilter');
+                           
+                            const selectedYear = yearFilter ? yearFilter.value : '';
+                            const selectedMonth = monthFilter ? monthFilter.value : '';
+                               
+                            // Get the category that was clicked
+                            const categoryLabel = notGoodChart.data.labels[index];
+                               
+                            // Show modal with filtered data for specific category AND group
+                            showNotGoodDetailsModal(selectedYear, selectedMonth, categoryLabel, item.group);
+                        }
+                    }
+                });
+            }
+            
             } catch (error) {
-                console.error('Error creating chart for group', item.group, ':', error);
                 const container = document.getElementById('notGoodChart_' + item.group).parentNode;
                 container.innerHTML = `
                     <div class="text-center text-muted" style="height: 100%; display: flex; align-items: center; justify-content: center;">
                         <div>
-                            <i class="fas fa-exclamation-triangle mb-2 text-warning" style="font-size: 2rem;"></i>
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="mb-2 text-warning" aria-hidden="true">
+                                <path d="M12 3L2 20h20L12 3z" />
+                                <line x1="12" y1="9" x2="12" y2="13" />
+                                <circle cx="12" cy="17" r="1" />
+                            </svg>
                             <p class="mb-0">Error loading chart</p>
                         </div>
                     </div>
@@ -781,7 +1352,524 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Move showToast function outside of DOMContentLoaded to make it globally available
+   // Plate Usage Charts: globals and renderer
+   window.plateTrendChart = window.plateTrendChart || null;
+   window.plateTypeChart = window.plateTypeChart || null;
+   window.plateGroupChart = window.plateGroupChart || null;
+   window.plateTypeTrendChart = window.plateTypeTrendChart || null;
+
+   function renderPlateUsageCharts(usage) {
+       try {
+           const trendCanvas = document.getElementById('plateUsageTrend');
+           const typeCanvas = document.getElementById('plateUsageByType');
+           const groupCanvas = document.getElementById('plateUsageByGroup');
+
+           // Destroy previous charts to avoid memory leaks
+           if (window.plateTrendChart) { try { window.plateTrendChart.destroy(); } catch (e) {} }
+           if (window.plateTypeChart) { try { window.plateTypeChart.destroy(); } catch (e) {} }
+           if (window.plateGroupChart) { try { window.plateGroupChart.destroy(); } catch (e) {} }
+
+           // Trend chart (line/area)
+           if (trendCanvas && usage?.trend?.labels) {
+               const t = usage.trend;
+               const ctx = trendCanvas.getContext('2d');
+               window.plateTrendChart = new Chart(ctx, {
+                   type: 'line',
+                   data: {
+                       labels: t.labels,
+                       datasets: [
+                           {
+                               label: 'Total',
+                               data: t.total || [],
+                               borderColor: 'rgba(255, 149, 0, 1)',
+                               backgroundColor: 'rgba(255, 149, 0, 0.2)',
+                               borderWidth: 2,
+                               tension: 0.25,
+                               fill: true
+                           },
+                           {
+                               label: 'Good',
+                               data: t.good || [],
+                               borderColor: 'rgba(40, 167, 69, 1)',
+                               backgroundColor: 'rgba(40, 167, 69, 0.15)',
+                               borderWidth: 2,
+                               tension: 0.25,
+                               fill: false
+                           },
+                           {
+                               label: 'Not Good',
+                               data: t.not_good || [],
+                               borderColor: 'rgba(220, 53, 69, 1)',
+                               backgroundColor: 'rgba(220, 53, 69, 0.15)',
+                               borderWidth: 2,
+                               tension: 0.25,
+                               fill: false
+                           }
+                       ]
+                   },
+                   options: {
+                       responsive: true,
+                       maintainAspectRatio: false,
+                       plugins: {
+                           legend: { position: 'top' },
+                           tooltip: {
+                               callbacks: {
+                                   label: (context) => ` ${context.dataset.label}: ${Number(context.raw || 0).toLocaleString()} plate`
+                               }
+                           }
+                       },
+                       scales: {
+                           y: {
+                               beginAtZero: true,
+                               ticks: { precision: 0 }
+                           }
+                       }
+                   }
+               });
+           }
+
+           // Donut chart by type
+           if (typeCanvas) {
+               const types = Array.isArray(usage?.by_type) ? usage.by_type : [];
+               const labels = types.map(x => x.type || 'Lainnya');
+               const values = types.map(x => (x.total || 0));
+               const colors = [
+                   'rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)', 'rgba(255, 206, 86, 0.7)',
+                   'rgba(75, 192, 192, 0.7)', 'rgba(153, 102, 255, 0.7)', 'rgba(255, 159, 64, 0.7)',
+                   'rgba(205, 92, 92, 0.7)', 'rgba(72, 209, 204, 0.7)', 'rgba(255, 182, 193, 0.7)',
+                   'rgba(107, 142, 35, 0.7)', 'rgba(255, 140, 0, 0.7)', 'rgba(60, 179, 113, 0.7)'
+               ];
+               const ctxType = typeCanvas.getContext('2d');
+               window.plateTypeChart = new Chart(ctxType, {
+                   type: 'doughnut',
+                   data: {
+                       labels,
+                       datasets: [{
+                           label: 'Total Plate',
+                           data: values,
+                           backgroundColor: labels.map((_, i) => colors[i % colors.length]),
+                           borderWidth: 1
+                       }]
+                   },
+                   options: {
+                       responsive: true,
+                       maintainAspectRatio: false,
+                       plugins: {
+                           legend: { position: 'bottom' },
+                           tooltip: {
+                               callbacks: {
+                                   label: (context) => {
+                                       const val = Number(context.raw || 0);
+                                       const sum = values.reduce((a,b) => a + (b || 0), 0) || 1;
+                                       const pct = ((val / sum) * 100).toFixed(1);
+                                       return ` ${context.label}: ${val.toLocaleString()} plate (${pct}%)`;
+                                   }
+                               }
+                           }
+                       }
+                   }
+               });
+           }
+
+           // Stacked bar per group
+           if (groupCanvas) {
+               const list = Array.isArray(usage?.by_group) ? usage.by_group : [];
+               const labels = list.map(x => x.group || 'Lainnya');
+               const good = list.map(x => (x.good || 0));
+               const notGood = list.map(x => (x.not_good || 0));
+               const ctxGroup = groupCanvas.getContext('2d');
+               window.plateGroupChart = new Chart(ctxGroup, {
+                   type: 'bar',
+                   data: {
+                       labels,
+                       datasets: [
+                           {
+                               label: 'Good',
+                               data: good,
+                               backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                               stack: 'stack1',
+                               borderRadius: 4
+                           },
+                           {
+                               label: 'Not Good',
+                               data: notGood,
+                               backgroundColor: 'rgba(220, 53, 69, 0.7)',
+                               stack: 'stack1',
+                               borderRadius: 4
+                           }
+                       ]
+                   },
+                   options: {
+                       responsive: true,
+                       maintainAspectRatio: false,
+                       plugins: {
+                           legend: { position: 'top' },
+                           tooltip: {
+                               callbacks: {
+                                   label: (context) => ` ${context.dataset.label}: ${Number(context.raw || 0).toLocaleString()} plate`
+                               }
+                           }
+                       },
+                       scales: {
+                           x: { stacked: true },
+                           y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } }
+                       }
+                   }
+               });
+           }
+       } catch (err) {
+           showToast('Gagal merender grafik pemakaian plate: ' + err.message, 'danger');
+       }
+   }
+
+   // Fungsi renderAverageBoxUsage dihapus karena sudah tidak digunakan
+   // Fungsionalitas dipindahkan ke renderAverageUsageInfo
+
+   // Plate Consumption by Print Machine Chart
+   window.plateConsumptionMachineChart = window.plateConsumptionMachineChart || null;
+
+   function renderPlateConsumptionByMachine(printMachine) {
+       try {
+           const canvas = document.getElementById('plateConsumptionByMachineChart');
+           const noDataDiv = document.getElementById('plateConsumptionMachineNoData');
+           
+           if (!canvas) return;
+
+           // Destroy previous instance
+           if (window.plateConsumptionMachineChart) {
+               try {
+                   window.plateConsumptionMachineChart.destroy();
+               } catch (e) {}
+               window.plateConsumptionMachineChart = null;
+           }
+
+           const labels = Array.isArray(printMachine?.labels) ? printMachine.labels : [];
+           const series = Array.isArray(printMachine?.series) ? printMachine.series : [];
+           
+           // Check if there's any data
+           const hasData = series.some(s => Array.isArray(s.total) && s.total.some(v => (v || 0) > 0));
+           
+           if (!hasData || series.length === 0) {
+               if (noDataDiv) noDataDiv.classList.remove('d-none');
+               if (canvas) canvas.style.display = 'none';
+               return;
+           }
+           
+           if (noDataDiv) noDataDiv.classList.add('d-none');
+           if (canvas) {
+               canvas.style.display = 'block';
+               canvas.classList.remove('d-none');
+           }
+
+           const palette = [
+               'rgba(255, 99, 132, 0.8)', 'rgba(54, 162, 235, 0.8)', 'rgba(255, 206, 86, 0.8)',
+               'rgba(75, 192, 192, 0.8)', 'rgba(153, 102, 255, 0.8)', 'rgba(255, 159, 64, 0.8)',
+               'rgba(205, 92, 92, 0.8)', 'rgba(72, 209, 204, 0.8)', 'rgba(255, 182, 193, 0.8)',
+               'rgba(107, 142, 35, 0.8)', 'rgba(255, 140, 0, 0.8)', 'rgba(60, 179, 113, 0.8)'
+           ];
+
+           const datasets = series.map((s, idx) => ({
+               label: s.machine || `Mesin ${idx + 1}`,
+               data: Array.isArray(s.total) ? s.total : [],
+               borderColor: palette[idx % palette.length].replace('0.8', '1'),
+               backgroundColor: palette[idx % palette.length],
+               borderWidth: 2,
+               tension: 0.25,
+               fill: false,
+               pointRadius: 3
+           }));
+
+           const ctx = canvas.getContext('2d');
+           window.plateConsumptionMachineChart = new Chart(ctx, {
+               type: 'line',
+               data: {
+                   labels,
+                   datasets
+               },
+               options: {
+                   responsive: true,
+                   maintainAspectRatio: false,
+                   plugins: {
+                       legend: {
+                           position: 'top',
+                           labels: {
+                               boxWidth: 12,
+                               padding: 15,
+                               font: {
+                                   size: 11
+                               }
+                           }
+                       },
+                       tooltip: {
+                           mode: 'index',
+                           intersect: false,
+                           callbacks: {
+                               title: (items) => {
+                                   if (!items || !items.length) return '';
+                                   return `${printMachine?.granularity === 'daily' ? 'Tanggal' : 'Bulan'}: ${items[0].label}`;
+                               },
+                               label: (context) => {
+                                   const machineName = context.dataset.label;
+                                   const value = Number(context.raw || 0).toLocaleString();
+                                   return ` ${machineName}: ${value} plate`;
+                               }
+                           }
+                       }
+                   },
+                   scales: {
+                       x: {
+                           title: {
+                               display: true,
+                               text: printMachine?.granularity === 'daily' ? 'Tanggal' : 'Bulan',
+                               font: {
+                                   size: 12
+                               }
+                           },
+                           grid: {
+                               display: false
+                           }
+                       },
+                       y: {
+                           beginAtZero: true,
+                           ticks: {
+                               precision: 0,
+                               font: {
+                                   size: 11
+                               }
+                           },
+                           title: {
+                               display: true,
+                               text: 'Jumlah Plate',
+                               font: {
+                                   size: 14
+                               }
+                           },
+                           grid: {
+                               color: 'rgba(0, 0, 0, 0.05)'
+                           }
+                       }
+                   },
+                   interaction: {
+                       mode: 'nearest',
+                       axis: 'x',
+                       intersect: false
+                   }
+               }
+           });
+       } catch (err) {
+           console.error('Error rendering plate consumption by machine chart:', err);
+           showToast('Gagal merender grafik pemakaian plate per mesin: ' + err.message, 'danger');
+       }
+   }
+
+   // Additional: Multi-series trend per plate type
+   function renderPlateUsageTypeTrend(typeTrend) {
+       try {
+           const canvas = document.getElementById('plateUsageTypeTrend');
+           const card = document.getElementById('plateTypeTrendCard');
+           if (!canvas) return;
+
+           // Destroy previous instance
+           if (window.plateTypeTrendChart) { try { window.plateTypeTrendChart.destroy(); } catch (e) {} window.plateTypeTrendChart = null; }
+
+           const labels = Array.isArray(typeTrend?.labels) ? typeTrend.labels : [];
+           const series = Array.isArray(typeTrend?.series) ? typeTrend.series : [];
+           const averageBoxUsage = Array.isArray(typeTrend?.average_box_usage) ? typeTrend.average_box_usage : [];
+
+           // Mapping pieces per box
+           const piecesPerBox = {
+               'FUJI 1030': 30, 'FUJI 1030 UV': 30, 'FUJI 1030 LHPJA': 30,
+               'FUJI 1055': 30, 'FUJI 1055 LHPL': 30, 'FUJI 1055 UV': 30,
+               'FUJI 1630': 15, 'SAPHIRA 1030': 50, 'SAPHIRA 1055': 50,
+               'SAPHIRA 1055 PN': 40, 'SAPHIRA 1630': 30
+           };
+
+           const palette = [
+               'rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)',
+               'rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)',
+               'rgba(99, 255, 132, 1)', 'rgba(235, 54, 162, 1)', 'rgba(86, 255, 206, 1)',
+               'rgba(192, 75, 192, 1)', 'rgba(102, 153, 255, 1)', 'rgba(159, 255, 64, 1)'
+           ];
+
+           const datasets = series.map((s, idx) => ({
+               label: s.type || `Tipe ${idx + 1}`,
+               data: Array.isArray(s.total) ? s.total : [],
+               borderColor: palette[idx % palette.length],
+               backgroundColor: palette[idx % palette.length].replace(', 1)', ', 0.15)'),
+               borderWidth: 2,
+               tension: 0.25,
+               fill: false,
+               pointRadius: 2
+           }));
+
+           const hasData = datasets.some(ds => Array.isArray(ds.data) && ds.data.some(v => (v || 0) > 0));
+           if (card) {
+               if (!hasData) {
+                   card.classList.add('d-none');
+               } else {
+                   card.classList.remove('d-none');
+               }
+           }
+
+           // Calculate average usage per period for each plate type
+           const avgUsagePerPiece = {};
+           series.forEach(s => {
+               const plateType = s.type;
+               const totalPieces = s.total.reduce((sum, val) => sum + (val || 0), 0);
+               const periodCount = s.total.length; // Number of days or months
+               const avgPiecesPerPeriod = periodCount > 0 ? Math.round(totalPieces / periodCount) : 0;
+               
+               avgUsagePerPiece[plateType] = {
+                   averagePiecesPerPeriod: avgPiecesPerPeriod
+               };
+           });
+
+           const ctx = canvas.getContext('2d');
+           window.plateTypeTrendChart = new Chart(ctx, {
+               type: 'line',
+               data: { labels, datasets },
+               options: {
+                   responsive: true,
+                   maintainAspectRatio: false,
+                   plugins: {
+                       legend: {
+                           position: 'top',
+                           onClick: function(e, legendItem, legend) {
+                               // Get the index of the clicked legend item
+                               const index = legendItem.datasetIndex;
+                               const chart = legend.chart;
+                               const meta = chart.getDatasetMeta(index);
+                               
+                               // Toggle visibility of the dataset
+                               meta.hidden = meta.hidden === null ? !chart.data.datasets[index].hidden : null;
+                               chart.update();
+                               
+                               // Update average usage info based on visible datasets
+                               updateAverageUsageInfoVisibility(chart, avgUsagePerPiece, typeTrend?.granularity, series);
+                           }
+                       },
+                       tooltip: {
+                           callbacks: {
+                               title: (items) => {
+                                   if (!items || !items.length) return '';
+                                   return `${typeTrend?.granularity === 'daily' ? 'Tanggal' : 'Bulan'}: ${items[0].label}`;
+                               },
+                               label: (context) => {
+                                   const plateType = context.dataset.label;
+                                   const value = Number(context.raw || 0).toLocaleString();
+                                   return ` ${plateType}: ${value} plate`;
+                               }
+                           }
+                       }
+                   },
+                   scales: {
+                       x: {
+                           title: { display: true, text: typeTrend?.granularity === 'daily' ? 'Tanggal' : 'Bulan' }
+                       },
+                       y: {
+                           beginAtZero: true,
+                           ticks: { precision: 0 },
+                           title: {
+                               display: true,
+                               text: 'Jumlah Plate',
+                               font: { size: 14 }
+                           }
+                       }
+                   }
+               }
+           });
+           
+           // Display average usage information below the chart
+           renderAverageUsageInfo(avgUsagePerPiece, typeTrend?.granularity, series);
+       } catch (err) {
+           showToast('Gagal merender grafik trend per tipe: ' + err.message, 'danger');
+       }
+   }
+   
+   // Function to update average usage info based on visible datasets
+   function updateAverageUsageInfoVisibility(chart, avgUsagePerPiece, granularity, originalSeries) {
+       try {
+           // Get all datasets and their visibility status
+           const visibleDatasets = [];
+           chart.data.datasets.forEach((dataset, index) => {
+               const meta = chart.getDatasetMeta(index);
+               if (!meta.hidden) {
+                   visibleDatasets.push(dataset.label);
+               }
+           });
+           
+           // Filter avgUsagePerPiece to only include visible datasets
+           const filteredAvgUsage = {};
+           visibleDatasets.forEach(plateType => {
+               if (avgUsagePerPiece[plateType]) {
+                   filteredAvgUsage[plateType] = avgUsagePerPiece[plateType];
+               }
+           });
+           
+           // Re-render the average usage info with filtered data but keep original series for color mapping
+           renderAverageUsageInfo(filteredAvgUsage, granularity, originalSeries);
+       } catch (error) {
+       }
+   }
+   
+   // Function to render average usage information below the chart
+   function renderAverageUsageInfo(avgUsagePerPiece, granularity, series) {
+       const container = document.getElementById('averageUsageContainer');
+       if (!container) return;
+       
+       const period = granularity === 'daily' ? 'Hari' : 'Bulan';
+       
+       // Mapping pieces per box
+       const piecesPerBox = {
+           'FUJI 1030': 30, 'FUJI 1030 UV': 30, 'FUJI 1030 LHPJA': 30,
+           'FUJI 1055': 30, 'FUJI 1055 LHPL': 30, 'FUJI 1055 UV': 30,
+           'FUJI 1630': 15, 'SAPHIRA 1030': 50, 'SAPHIRA 1055': 50,
+           'SAPHIRA 1055 PN': 40, 'SAPHIRA 1630': 30
+       };
+       
+       // Create a mapping of plate types to their original color indices
+       const plateTypeToColorIndex = {};
+       series.forEach((s, idx) => {
+           plateTypeToColorIndex[s.type] = idx;
+       });
+       
+       let htmlContent = '';
+       // Color palette matching the chart
+       const palette = [
+           'rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)',
+           'rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)',
+           'rgba(99, 255, 132, 1)', 'rgba(235, 54, 162, 1)', 'rgba(86, 255, 206, 1)',
+           'rgba(192, 75, 192, 1)', 'rgba(102, 153, 255, 1)', 'rgba(159, 255, 64, 1)'
+       ];
+       
+       for (const [plateType, data] of Object.entries(avgUsagePerPiece)) {
+           // Get the original color index for this plate type from our mapping
+           const originalColorIndex = plateTypeToColorIndex[plateType] !== undefined ? plateTypeToColorIndex[plateType] : 0;
+           const bgColor = palette[originalColorIndex % palette.length].replace(', 1)', ', 0.15)');
+           
+           // Get pieces per box for this plate type, default to 30 if not found
+           const piecesPerBoxValue = piecesPerBox[plateType] || 30;
+           
+           htmlContent += `
+               <div class="col-md-2 mb-3">
+                   <div class="card h-100" style="background-color: ${bgColor}; border: 2px solid ${palette[originalColorIndex % palette.length]};">
+                       <div class="card-body p-3 text-center">
+                           <h6 class="mb-3" style="color: ${palette[originalColorIndex % palette.length]};">${plateType}</h6>
+                           <div>
+                               <small class="text-muted">Rata-rata Pemakaian</small>
+                               <div class="h4 mb-0" style="color: ${palette[originalColorIndex % palette.length]};">${data.averagePiecesPerPeriod.toLocaleString('id-ID')} Pcs/${period}</div>
+                               <small class="text-muted">1 Box = ${piecesPerBoxValue} Pcs</small>
+                           </div>
+                       </div>
+                   </div>
+               </div>
+           `;
+       }
+       
+       container.innerHTML = htmlContent;
+   }
+
+   // Move showToast function outside of DOMContentLoaded to make it globally available
     
     // Event listeners
     yearFilter.addEventListener('change', loadKpiData);
@@ -789,11 +1877,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initial load
     loadKpiData();
+    
 });
 </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
-</script>
+    <script src="{{ url_for('static', filename='js/notification_system.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ctp_not_good_machine_chart.js') }}"></script>
 
 
 
@@ -803,8 +1893,12 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header" style="background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%); color: white;">
-                <h5 class="modal-title" id="modalInputTotalWaktuLabel">
-                    <i class="fas fa-clock me-2"></i>Input Total Waktu Cetak
+                <h5 class="modal-title d-flex align-items-center" id="modalInputTotalWaktuLabel">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="me-2" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9" />
+                        <polyline points="12 7 12 12 15 14" />
+                    </svg>
+                    Input Total Waktu Cetak
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -852,6 +1946,50 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 {% endif %}
+
+<!-- Modal for Not Good Plate Details -->
+<div class="modal fade" id="notGoodDetailsModal" tabindex="-1" aria-labelledby="notGoodDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%); color: white;">
+                <h5 class="modal-title" id="notGoodDetailsModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Detail Plate Not Good
+                    <span id="modalCategoryInfo" class="ms-2"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Loading state -->
+                <div id="notGoodLoading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Memuat data...</span>
+                    </div>
+                    <div class="mt-2 text-muted">Memuat data plate not good...</div>
+                </div>
+                
+                <!-- Error state -->
+                <div id="notGoodError" class="alert alert-danger d-none d-flex align-items-center" role="alert">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="me-2" aria-hidden="true">
+                        <path d="M12 3L2 20h20L12 3z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <circle cx="12" cy="17" r="1" />
+                    </svg>
+                    <span id="notGoodErrorMessage">Gagal memuat data</span>
+                </div>
+                
+                <!-- Data content -->
+                <div id="notGoodContent" class="d-none">
+                    <div id="notGoodEntries" style="max-height: 400px; overflow-y: auto;">
+                        <!-- Entries will be populated here -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
 // Global showToast function
@@ -917,7 +2055,7 @@ document.getElementById('formTotalWaktu').addEventListener('submit', function(e)
     total_produksi = parseFloat(total_produksi);
     total_proof = parseFloat(total_proof);
 
-    fetch('/monthly_work_hours', {
+    fetch('/impact/monthly_work_hours', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -930,11 +2068,9 @@ document.getElementById('formTotalWaktu').addEventListener('submit', function(e)
         })
     })
     .then(response => {
-        console.log('Response status:', response.status);
         return response.json();
     })
     .then(result => {
-        console.log('Response data:', result);
         if (result.success) {
             showToast('Total waktu kerja berhasil disimpan!', 'success');
             var modal = bootstrap.Modal.getInstance(document.getElementById('modalInputTotalWaktu'));
@@ -952,9 +2088,193 @@ document.getElementById('formTotalWaktu').addEventListener('submit', function(e)
         }
     })
     .catch(err => {
-        console.error('Error:', err);
         showToast('Gagal menyimpan: ' + err.message, 'danger');
     });
+});
+
+// --- Function to handle Not Good Plate Details Modal ---
+function showNotGoodDetailsModal(year, month, category = null, group = null) {
+    
+    // Prevent multiple simultaneous calls
+    if (window.modalLoading) {
+        return;
+    }
+    
+    window.modalLoading = true;
+    
+    const modal = new bootstrap.Modal(document.getElementById('notGoodDetailsModal'));
+    const loadingDiv = document.getElementById('notGoodLoading');
+    const errorDiv = document.getElementById('notGoodError');
+    const contentDiv = document.getElementById('notGoodContent');
+    const entriesDiv = document.getElementById('notGoodEntries');
+    const errorMessage = document.getElementById('notGoodErrorMessage');
+    
+    // Reset modal state
+    loadingDiv.classList.remove('d-none');
+    errorDiv.classList.add('d-none');
+    contentDiv.classList.add('d-none');
+    entriesDiv.innerHTML = '';
+    
+    // Update modal title with category and group if provided
+    const modalCategoryInfo = document.getElementById('modalCategoryInfo');
+    if (modalCategoryInfo) {
+        if (category && group) {
+            modalCategoryInfo.textContent = `- ${category} (Grup ${group})`;
+            modalCategoryInfo.className = 'ms-2 text-white';
+        } else if (category) {
+            modalCategoryInfo.textContent = `- ${category}`;
+            modalCategoryInfo.className = 'ms-2 text-white';
+        } else {
+            modalCategoryInfo.textContent = '';
+        }
+    }
+    
+    // Show modal
+    modal.show();
+    
+    // Reset loading flag when modal is hidden
+    document.getElementById('notGoodDetailsModal').addEventListener('hidden.bs.modal', function () {
+        window.modalLoading = false;
+    });
+    
+    // Fetch not good plate details
+    fetchNotGoodPlateDetails(year, month, category, group)
+        .then(result => {
+            
+            loadingDiv.classList.add('d-none');
+           
+            if (result.success && result.data && result.data.length > 0) {
+                contentDiv.classList.remove('d-none');
+               
+                // Debug information removed
+                let debugHtml = '';
+               
+                // Format entries as specified: [log_date] - [item_name] followed by [num_plate_not_good] and [detail_not_good]
+                let entriesHtml = '';
+                result.data.forEach((entry, index) => {
+                    
+                   
+                    const itemName = entry.item_name || 'Item tidak tersedia';
+                    const numPlateNotGood = entry.num_plate_not_good || '0';
+                    const detailNotGood = entry.detail_not_good || 'Tidak ada keterangan';
+                    const notGoodReason = entry.not_good_reason || 'Tidak ada kategori';
+                   
+                    const logDate = entry.log_date ? new Date(entry.log_date).toLocaleDateString('id-ID', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    }) : 'Tanggal tidak tersedia';
+
+                    entriesHtml += `
+                        <div class="border-bottom pb-3 mb-3">
+                            <div class="fw-semibold text-primary mb-1 d-flex align-items-center">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="me-2" aria-hidden="true">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                                    <line x1="3" y1="10" x2="21" y2="10" />
+                                    <line x1="8" y1="3" x2="8" y2="7" />
+                                    <line x1="16" y1="3" x2="16" y2="7" />
+                                </svg>
+                                ${logDate}
+                            </div>
+                            <div class="fw-semibold text-primary mb-2">
+                                ${itemName}
+                            </div>
+                            <div class="text-info mb-2 d-flex align-items-center">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="me-2" aria-hidden="true">
+                                    <path d="M12 3l9 4.5-9 4.5L3 7.5 12 3z" />
+                                    <path d="M3 12l9 4.5L21 12" />
+                                </svg>
+                                ${entry.plate_type_material || 'Tidak tersedia'}
+                            </div>
+                            <div class="text-danger mb-2 d-flex align-items-center">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="me-2" aria-hidden="true">
+                                    <path d="M12 3L2 20h20L12 3z" />
+                                    <line x1="12" y1="9" x2="12" y2="13" />
+                                    <circle cx="12" cy="17" r="1" />
+                                </svg>
+                                <strong>${numPlateNotGood} Plate</strong>
+                            </div>
+                            <div class="text-muted fst-italic d-flex align-items-center">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="me-2" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="9" />
+                                    <line x1="12" y1="8" x2="12" y2="12" />
+                                    <circle cx="12" cy="16" r="1" />
+                                </svg>
+                                ${detailNotGood}
+                            </div>
+                        </div>
+                    `;
+                });
+               
+                entriesDiv.innerHTML = debugHtml + entriesHtml;
+            } else {
+                // Show no data message with debug info
+                contentDiv.classList.remove('d-none');
+                
+                // Debug information removed
+                let debugHtml = '';
+                
+                entriesDiv.innerHTML = debugHtml + `
+                    <div class="text-center py-4">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="text-muted" aria-hidden="true">
+                            <rect x="3" y="4" width="18" height="16" rx="2" />
+                            <path d="M3 10h18" />
+                        </svg>
+                        <div class="mt-3 text-muted">
+                            <strong>Tidak ada data plate not good</strong><br>
+                            <small>Untuk kategori "${category || 'Semua'}" pada periode yang dipilih</small>
+                        </div>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            loadingDiv.classList.add('d-none');
+            errorDiv.classList.remove('d-none');
+            errorMessage.textContent = error.message || 'Gagal memuat data plate not good';
+        });
+}
+
+// --- Function to fetch not good plate details from API ---
+async function fetchNotGoodPlateDetails(year, month, category = null, group = null) {
+    let url = '/impact/api/ctp-production-logs/not-good-details';
+    
+    // Add query parameters if provided
+    const params = new URLSearchParams();
+    if (year) params.append('year', year);
+    if (month) params.append('month', month);
+    if (category) params.append('category', category);
+    if (group) params.append('group', group);
+    
+    if (params.toString()) {
+        url += '?' + params.toString();
+    }
+    
+    try {
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        throw error;
+    }
+}
+
+// --- Function to add click handlers to not good bar charts ---
+// DEPRECATED: Click handlers are now attached directly during chart creation
+// This function is kept for backward compatibility but no longer used
+function addNotGoodChartClickHandlers() {
+    // This function is no longer needed as click handlers are attached directly during chart creation
+}
+
+// --- Initialize click handlers when page loads ---
+document.addEventListener('DOMContentLoaded', function() {
+    // Click handlers are now attached directly during chart creation
 });
 </script>
 </body>

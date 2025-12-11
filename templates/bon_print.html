@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Prepress Impact</title>
+    <title>Impact 360</title>
     <style>
         @media print {
             @page {
@@ -121,6 +121,42 @@
         .dok-no {
             margin-top: 10px;
         }
+
+        /* Fixed table layout and column overflow/line wrapping */
+        .bon-table {
+            table-layout: fixed;
+        }
+        .bon-table td.item-code,
+        .bon-table td.item-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .bon-table td.keterangan {
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            hyphens: auto;
+        }
+
+        /* Ensure same behavior when printing */
+        @media print {
+            .bon-table {
+                table-layout: fixed;
+            }
+            .bon-table td.item-code,
+            .bon-table td.item-name {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .bon-table td.keterangan {
+                white-space: normal;
+                overflow-wrap: anywhere;
+                word-break: break-word;
+                hyphens: auto;
+            }
+        }
     </style>
     <script>
         window.onload = function() {
@@ -155,6 +191,15 @@
             </tr>
         </table>
         <table class="bon-table">
+            <colgroup>
+                <col style="width:5%">
+                <col style="width:15%">
+                <col style="width:40%">
+                <col style="width:5%">
+                <col style="width:5%">
+                <col style="width:5%">
+                <col style="width:25%">
+            </colgroup>
             <thead>
                 <tr>
                     <th style="width: 5%; height: 100%;">No</th>
@@ -182,12 +227,12 @@
                 {% for g in grouped.values() %}
                 <tr>
                     <td>{{ loop.index }}</td>
-                    <td>{{ g.item_code }}</td>
-                    <td>{{ g.item_name }}</td>
+                    <td class="item-code">{{ g.item_code }}</td>
+                    <td class="item-name">{{ g.item_name }}</td>
                     <td>LBR</td>
                     <td>{{ g.jumlah }}</td>
                     <td>{{ g.jumlah }}</td>
-                    <td>{{ g.keterangan }}</td>
+                    <td class="keterangan">{{ g.keterangan }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

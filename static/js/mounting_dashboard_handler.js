@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('totalMinutes').textContent = '-';
         document.getElementById('avgMinutesPerJob').textContent = '-';
         
-        fetch(`/get-mounting-dashboard-data?year=${year}&month=${month}`)
+        fetch(`/impact/get-mounting-dashboard-data?year=${year}&month=${month}`)
             .then(async response => {
                 const text = await response.text();
                 let json = null;
