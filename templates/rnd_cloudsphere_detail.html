@@ -1,0 +1,1611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudsphere Job Detail - {{ job.job_id }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <style>
+        /* Page Header with gradient */
+        .page-header {
+            background: linear-gradient(135deg,
+                #667eea 0%,
+                #764ba2 25%,
+                #f093fb 50%,
+                #4facfe 75%,
+                #667eea 100%);
+            color: white;
+            padding: 2rem 0;
+            margin: -1rem -15px 2rem -15px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3),
+                        0 0 40px rgba(118, 75, 162, 0.1),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Job Info Section */
+        .job-info-section {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+        }
+        
+        @media (max-width: 1200px) {
+            .info-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .info-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+        
+        .info-value {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1f2937;
+            margin-right: 20px;
+        }
+
+        .info-value-leadtime {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1f2937;
+            text-align: right;
+            margin-right: 30px;
+        }        
+        
+        /* Step Process Section */
+        .step-process-section {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        
+        .step-process-timeline {
+            position: relative;
+            padding: 1rem 0;
+            overflow-x: auto;
+        }
+        
+        .horizontal-steps {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            min-width: 800px;
+            padding: 0 1rem;
+        }
+        
+        .horizontal-steps::before {
+            display: none; /* Hide default line */
+        }
+        
+        /* Individual connector lines between steps */
+        .step-connector {
+            position: absolute;
+            top: 20px;
+            height: 5px;
+            background: #e5e7eb;
+            z-index: 0; /* Behind step circle (z-index: 2) */
+            /* Transform removed - will be calculated dynamically */
+        }
+        
+        /* Connector colors based on step status */
+        .step-connector.completed {
+            background: #10b981;
+        }
+        
+        .step-connector.active {
+            background: linear-gradient(to right, #10b981 50%, #e5e7eb 50%);
+        }
+        
+        .process-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+            flex: 1;
+            max-width: 120px;
+        }
+        
+        .step-indicator {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #f3f4f6;
+            border: 2px solid #d1d5db;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .step-indicator.completed {
+            background: #10b981;
+            border-color: #10b981;
+            color: white;
+        }
+        
+        .step-indicator.in_progress {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #f3f4f6;
+            border: 2px solid #10b981;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .step-indicator.pending {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+            color: #9ca3af;
+        }
+        
+        .step-content {
+            text-align: center;
+            max-width: 120px;
+        }
+        
+        .step-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6b7280;
+            text-align: center;
+            line-height: 1.2;
+            margin: 0 0 0.5rem 0;
+        }
+        
+        .step-indicator.completed + .step-content .step-title {
+            color: #10b981;
+        }
+        
+        .step-indicator.in-progress + .step-content .step-title {
+            color: #3b82f6;
+        }
+        
+        .step-status {
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.625rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .step-status.completed {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .step-status.in_progress {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        
+        .step-status.pending {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        
+        .step-meta {
+            font-size: 0.725rem;
+            color: #6c757d;
+            margin-top: 0.5rem;
+        }
+        
+        .step-meta-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .step-meta-item i {
+            width: 10px;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 0.625rem;
+        }
+        
+        /* Tasks Section */
+        .tasks-section {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        
+        .pic-tasks-group {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .pic-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .pic-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #3b82f6;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 1rem;
+        }
+        
+        .pic-info {
+            flex: 1;
+        }
+        
+        .pic-name {
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+        
+        .pic-process {
+            font-size: 0.875rem;
+            color: #6b757d;
+            margin: 0;
+        }
+        
+        .task-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 0.75rem;
+        }
+        
+        .task-item {
+            padding: 0.75rem;
+            border-bottom: 1px solid #f3f4f6;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: background-color 0.2s;
+        }
+        
+        .task-item:hover {
+            background-color: #f9fafb;
+        }
+        
+        .task-item:last-child {
+            border-bottom: none;
+        }
+        
+        .task-checkbox {
+            width: 18px;
+            height: 18px;
+            accent-color: #3b82f6;
+        }
+        
+        .task-name {
+            flex: 1;
+            font-size: 0.875rem;
+            color: #374151;
+        }
+        
+        .task-status {
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        
+        .task-status.completed {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .task-status.pending {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        
+        /* Evidence Section */
+        .evidence-section {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        
+        .step-evidence-group {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .step-evidence-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .step-evidence-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+        
+        .evidence-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .evidence-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .evidence-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .evidence-icon {
+            font-size: 2rem;
+            color: #3b82f6;
+            margin-bottom: 0.5rem;
+        }
+        
+        .evidence-name {
+            font-size: 0.875rem;
+            color: #374151;
+            margin-bottom: 0.25rem;
+            word-break: break-word;
+        }
+        
+        .evidence-meta {
+            font-size: 0.75rem;
+            color: #6b757d;
+        }
+        
+        .evidence-actions {
+            margin-top: 0.5rem;
+        }
+        
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            background: #f9fafb;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+        
+        .upload-area:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        
+        .upload-area.dragover {
+            border-color: #3b82f6;
+            background: #dbeafe;
+        }
+        
+        /* Job Notes Section */
+        .job-notes-section {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        
+        .notes-content {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid #e5e7eb;
+            min-height: 100px;
+        }
+        
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+        
+        .btn-action {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-primary-action {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary-action:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+        
+        .btn-secondary-action {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        
+        .btn-secondary-action:hover {
+            background: #e5e7eb;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            /* For tablets, show 2 columns */
+            .step-tasks-group {
+                margin-bottom: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+           
+            .evidence-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+           
+            .step-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+           
+            .horizontal-steps {
+                min-width: 600px;
+            }
+           
+            .process-step {
+                max-width: 100px;
+            }
+           
+            .step-title {
+                font-size: 0.65rem;
+            }
+           
+            .step-status {
+                font-size: 0.5rem;
+            }
+           
+            .step-meta {
+                font-size: 0.55rem;
+            }
+           
+            .step-indicator {
+                width: 35px;
+                height: 35px;
+                font-size: 0.8rem;
+            }
+            
+            /* For mobile, make tasks take full width */
+            .task-list-small {
+                max-height: 200px;
+            }
+            
+            .task-item-small {
+                font-size: 0.8rem;
+            }
+            
+            .pic-avatar-small {
+                width: 28px;
+                height: 28px;
+                font-size: 0.75rem;
+            }
+        }
+        
+        /* Priority Badges - same as job cards */
+        .priority-badge-new {
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-block;
+        }
+        
+        .priority-badge-new.high {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .priority-badge-new.middle {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        
+        .priority-badge-new.low {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+        
+        /* Status Badges */
+        .priority-badge-new.completed {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+        
+        .priority-badge-new.in_progress {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        
+        .priority-badge-new.rejected {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .priority-badge-new.pending {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        
+        /* Sample Type Icon */
+        .sample-type-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .sample-type-icon svg {
+            width: 20px;
+            height: 20px;
+            display: block;
+        }
+        
+        /* Sample Type Badges */
+        .sample-type-badge {
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .sample-type-badge.blank {
+            background: #E3F2FD;
+            color: #1976D2;
+        }
+        
+        .sample-type-badge.rohs-icb {
+            background: #E8F5E9;
+            color: #4CAF50;
+        }
+        
+        .sample-type-badge.rohs-ribbon {
+            background: #FFF3E0;
+            color: #FF9800;
+        }
+        
+        /* 3 Column Layout for Tasks by Step */
+        .step-tasks-group {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            height: 100%;
+        }
+        
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .step-name {
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+        
+        .pic-section {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .pic-info-small {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        
+        .pic-avatar-small {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #3b82f6;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 0.75rem;
+            font-size: 0.875rem;
+        }
+        
+        .pic-name-small {
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .task-list-small {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 0.75rem;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        
+        .task-item-small {
+            padding: 0.5rem;
+            border-bottom: 1px solid #f3f4f6;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.2s;
+            font-size: 0.875rem;
+        }
+        
+        .task-item-small:hover {
+            background-color: #f9fafb;
+        }
+        
+        .task-item-small:last-child {
+            border-bottom: none;
+        }
+        
+        .task-checkbox {
+            width: 16px;
+            height: 16px;
+            accent-color: #3b82f6;
+        }
+        
+        .task-name-small {
+            flex: 1;
+            font-size: 0.875rem;
+            color: #374151;
+            margin: 0;
+        }
+        
+        .task-status-small {
+            padding: 0.125rem 0.375rem;
+            border-radius: 8px;
+            font-size: 0.625rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        
+        .task-status-small.completed {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .task-status-small.pending {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        
+        .task-content-small {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .task-datetime-small {
+            font-size: 0.7rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .task-datetime-small i {
+            font-size: 0.6rem;
+            color: #9ca3af;
+        }
+
+        /* Image Preview Styles */
+        .evidence-preview {
+            cursor: pointer;
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+
+        .evidence-thumbnail {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .pdf-preview {
+            width: 100%;
+            height: 120px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .pdf-preview:hover {
+            background: #e9ecef;
+            transform: scale(1.05);
+        }
+
+        .pdf-preview i {
+            font-size: 2rem;
+            color: #dc3545;
+        }
+
+        #imagePreviewContainer img {
+            max-width: 100%;
+            max-height: 70vh;
+            border-radius: 4px;
+        }
+
+        #pdfPreviewContainer {
+            width: 100%;
+            height: 70vh;
+        }
+
+        .pdf-viewer {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pdf-controls {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .pdf-canvas-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            background: #ffffff;
+            overflow: auto;
+        }
+
+        .pdf-canvas-image {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .pdf-info {
+            text-align: center;
+            padding: 0.5rem;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .file-type-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+        }
+
+        .evidence-card {
+            position: relative;
+        }
+
+        .preview-container {
+            position: relative;
+            margin-bottom: 0.5rem;
+            width: 100%;
+            height: 120px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;            
+        }
+        .preview-container:hover {
+            background: #e9ecef;
+            transform: scale(1.05);
+        }
+        
+        /* Collaborative Notes Styles */
+        .user-avatar-small {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #3b82f6;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        
+        .note-item {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s ease;
+        }
+        
+        .note-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .note-item.pinned {
+            border-left: 4px solid #f59e0b;
+            background: #fffbeb;
+        }
+        
+        .note-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .note-author {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .note-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .note-type-badge {
+            padding: 0.25rem 0.5rem;
+            height: 22px;
+            border-radius: 12px;
+            font-size: 0.625rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .note-type-badge.general {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        
+        .note-type-badge.progress {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        
+        .note-type-badge.issue {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .note-type-badge.solution {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+        
+        .note-content {
+            margin: 0.75rem 0;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+        
+        .note-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+        
+        .note-action-btn {
+            padding: 0.25rem 0.5rem;
+            border: none;
+            background: transparent;
+            color: #6b7280;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+        
+        .note-action-btn:hover {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        
+        .note-action-btn.delete:hover {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .pin-indicator {
+            color: #f59e0b;
+            font-size: 0.875rem;
+        }
+        
+        .edit-note-form {
+            margin-top: 0;
+        }
+        
+        .edit-note-textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            resize: vertical;
+        }
+        
+        .edit-note-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+            align-items: flex-end;
+        }
+        
+        .edit-note-actions .btn {
+            height: auto;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            white-space: nowrap;
+        }
+        
+        /* Lead Time Information Styles */
+        .lead-time-info {
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .lead-time-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+        
+        .lead-time-value {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1f2937;
+        }
+        
+        /* Lead Time Status Badges */
+        .lead-time-badge {
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-block;
+        }
+        
+        .lead-time-badge.good {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+        
+        .lead-time-badge.warning {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        
+        .lead-time-badge.critical {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        /* Print-specific styles for PDF export */
+        @media print {
+            body {
+                font-size: 12pt;
+                line-height: 1.4;
+                color: #000;
+                background: #fff;
+            }
+            
+            .page-header {
+                background: none !important;
+                color: #000 !important;
+                padding: 1rem 0 !important;
+                margin: 0 0 1rem 0 !important;
+                box-shadow: none !important;
+                border-bottom: 2px solid #000 !important;
+            }
+            
+            .job-info-section,
+            .tasks-section,
+            .evidence-section {
+                background: #fff !important;
+                border: 1px solid #000 !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                margin-bottom: 1rem !important;
+                page-break-inside: avoid;
+            }
+            
+            .info-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 0.5rem !important;
+            }
+            
+            .step-tasks-group {
+                break-inside: avoid;
+                margin-bottom: 1rem !important;
+            }
+            
+            .task-item-small,
+            .evidence-card {
+                break-inside: avoid;
+                border: 1px solid #ccc !important;
+                margin-bottom: 0.5rem !important;
+            }
+            
+            .action-buttons {
+                display: none !important;
+            }
+            
+            /* Hide unnecessary elements for print */
+            .btn,
+            .upload-area,
+            .evidence-actions,
+            .task-checkbox,
+            .note-actions,
+            .add-note-form {
+                display: none !important;
+            }
+            
+            /* Ensure proper text formatting */
+            h1, h2, h3, h4, h5, h6 {
+                color: #000 !important;
+                page-break-after: avoid;
+            }
+            
+            p, div, span {
+                color: #000 !important;
+            }
+            
+            /* Table formatting for print */
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+                margin-bottom: 1rem !important;
+            }
+            
+            th, td {
+                border: 1px solid #000 !important;
+                padding: 0.5rem !important;
+                text-align: left !important;
+            }
+            
+            th {
+                background-color: #f0f0f0 !important;
+                font-weight: bold !important;
+            }
+            
+            /* Page breaks */
+            .job-info-section {
+                page-break-after: always;
+            }
+            
+            .tasks-section {
+                page-break-after: always;
+            }
+            
+            /* Ensure images are properly sized */
+            img {
+                max-width: 100% !important;
+                height: auto !important;
+            }
+            
+            /* PDF generation specific styles */
+            .pdf-section {
+                page-break-inside: avoid;
+                margin-bottom: 1rem;
+            }
+            
+            .pdf-header {
+                font-size: 16pt;
+                font-weight: bold;
+                text-align: center;
+                margin-bottom: 1rem;
+                border-bottom: 2px solid #000;
+                padding-bottom: 0.5rem;
+            }
+            
+            .pdf-subheader {
+                font-size: 14pt;
+                font-weight: bold;
+                margin-top: 1rem;
+                margin-bottom: 0.5rem;
+                border-bottom: 1px solid #000;
+                padding-bottom: 0.25rem;
+            }
+            
+            .pdf-content {
+                font-size: 12pt;
+                line-height: 1.4;
+                margin-bottom: 0.5rem;
+            }
+            
+            .pdf-footer {
+                font-size: 10pt;
+                text-align: center;
+                margin-top: 2rem;
+                border-top: 1px solid #000;
+                padding-top: 0.5rem;
+                color: #666;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% include '_top_header.html' %}
+    <div class="d-flex" id="content-wrapper">
+        {% include '_sidebar.html' %}
+        <div id="page-content-wrapper">
+            <div class="container-fluid pt-3">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div class="container-fluid">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 class="mb-1 text-white">Cloudsphere Job Detail</h2>
+                                <p class="mb-0 opacity-75">{{ job.job_id }}</p>
+                            </div>
+                            <div class="text-end">
+                                <button onclick="goBack()" class="btn btn-light">
+                                    <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step Process -->
+                <div class="step-process-section">
+                    <h4 class="mb-3">Tasks Progress</h4>
+                    <div class="info-value-leadtime" id="totalLeadTime">Calculating...</div>
+                    <div class="step-process-timeline" id="stepProcessTimeline">
+                        <!-- Step process will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Job Information -->
+                <div class="job-info-section">
+                    <h4 class="mb-3">Job Information</h4>
+                    <div class="info-grid">
+                        <!-- First Row: Started At | Deadline | Finished At | Status -->
+                        <div class="info-item">
+                            <div class="info-label">Started At</div>
+                            <div class="info-value">
+                                {% if job.started_at %}
+                                    {{ job.started_at.strftime('%d') }} Desember {{ job.started_at.strftime('%Y') }} {{ job.started_at.strftime('%H:%M') }}
+                                {% else %}
+                                    Not started
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Deadline</div>
+                            <div class="info-value">
+                                {% if job.deadline_at %}
+                                    {{ job.deadline_at.strftime('%d') }} Desember {{ job.deadline_at.strftime('%Y') }} {{ job.deadline_at.strftime('%H:%M') }}
+                                {% else %}
+                                    No deadline
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Finished At</div>
+                            <div class="info-value">
+                                {% if job.finished_at %}
+                                    {{ job.finished_at.strftime('%d') }} Desember {{ job.finished_at.strftime('%Y') }} {{ job.finished_at.strftime('%H:%M') }}
+                                {% else %}
+                                    Not finished
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Status</div>
+                            <div class="info-value">
+                                <span class="priority-badge-new {{ job.status }}">
+                                    {{ job.status.replace('_', ' ').title() }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Second Row: Item Name | Sample Type | Priority Level | Completion -->
+                        <div class="info-item">
+                            <div class="info-label">Item Name</div>
+                            <div class="info-value">{{ job.item_name }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Sample Type</div>
+                            <div class="info-value">
+                                <span class="sample-type-badge {{ job.sample_type.lower().replace(' ', '-') }}" id="sampleTypeBadge">
+                                    <span class="sample-type-icon" id="sampleTypeIcon"></span>
+                                    {{ job.sample_type }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Priority Level</div>
+                            <div class="info-value">
+                                <span class="priority-badge-new {{ job.priority_level }}">
+                                    {{ job.priority_level }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Completion</div>
+                            <div class="info-value">{{ "%.1f"|format(job.completion_percentage or 0) }}%</div>
+                        </div>
+                        
+                        <!-- Third Row: Notes -->
+                        <div class="info-item" style="grid-column: 1 / -1;">
+                            <div class="info-label">Notes</div>
+                            <div class="info-value">{{ job.notes or 'No notes' }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tasks by PIC Assignment -->
+                <div class="tasks-section">
+                    <h4 class="mb-3">Tasks</h4>
+                    <div id="tasksByPic">
+                        <!-- Tasks grouped by PIC will be loaded here -->
+                    </div>
+                    <div id="noTasksMessage" style="display: none;" class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        You don't have access to view any tasks. Only admins and assigned PICs can view tasks.
+                    </div>
+                </div>
+
+                <!-- Proof / Evidence Files by Step -->
+                <div class="evidence-section">
+                    <h4 class="mb-3">Proof Files</h4>
+                    <div id="evidenceByStep">
+                        <!-- Evidence files grouped by step will be loaded here -->
+                    </div>
+                    <div id="noEvidenceMessage" style="display: none;" class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        You don't have access to view any evidence files. Only admins and assigned PICs can view evidence files.
+                    </div>
+                </div>
+
+                <!-- Collaborative Job Notes -->
+                <div class="job-notes-section">
+                    <h4 class="mb-3">Team Notes & Discussions</h4>
+                    
+                    <!-- Add Note Form -->
+                    <div class="add-note-form mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="user-avatar-small me-2">
+                                        {{ current_user.name[0].upper() if current_user.name else 'U' }}
+                                    </div>
+                                    <span class="fw-bold">{{ current_user.name }}</span>
+                                </div>
+                                <textarea class="form-control mb-2" placeholder="Add a note or update..." rows="3" id="newNoteContent"></textarea>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <select class="form-select form-select-sm d-inline-block" style="width: auto;" id="noteType">
+                                            <option value="general">General</option>
+                                            <option value="progress">Progress Update</option>
+                                            <option value="issue">Issue</option>
+                                            <option value="solution">Solution</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <button class="btn btn-primary btn-sm" onclick="addNote()">
+                                            <i class="fas fa-paper-plane me-1"></i> Post Note
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Notes List -->
+                    <div class="notes-list" id="notesList">
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-spinner fa-spin me-2"></i>Loading notes...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <!-- TEMPORARILY HIDDEN: Approve/Reject functionality
+                    {% if current_user.is_admin() %}
+                    <button onclick="approveJob()" class="btn-action btn-primary-action">
+                        <i class="fas fa-check me-1"></i> Approve Job
+                    </button>
+                    <button onclick="rejectJob()" class="btn-action btn-secondary-action">
+                        <i class="fas fa-times me-1"></i> Reject Job
+                    </button>
+                    {% endif %}
+                    END HIDDEN -->
+                    <button onclick="exportPDF()" class="btn-action btn-secondary-action">
+                        <i class="fas fa-download me-1"></i> Export PDF
+                    </button>
+                    <!-- Force Complete button removed - job finalization is automatic or handled by PIC via complete-if-ready -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-body message-text">
+                <!-- Message will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Preview Modal -->
+    <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-labelledby="imagePreviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imagePreviewModalLabel">File Preview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div id="imagePreviewContainer">
+                        <!-- Image will be loaded here -->
+                    </div>
+                    <div id="pdfPreviewContainer" style="display: none;">
+                        <!-- PDF will be loaded here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <a id="downloadFileBtn" href="#" target="_blank" class="btn btn-primary">
+                        <i class="fas fa-download me-1"></i> Download
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Evidence Confirmation Modal -->
+    <div class="modal fade" id="deleteEvidenceModal" tabindex="-1" aria-labelledby="deleteEvidenceModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteEvidenceModalLabel">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Konfirmasi Hapus Evidence
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning d-flex align-items-center" role="alert">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-2">
+                            <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <div>
+                            <strong>Peringatan:</strong> Tindakan ini tidak dapat dibatalkan. File evidence akan dihapus secara permanen.
+                        </div>
+                    </div>
+                    <p>Apakah Anda yakin ingin menghapus evidence ini?</p>
+                    <div class="evidence-details-preview" id="deleteEvidencePreview">
+                        <!-- Evidence details will be shown here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteEvidenceBtn">
+                        <i class="fas fa-trash me-1"></i>Hapus Evidence
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- PDF.js for PDF preview -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Set PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    
+    <script>
+        window.jobId = "{{ job.id if job else 'null' }}";
+        window.currentUserRole = "{{ current_user.role|e }}";
+        window.currentUserId = "{{ current_user.id if current_user else 'null' }}";
+        window.jobSampleType = "{{ job.sample_type if job else '' }}";
+    </script>
+    <!-- Only load detail-specific scripts, not the dashboard script -->
+    <script src="{{ url_for('static', filename='js/rnd_cloudsphere_detail.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/notification_system.js') }}"></script>
+    <script>
+        // Create a simple utility function to get sample icon
+        function getSampleIcon(sampleType) {
+            switch(sampleType.toLowerCase()) {
+                case 'blank':
+                    return `
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="4" y="4" width="16" height="16" rx="2" fill="#E3F2FD" stroke="#1976D2" stroke-width="2"/>
+                            <path d="M8 8L16 16M16 8L8 16" stroke="#1976D2" stroke-width="2" stroke-linecap="round"/>
+                            <circle cx="12" cy="12" r="2" fill="#90CAF9" stroke="#1976D2" stroke-width="1.5"/>
+                            <rect x="10" y="6" width="4" height="2" fill="#64B5F6"/>
+                            <rect x="6" y="10" width="2" height="4" fill="#64B5F6"/>
+                            <rect x="16" y="10" width="2" height="4" fill="#64B5F6"/>
+                            <rect x="10" y="16" width="4" height="2" fill="#64B5F6"/>
+                        </svg>
+                    `;
+                case 'rohs icb':
+                    return `
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#4CAF50"/>
+                            <path d="M9 11L11 13L15 9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    `;
+                case 'rohs ribbon':
+                    return `
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2C12 2 13 2 14 3C15 4 16 4 16 6C16 8 15 9 15 11C15 13 16 14 16 16C16 18 15 19 14 20C13 21 12 21 12 21C12 21 11 21 10 20C9 19 8 18 8 16C8 14 9 13 9 11C9 9 8 8 8 6C8 4 9 4 10 3C11 2 12 2 12 2Z" fill="#FF5722"/>
+                            <path d="M12 2L12 21" stroke="#D84315" stroke-width="1.5" stroke-linecap="round"/>
+                            <path d="M8 6L16 6" stroke="#FF8A65" stroke-width="1.5" stroke-linecap="round"/>
+                            <path d="M8 16L16 16" stroke="#FF8A65" stroke-width="1.5" stroke-linecap="round"/>
+                            <path d="M10 11L11 12L14 9" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="12" cy="6" r="1.5" fill="#FFEB3B"/>
+                            <circle cx="12" cy="16" r="1.5" fill="#FFEB3B"/>
+                        </svg>
+                    `;
+                default:
+                    return `
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="3" y="4" width="18" height="16" rx="2" stroke="#757575" stroke-width="2"/>
+                            <path d="M7 8H17M7 12H17M7 16H13" stroke="#757575" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    `;
+            }
+        }
+        
+        // Initialize sample type icon
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.jobSampleType) {
+                const sampleTypeIcon = document.getElementById('sampleTypeIcon');
+                if (sampleTypeIcon) {
+                    sampleTypeIcon.innerHTML = getSampleIcon(window.jobSampleType);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

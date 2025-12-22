@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Cloudsphere New</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <style>
+        /* Page Header with gradient - matching other RND templates */
+        .page-header {
+            background: linear-gradient(135deg,
+                #667eea 0%,
+                #764ba2 25%,
+                #f093fb 50%,
+                #4facfe 75%,
+                #667eea 100%);
+            color: white;
+            padding: 2rem 0;
+            margin: -1rem -15px 2rem -15px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3),
+                        0 0 40px rgba(118, 75, 162, 0.1),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        
+        .page-header .container-fluid {
+            padding: 0 15px;
+        }
+        
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .page-header p {
+            margin: 0;
+            opacity: 0.75;
+        }
+
+        /* Filter section - matching other RND templates */
+        .filter-section {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        
+        /* Form controls clean styling - matching other RND templates */
+        .form-control-clean {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.95);
+        }
+        .form-control-clean:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25),
+                        0 2px 8px rgba(102, 126, 234, 0.1);
+            background: rgba(255, 255, 255, 0.98);
+        }
+        
+        .form-select, .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        .form-select:focus, .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25),
+                        0 2px 8px rgba(102, 126, 234, 0.1);
+            background: rgba(255, 255, 255, 0.98);
+        }
+        
+        .form-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+        
+        /* Button styling - matching other RND templates */
+        .btn-clean {
+            border: none;
+            border-radius: 25px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary-clean {
+            background: linear-gradient(135deg,
+                #667eea 0%,
+                #764ba2 50%,
+                #4facfe 100%);
+            color: white;
+            box-shadow: 0 2px 15px rgba(102, 126, 234, 0.4),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-primary-clean:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.5),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        /* Statistics Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Combined Statistics Cards */
+        .combined-stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 2fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .combined-stats-grid.full-width {
+            grid-template-columns: 1fr;
+        }
+
+        .combined-stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Card background colors */
+        .combined-stats-grid > .combined-stat-card:nth-child(1) {
+            background: white;
+        }
+
+        .combined-stats-grid > .combined-stat-card:nth-child(2) {
+            background: white;
+        }
+
+        .combined-stats-grid > .combined-stat-card:nth-child(3) {
+            background: white;
+        }
+
+        .combined-stat-header {
+            display: flex;
+            align-items: center;
+            margin: 0 -2rem 1.5rem -2rem;
+            padding: 0 2rem 0.75rem 2rem;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .combined-stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            background: #667eea;
+            color: white;
+        }
+
+        .combined-stat-icon svg {
+            width: 20px;
+            height: 20px;
+            display: block;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .combined-stat-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+            margin-top: -0.25rem;
+        }
+
+        .combined-stat-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .combined-stat-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0;
+            border-radius: 0;
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+
+        .combined-stat-item:hover {
+            background: transparent;
+        }
+
+        .combined-stat-item-icon {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #667eea;
+            color: white;
+            font-size: 20px;
+        }
+
+        .combined-stat-item-icon svg {
+            width: 20px;
+            height: 20px;
+            display: block;
+        }
+
+        .combined-stat-item-content {
+            flex: 1;
+        }
+
+        .combined-stat-item-label {
+            font-size: 0.8rem;
+            color: #64748b;
+            font-weight: 400;
+            margin-bottom: 0.1rem;
+            text-transform: none;
+            letter-spacing: 0px;
+        }
+
+        .combined-stat-item-value {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: #1e293b;
+            line-height: 1.2;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--card-color);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06);
+        }
+
+        .stat-card.total-jobs { --card-color: #667eea; }
+        .stat-card.blank { --card-color: #1976D2; }
+        .stat-card.rohs-icb { --card-color: #4CAF50; }
+        .stat-card.rohs-ribbon { --card-color: #FF5722; }
+        .stat-card.completed { --card-color: #56ab2f; }
+        .stat-card.overdue { --card-color: #fa709a; }
+        .stat-card.design { --card-color: #9C27B0; }
+        .stat-card.mastercard { --card-color: #795548; }
+        .stat-card.polymer-ribbon { --card-color: #2196F3; }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-icon::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--card-color);
+            opacity: 0.1;
+            border-radius: 12px;
+        }
+
+        .stat-icon svg {
+            width: 24px;
+            height: 24px;
+            display: block;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Icon color overrides */
+        .stat-card.total-jobs .stat-icon svg path { fill: #667eea; stroke: #667eea; }
+        .stat-card.blank .stat-icon svg rect, .stat-card.blank .stat-icon svg path { stroke: #1976D2; fill: none; }
+        .stat-card.blank .stat-icon svg circle { fill: #90CAF9; stroke: #1976D2; }
+        .stat-card.rohs-icb .stat-icon svg path:first-child { fill: #4CAF50; }
+        .stat-card.rohs-icb .stat-icon svg path:last-child { stroke: white; }
+        .stat-card.rohs-ribbon .stat-icon svg path:first-child { fill: #FF5722; }
+        .stat-card.rohs-ribbon .stat-icon svg path:not(:first-child) { stroke: #D84315; }
+        .stat-card.completed .stat-icon svg path { fill: #56ab2f; }
+        .stat-card.overdue .stat-icon svg circle, .stat-card.overdue .stat-icon svg path { stroke: #fa709a; fill: none; }
+        .stat-card.design .stat-icon svg path, .stat-card.design .stat-icon svg rect { fill: #9C27B0; }
+        .stat-card.mastercard .stat-icon svg rect, .stat-card.mastercard .stat-icon svg circle, .stat-card.mastercard .stat-icon svg path { fill: #795548; }
+        .stat-card.mastercard .stat-icon svg rect { stroke: #795548; fill: none; }
+        .stat-card.polymer-ribbon .stat-icon svg path, .stat-card.polymer-ribbon .stat-icon svg circle { fill: #2196F3; }
+
+        /* Scores Individu Section */
+        .scores-individu-section {
+            margin-bottom: 2rem;
+        }
+
+        .chart-subtitle {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+            font-weight: 400;
+        }
+
+        .scores-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .score-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
+            transition: none;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .score-card-header {
+            margin-bottom: 1.25rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+        }
+
+        .score-card-username {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+
+        .score-card-userid {
+            font-size: 0.75rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .score-items {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .score-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+            transition: none;
+        }
+
+        .score-item:last-child {
+            border-bottom: none;
+        }
+
+        .score-item-label {
+            font-size: 0.85rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .score-item-value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #667eea;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        .score-item-unit {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            font-weight: 400;
+            margin-left: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: #64748b;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1e293b;
+            line-height: 1.2;
+        }
+
+        /* Chart Container */
+        .chart-container-wrapper {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .chart-nav-buttons {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .chart-nav-btn {
+            padding: 0.6rem 1.2rem;
+            border: 2px solid #e9ecef;
+            background: white;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+
+        .chart-nav-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .chart-nav-btn.active {
+            background: #667eea;
+            border-color: #667eea;
+            color: white;
+        }
+
+        .chart-canvas {
+            position: relative;
+            height: 400px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+        
+        /* Adjust scores container to fit within chart height */
+        .chart-canvas .scores-container {
+            height: 100%;
+            max-height: 400px;
+            overflow: hidden;
+            padding: 0.25rem;
+            margin-top: 0;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            align-content: start;
+        }
+        
+        /* Make score cards more compact to fit better */
+        .chart-canvas .score-card {
+            padding: 0.75rem;
+            margin-bottom: 0;
+            height: fit-content;
+            max-height: 500px;
+            overflow: hidden;
+        }
+        
+        .chart-canvas .score-card-header {
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+        
+        .chart-canvas .score-card-username {
+            font-size: 0.9rem;
+        }
+        
+        .chart-canvas .score-card-userid {
+            font-size: 0.7rem;
+        }
+        
+        .chart-canvas .score-item {
+            padding: 0.35rem 0;
+        }
+        
+        .chart-canvas .score-item-label {
+            font-size: 0.75rem;
+        }
+        
+        .chart-canvas .score-item-value {
+            font-size: 0.85rem;
+        }
+        
+        /* Hide scrollbar but keep functionality */
+        .chart-canvas .scores-container::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .chart-canvas .scores-container {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Performance Indicators Grid */
+        .performance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        /* 4-Column Layout (3:1 ratio) */
+        .main-chart-area {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .charts-3-column {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+        
+        /* Combined Chart Container */
+        .combined-chart-container {
+            position: relative;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-chart-area {
+                grid-template-columns: 1fr;
+            }
+            .charts-3-column {
+                grid-template-columns: 1fr;
+            }
+            .combined-stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .scores-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .chart-canvas {
+                height: 380px;
+            }
+            
+            .chart-canvas .scores-container {
+                max-height: 380px;
+                gap: 0.5rem;
+            }
+            
+            .chart-canvas .score-card {
+                padding: 0.6rem;
+                max-height: 170px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 1rem;
+            }
+
+            .combined-stats-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .combined-stat-card {
+                padding: 1rem;
+            }
+
+            .stat-card {
+                padding: 1rem;
+            }
+
+            .stat-value {
+                font-size: 1.5rem;
+            }
+
+            .combined-stat-item-value {
+                font-size: 1rem;
+            }
+
+            .chart-container-wrapper {
+                padding: 1rem;
+            }
+
+            .chart-nav-buttons {
+                flex-direction: column;
+            }
+
+            .chart-nav-btn {
+                width: 100%;
+            }
+            
+            .scores-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-canvas {
+                height: 350px;
+            }
+            
+            .chart-canvas .scores-container {
+                max-height: 350px;
+                gap: 0.5rem;
+            }
+            
+            .chart-canvas .score-card {
+                padding: 0.5rem;
+                max-height: 160px;
+            }
+            
+            .chart-canvas .score-card-header {
+                margin-bottom: 0.4rem;
+                padding-bottom: 0.4rem;
+            }
+            
+            .chart-canvas .score-item {
+                padding: 0.25rem 0;
+            }
+        }
+
+        /* Performance Indicators 2-Column Layout */
+        .combined-stat-card .row {
+            margin: 0;
+        }
+        
+        .combined-stat-card .col-md-6 {
+            padding: 0 0.75rem;
+        }
+        
+        @media (max-width: 768px) {
+            .combined-stat-card .col-md-6 {
+                padding: 0;
+                margin-bottom: 1rem;
+            }
+        }
+
+        /* Loading state */
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .loading-spinner.show {
+            display: block;
+        }
+
+        .spinner-border {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    {% include '_top_header.html' %}
+    <div class="d-flex" id="content-wrapper">
+        {% include '_sidebar.html' %}
+        
+        <div class="flex-grow-1 p-4">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="container-fluid">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1 text-white">Dashboard Cloudsphere New</h2>
+                            <p class="mb-0 opacity-75">Multi-PIC job tracking and progress management system</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Section -->
+            <div class="filter-section">
+                <div class="row align-items-end g-3">
+                    <div class="col-md-3">
+                        <label for="filterYear" class="form-label">Filter Tahun</label>
+                        <select id="filterYear" class="form-select form-control-clean">
+                            <option value="">Semua Tahun</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filterMonth" class="form-label">Filter Bulan</label>
+                        <select id="filterMonth" class="form-select form-control-clean">
+                            <option value="">Semua Bulan</option>
+                            <option value="1">Januari</option>
+                            <option value="2">Februari</option>
+                            <option value="3">Maret</option>
+                            <option value="4">April</option>
+                            <option value="5">Mei</option>
+                            <option value="6">Juni</option>
+                            <option value="7">Juli</option>
+                            <option value="8">Agustus</option>
+                            <option value="9">September</option>
+                            <option value="10">Oktober</option>
+                            <option value="11">November</option>
+                            <option value="12">Desember</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Combined Statistics Cards -->
+            <div class="combined-stats-grid">
+                <!-- Job Statistics Card -->
+                <div class="combined-stat-card">
+                    <div class="combined-stat-header">
+                        <h3 class="combined-stat-title">Job Statistics</h3>
+                    </div>
+                    <div class="combined-stat-content">
+                        <div class="combined-stat-item">
+                            <div class="combined-stat-item-icon" style="background: #667eea;">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 2L2 7V12C2 16.5 12 22 12 22S22 16.5 22 12V7L12 2Z" fill="white" stroke="white" stroke-width="2"/>
+                                </svg>
+                            </div>
+                            <div class="combined-stat-item-content">
+                                <div class="combined-stat-item-label">Total Jobs</div>
+                                <div class="combined-stat-item-value" id="totalJobsValue">0</div>
+                            </div>
+                        </div>
+                        <div class="combined-stat-item">
+                            <div class="combined-stat-item-icon" style="background: #1976D2;">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <rect x="4" y="4" width="16" height="16" rx="2" fill="white" stroke="white" stroke-width="2"/>
+                                    <path d="M8 8L16 16M16 8L8 16" stroke="#1976D2" stroke-width="2" stroke-linecap="round"/>
+                                    <circle cx="12" cy="12" r="2" fill="#1976D2" stroke="#1976D2" stroke-width="1.5"/>
+                                    <rect x="10" y="6" width="4" height="2" fill="#1976D2"/>
+                                    <rect x="6" y="10" width="2" height="4" fill="#1976D2"/>
+                                    <rect x="16" y="10" width="2" height="4" fill="#1976D2"/>
+                                    <rect x="10" y="16" width="4" height="2" fill="#1976D2"/>
+                                </svg>
+                            </div>
+                            <div class="combined-stat-item-content">
+                                <div class="combined-stat-item-label">Blank</div>
+                                <div class="combined-stat-item-value" id="blankJobsValue">0</div>
+                            </div>
+                        </div>
+                        <div class="combined-stat-item">
+                            <div class="combined-stat-item-icon" style="background: #4CAF50;">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="white"/>
+                                    <path d="M9 11L11 13L15 9" stroke="#4CAF50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <div class="combined-stat-item-content">
+                                <div class="combined-stat-item-label">RoHS ICB</div>
+                                <div class="combined-stat-item-value" id="rohsIcbValue">0</div>
+                            </div>
+                        </div>
+                        <div class="combined-stat-item">
+                            <div class="combined-stat-item-icon" style="background: #FF5722;">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 2C12 2 13 2 14 3C15 4 16 4 16 6C16 8 15 9 15 11C15 13 16 14 16 16C16 18 15 19 14 20C13 21 12 21 12 21C12 21 11 21 10 20C9 19 8 18 8 16C8 14 9 13 9 11C9 9 8 8 8 6C8 4 9 4 10 3C11 2 12 2 12 2Z" fill="white"/>
+                                    <path d="M12 2L12 21" stroke="#D84315" stroke-width="1.5" stroke-linecap="round"/>
+                                    <path d="M8 6L16 6" stroke="#FF8A65" stroke-width="1.5" stroke-linecap="round"/>
+                                    <path d="M8 16L16 16" stroke="#FF8A65" stroke-width="1.5" stroke-linecap="round"/>
+                                    <path d="M10 11L11 12L14 9" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <circle cx="12" cy="6" r="1.5" fill="#FFEB3B"/>
+                                    <circle cx="12" cy="16" r="1.5" fill="#FFEB3B"/>
+                                </svg>
+                            </div>
+                            <div class="combined-stat-item-content">
+                                <div class="combined-stat-item-label">RoHS Ribbon</div>
+                                <div class="combined-stat-item-value" id="rohsRibbonValue">0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Statistics Card -->
+                <div class="combined-stat-card">
+                    <div class="combined-stat-header">
+                        <h3 class="combined-stat-title">Performance Statistics</h3>
+                    </div>
+                    <div class="combined-stat-content">
+                        <div class="combined-stat-item">
+                            <div class="combined-stat-item-icon" style="background: #56ab2f;">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z" fill="white" stroke="white" stroke-width="2"/>
+                                </svg>
+                            </div>
+                            <div class="combined-stat-item-content">
+                                <div class="combined-stat-item-label">Completed Jobs</div>
+                                <div class="combined-stat-item-value" id="completedJobsValue">0</div>
+                            </div>
+                        </div>
+                        <div class="combined-stat-item">
+                            <div class="combined-stat-item-icon" style="background: #fa709a;">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="10" stroke="white" stroke-width="2" fill="none"/>
+                                    <path d="M12 6V12L16 14" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <div class="combined-stat-item-content">
+                                <div class="combined-stat-item-label">Overdue Jobs</div>
+                                <div class="combined-stat-item-value" id="overdueJobsValue">0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Indicators Card -->
+                <div class="combined-stat-card">
+                    <div class="combined-stat-header">
+                        <h3 class="combined-stat-title">Performance Indicators</h3>
+                    </div>
+                    <div class="row">
+                        <!-- Only show the three required performance indicators -->
+                        <div class="col-md-12">
+                            <div class="combined-stat-content">
+                                <div class="combined-stat-item">
+                                    <div class="combined-stat-item-icon" style="background: #1976D2;">
+                                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <rect x="4" y="4" width="16" height="16" rx="2" stroke="white" stroke-width="2" fill="none"/>
+                                            <path d="M8 8L16 16M16 8L8 16" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                                        </svg>
+                                    </div>
+                                    <div class="combined-stat-item-content">
+                                        <div class="combined-stat-item-label">Avg. Blank</div>
+                                        <div class="combined-stat-item-value" id="avgBlankValue">0</div>
+                                    </div>
+                                </div>
+                                <div class="combined-stat-item">
+                                    <div class="combined-stat-item-icon" style="background: #4CAF50;">
+                                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="white"/>
+                                        </svg>
+                                    </div>
+                                    <div class="combined-stat-item-content">
+                                        <div class="combined-stat-item-label">Avg. RoHS ICB</div>
+                                        <div class="combined-stat-item-value" id="avgRohsIcbValue">0</div>
+                                    </div>
+                                </div>
+                                <div class="combined-stat-item">
+                                    <div class="combined-stat-item-icon" style="background: #FF5722;">
+                                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M12 2C12 2 13 2 14 3C15 4 16 4 16 6C16 8 15 9 15 11C15 13 16 14 16 16C16 18 15 19 14 20C13 21 12 21 12 21C12 21 11 21 10 20C9 19 8 18 8 16C8 14 9 13 9 11C9 9 8 8 8 6C8 4 9 4 10 3C11 2 12 2 12 2Z" fill="white"/>
+                                        </svg>
+                                    </div>
+                                    <div class="combined-stat-item-content">
+                                        <div class="combined-stat-item-label">Avg. RoHS Ribbon</div>
+                                        <div class="combined-stat-item-value" id="avgRohsRibbonValue">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Chart Area (3:1 ratio) -->
+            <div class="main-chart-area">
+                <!-- Combined Chart Container with Navigation -->
+                <div class="chart-container-wrapper">
+                    <div class="chart-header">
+                        <div class="chart-title" id="combinedChartTitle">Scores KPI</div>
+                        <div class="chart-nav-buttons">
+                            <button class="chart-nav-btn active" data-chart="scores">Scores KPI</button>
+                            <button class="chart-nav-btn" data-chart="trend">Trend</button>
+                            <button class="chart-nav-btn" data-chart="distribution">Distribution</button>
+                            <button class="chart-nav-btn" data-chart="pic">PIC Distribution</button>
+                        </div>
+                    </div>
+                    
+                    <div class="loading-spinner" id="combinedChartLoading">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Chart Content (Initially Hidden) -->
+                    <div class="chart-canvas" id="chartContent" style="display: none;">
+                        <canvas id="combinedChart"></canvas>
+                    </div>
+                    
+                    <!-- Scores Individu Content (Initially Visible) -->
+                    <div class="chart-canvas" id="scoresContent">
+                        <div class="loading-spinner" id="scoresLoading">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="scores-container" id="scoresContainer">
+                            <!-- Individual score cards will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 1 Column SLA Health Chart -->
+                <div class="chart-container-wrapper">
+                    <div class="chart-header">
+                        <div class="chart-title">SLA Health</div>
+                    </div>
+                    <div class="loading-spinner" id="slaLoading">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                    <div class="chart-canvas">
+                        <canvas id="slaHealthChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Dashboard JS -->
+    <script src="{{ url_for('static', filename='js/rnd_cloudsphere_dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/notification_system.js') }}"></script>
+</body>
+</html>

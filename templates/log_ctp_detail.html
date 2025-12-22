@@ -768,7 +768,7 @@
                             <input type="file" class="form-control" id="editProblemPhotos" accept="image/*" multiple>
                             <div class="mt-2" id="editPhotosPreview"></div>
                             <div class="mt-2" id="currentPhotosPreview"></div>
-                            <small class="text-muted">Format: JPG, PNG, GIF. Maksimal 20 foto.</small>
+                            <small class="text-muted">Format: JPG, PNG, GIF. Maksimal 20 foto. Klik tombol X untuk menghapus foto.</small>
                         </div>
                         
                         <div class="mb-3">
@@ -776,7 +776,7 @@
                             <input type="file" class="form-control" id="editProblemDocuments" accept=".pdf,.docx,.zip" multiple>
                             <div class="mt-2" id="editDocumentsPreview"></div>
                             <div class="mt-2" id="currentDocumentsPreview"></div>
-                            <small class="text-muted">Format: PDF, DOCX, ZIP. Maksimal 5 dokumen. ZIP maksimal 50MB.</small>
+                            <small class="text-muted">Format: PDF, DOCX, ZIP. Maksimal 5 dokumen. ZIP maksimal 50MB. Klik tombol X untuk menghapus dokumen.</small>
                         </div>
                         
                         <div class="row">
@@ -965,6 +965,8 @@
         let currentMachineId = null;
         let currentMachineNickname = null;
         let currentUserRole = null;
+        let photosToDelete = [];  // Track photo IDs to delete on update
+        let documentsToDelete = [];  // Track document IDs to delete on update
 
         document.addEventListener('DOMContentLoaded', async function() {
             console.log('=== DOM CONTENT LOADED ===');
@@ -1600,6 +1602,10 @@
         }
 
         function editProblem(logId) {
+            // Reset deletion arrays when opening modal
+            photosToDelete = [];
+            documentsToDelete = [];
+            
             // First check if this is a completed problem and user is not admin
             fetch(`/impact/api/ctp-problem-logs/${logId}`)
                 .then(response => response.json())
@@ -1628,9 +1634,14 @@
                         // Show current photos if exists
                         if (log.photos && log.photos.length > 0) {
                             const photosHtml = log.photos.map(photo => `
-                                <div class="col-md-3 mb-2">
-                                    <img src="/impact/${photo.file_path}" class="photo-preview" alt="Current Photo" style="height: 80px;">
-                                    <div class="small text-muted">${photo.filename}</div>
+                                <div class="col-md-3 mb-2 position-relative">
+                                    <img src="/impact/${photo.file_path}" class="photo-preview" alt="Current Photo" style="height: 80px; width: 100%;">
+                                    <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 rounded-circle p-0" 
+                                            style="width: 24px; height: 24px; line-height: 1;"
+                                            onclick="deletePhotoFromEdit(${photo.id}, this)" title="Hapus foto">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    <div class="small text-muted text-truncate">${photo.filename}</div>
                                 </div>
                             `).join('');
                             
@@ -1649,11 +1660,17 @@
                         // Show current documents if exists
                         if (log.documents && log.documents.length > 0) {
                             const documentsHtml = log.documents.map(doc => `
-                                <div class="col-md-6 mb-2">
-                                    <a href="/impact/${doc.file_path}" target="_blank" class="btn btn-sm btn-outline-${doc.file_type === 'pdf' ? 'danger' : doc.file_type === 'zip' ? 'warning' : 'primary'}">
-                                        <i class="fas fa-${doc.file_type === 'pdf' ? 'file-pdf' : doc.file_type === 'zip' ? 'file-archive' : 'file-word'}"></i>
-                                        ${doc.filename}
-                                    </a>
+                                <div class="col-md-6 mb-2 position-relative">
+                                    <div class="btn-group w-100" role="group">
+                                        <a href="/impact/${doc.file_path}" target="_blank" class="btn btn-sm btn-outline-${doc.file_type === 'pdf' ? 'danger' : doc.file_type === 'zip' ? 'warning' : 'primary'} flex-grow-1">
+                                            <i class="fas fa-${doc.file_type === 'pdf' ? 'file-pdf' : doc.file_type === 'zip' ? 'file-archive' : 'file-word'}"></i>
+                                            ${doc.filename}
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-danger" 
+                                                onclick="deleteDocumentFromEdit(${doc.id}, this)" title="Hapus dokumen">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             `).join('');
                             
@@ -1721,90 +1738,141 @@
             
             showLoading();
             
-            // Check if photos or documents are being updated
-            const photoFiles = document.getElementById('editProblemPhotos').files;
-            const documentFiles = document.getElementById('editProblemDocuments').files;
+            // First, delete marked photos and documents
+            const deletePromises = [];
             
-            if (photoFiles.length > 0 || documentFiles.length > 0) {
-                // If files are being updated, use FormData
-                const formData = new FormData();
-                formData.append('problem_description', problemDescription);
-                formData.append('error_code', errorCode);
-                formData.append('technician_type', technicianType);
-                formData.append('technician_name', document.getElementById('editTechnicianName').value);
-                formData.append('solution', document.getElementById('editSolution').value);
-                formData.append('start_time', problemDate);
-                
-                // Add multiple photos
-                for (let i = 0; i < photoFiles.length; i++) {
-                    formData.append('problem_photos', photoFiles[i]);
-                }
-                
-                // Add multiple documents
-                for (let i = 0; i < documentFiles.length; i++) {
-                    formData.append('problem_documents', documentFiles[i]);
-                }
-                
-                fetch(`/impact/api/ctp-problem-logs/${problemId}`, {
-                    method: 'PUT',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    hideLoading();
-                    if (data.success) {
-                        showToast('Problem berhasil diupdate', 'success');
-                        bootstrap.Modal.getInstance(document.getElementById('editProblemModal')).hide();
-                        form.reset();
-                        document.getElementById('currentPhotosPreview').innerHTML = '';
-                        document.getElementById('currentDocumentsPreview').innerHTML = '';
-                        loadProblems();
-                        updateStatistics(currentMachineId);
-                    } else {
-                        showToast('Gagal mengupdate problem: ' + (data.error || 'Unknown error'), 'danger');
+            // Delete photos that are marked for deletion
+            for (let photoId of photosToDelete) {
+                deletePromises.push(
+                    fetch(`/impact/api/ctp-problem-photos/${photoId}`, {
+                        method: 'DELETE'
+                    }).then(response => response.json())
+                );
+            }
+            
+            // Delete documents that are marked for deletion
+            for (let docId of documentsToDelete) {
+                deletePromises.push(
+                    fetch(`/impact/api/ctp-problem-documents/${docId}`, {
+                        method: 'DELETE'
+                    }).then(response => response.json())
+                );
+            }
+            
+            // After all deletions complete, proceed with update
+            Promise.all(deletePromises)
+                .then(responses => {
+                    // Check if any deletions failed
+                    const deletionErrors = responses.filter(r => !r.success);
+                    if (deletionErrors.length > 0) {
+                        hideLoading();
+                        showToast('Beberapa file gagal dihapus, tapi data tetap diupdate', 'warning');
+                        return;
                     }
+                    
+                    // Clear deletion arrays after successful delete
+                    photosToDelete = [];
+                    documentsToDelete = [];
+                    
+                    // Now proceed with update
+                    proceedWithUpdate();
                 })
                 .catch(error => {
                     hideLoading();
-                    console.error('Error updating problem:', error);
-                    showToast('Gagal mengupdate problem', 'danger');
+                    console.error('Error deleting files:', error);
+                    showToast('Gagal menghapus file', 'danger');
                 });
-            } else {
-                // If no file update, use JSON
-                fetch(`/impact/api/ctp-problem-logs/${problemId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        problem_description: problemDescription,
-                        error_code: errorCode,
-                        technician_type: technicianType,
-                        technician_name: document.getElementById('editTechnicianName').value,
-                        solution: document.getElementById('editSolution').value,
-                        start_time: problemDate
+            
+            function proceedWithUpdate() {
+                // Check if photos or documents are being added
+                const photoFiles = document.getElementById('editProblemPhotos').files;
+                const documentFiles = document.getElementById('editProblemDocuments').files;
+                
+                if (photoFiles.length > 0 || documentFiles.length > 0) {
+                    // If files are being updated, use FormData
+                    const formData = new FormData();
+                    formData.append('problem_description', problemDescription);
+                    formData.append('error_code', errorCode);
+                    formData.append('technician_type', technicianType);
+                    formData.append('technician_name', document.getElementById('editTechnicianName').value);
+                    formData.append('solution', document.getElementById('editSolution').value);
+                    formData.append('start_time', problemDate);
+                    
+                    // Add multiple photos
+                    for (let i = 0; i < photoFiles.length; i++) {
+                        formData.append('problem_photos', photoFiles[i]);
+                    }
+                    
+                    // Add multiple documents
+                    for (let i = 0; i < documentFiles.length; i++) {
+                        formData.append('problem_documents', documentFiles[i]);
+                    }
+                    
+                    fetch(`/impact/api/ctp-problem-logs/${problemId}`, {
+                        method: 'PUT',
+                        body: formData
                     })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    hideLoading();
-                    if (data.success) {
-                        showToast('Problem berhasil diupdate', 'success');
-                        bootstrap.Modal.getInstance(document.getElementById('editProblemModal')).hide();
-                        form.reset();
-                        document.getElementById('currentPhotosPreview').innerHTML = '';
-                        document.getElementById('currentDocumentsPreview').innerHTML = '';
-                        loadProblems();
-                        updateStatistics(currentMachineId);
-                    } else {
-                        showToast('Gagal mengupdate problem: ' + (data.error || 'Unknown error'), 'danger');
-                    }
-                })
-                .catch(error => {
-                    hideLoading();
-                    console.error('Error updating problem:', error);
-                    showToast('Gagal mengupdate problem', 'danger');
-                });
+                    .then(response => response.json())
+                    .then(data => {
+                        hideLoading();
+                        if (data.success) {
+                            showToast('Problem berhasil diupdate', 'success');
+                            bootstrap.Modal.getInstance(document.getElementById('editProblemModal')).hide();
+                            form.reset();
+                            document.getElementById('currentPhotosPreview').innerHTML = '';
+                            document.getElementById('currentDocumentsPreview').innerHTML = '';
+                            photosToDelete = [];
+                            documentsToDelete = [];
+                            loadProblems();
+                            updateStatistics(currentMachineId);
+                        } else {
+                            showToast('Gagal mengupdate problem: ' + (data.error || 'Unknown error'), 'danger');
+                        }
+                    })
+                    .catch(error => {
+                        hideLoading();
+                        console.error('Error updating problem:', error);
+                        showToast('Gagal mengupdate problem', 'danger');
+                    });
+                } else {
+                    // If no file update, use JSON
+                    fetch(`/impact/api/ctp-problem-logs/${problemId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            problem_description: problemDescription,
+                            error_code: errorCode,
+                            technician_type: technicianType,
+                            technician_name: document.getElementById('editTechnicianName').value,
+                            solution: document.getElementById('editSolution').value,
+                            start_time: problemDate
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        hideLoading();
+                        if (data.success) {
+                            showToast('Problem berhasil diupdate', 'success');
+                            bootstrap.Modal.getInstance(document.getElementById('editProblemModal')).hide();
+                            form.reset();
+                            document.getElementById('currentPhotosPreview').innerHTML = '';
+                            document.getElementById('currentDocumentsPreview').innerHTML = '';
+                            photosToDelete = [];
+                            documentsToDelete = [];
+                            loadProblems();
+                            updateStatistics(currentMachineId);
+                        } else {
+                            showToast('Gagal mengupdate problem: ' + (data.error || 'Unknown error'), 'danger');
+                        }
+                    })
+                    .catch(error => {
+                        hideLoading();
+                        console.error('Error updating problem:', error);
+                        showToast('Gagal mengupdate problem', 'danger');
+                    });
+                }
             }
         }
 
@@ -1999,6 +2067,33 @@
             if (docDiv) {
                 docDiv.remove();
             }
+        }
+
+        function deletePhotoFromEdit(photoId, button) {
+            // Add photo ID to deletion list
+            if (!photosToDelete.includes(photoId)) {
+                photosToDelete.push(photoId);
+            }
+
+            // Remove the photo element from UI
+            const photoDiv = button.closest('.col-md-3');
+            if (photoDiv) {
+                photoDiv.remove();
+            }
+        }
+
+        function deleteDocumentFromEdit(documentId, button) {
+            // Add document ID to deletion list
+            if (!documentsToDelete.includes(documentId)) {
+                documentsToDelete.push(documentId);
+            }
+
+            // Remove the document element from UI
+            const docDiv = button.closest('.col-md-6');
+            if (docDiv) {
+                docDiv.remove();
+            }
+            showToast('Dokumen akan dihapus saat Anda klik Update', 'info');
         }
 
         function showPhoto(filename) {

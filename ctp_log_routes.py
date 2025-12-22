@@ -14,7 +14,7 @@ import random
 import traceback
 
 # Third party imports
-from flask import Blueprint, abort, flash, jsonify, make_response, redirect, render_template, request, send_file, send_from_directory, session, url_for
+from flask import Blueprint, abort, current_app, flash, jsonify, make_response, redirect, render_template, request, send_file, send_from_directory, session, url_for
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
@@ -241,7 +241,7 @@ def create_ctp_problem_log():
         # Handle multiple photo uploads
         if 'problem_photos' in request.files:
             photos = request.files.getlist('problem_photos')
-            upload_dir = os.path.join(ctp_log_bp.instance_path, 'uploads', 'ctp_problems')
+            upload_dir = os.path.join(current_app.instance_path, 'uploads', 'ctp_problems')
             os.makedirs(upload_dir, exist_ok=True)
             
             for i, photo in enumerate(photos):
@@ -266,7 +266,7 @@ def create_ctp_problem_log():
         # Handle document uploads
         if 'problem_documents' in request.files:
             documents = request.files.getlist('problem_documents')
-            upload_dir = os.path.join(ctp_log_bp.instance_path, 'uploads', 'ctp_documents')
+            upload_dir = os.path.join(current_app.instance_path, 'uploads', 'ctp_documents')
             os.makedirs(upload_dir, exist_ok=True)
             
             for i, doc in enumerate(documents):
@@ -457,7 +457,7 @@ def update_ctp_problem_log(log_id):
             # Handle multiple photo uploads if present
             if 'problem_photos' in request.files:
                 photos = request.files.getlist('problem_photos')
-                upload_dir = os.path.join(ctp_log_bp.instance_path, 'uploads', 'ctp_problems')
+                upload_dir = os.path.join(current_app.instance_path, 'uploads', 'ctp_problems')
                 os.makedirs(upload_dir, exist_ok=True)
                 
                 for i, photo in enumerate(photos):
@@ -484,7 +484,7 @@ def update_ctp_problem_log(log_id):
             # Handle document uploads if present
             if 'problem_documents' in request.files:
                 documents = request.files.getlist('problem_documents')
-                upload_dir = os.path.join(ctp_log_bp.instance_path, 'uploads', 'ctp_documents')
+                upload_dir = os.path.join(current_app.instance_path, 'uploads', 'ctp_documents')
                 os.makedirs(upload_dir, exist_ok=True)
                 
                 for i, doc in enumerate(documents):
@@ -614,4 +614,64 @@ def delete_ctp_problem_log(log_id):
         return jsonify({'success': True})
     except Exception as e:
         db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@ctp_log_bp.route('/api/ctp-problem-photos/<int:photo_id>', methods=['DELETE'])
+@login_required
+def delete_ctp_problem_photo(photo_id):
+    if not (current_user.can_access_ctp() or current_user.role == 'admin'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+    
+    try:
+        photo = CTPProblemPhoto.query.get_or_404(photo_id)
+        
+        # Delete physical file if exists
+        if photo.file_path:
+            file_full_path = os.path.join(current_app.instance_path, photo.file_path)
+            if os.path.exists(file_full_path):
+                try:
+                    os.remove(file_full_path)
+                    logger.info(f"Deleted physical file: {file_full_path}")
+                except Exception as e:
+                    logger.warning(f"Failed to delete physical file {file_full_path}: {str(e)}")
+        
+        # Delete database record
+        db.session.delete(photo)
+        db.session.commit()
+        
+        logger.info(f"Deleted CTPProblemPhoto with id={photo_id}")
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error deleting CTP problem photo: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@ctp_log_bp.route('/api/ctp-problem-documents/<int:document_id>', methods=['DELETE'])
+@login_required
+def delete_ctp_problem_document(document_id):
+    if not (current_user.can_access_ctp() or current_user.role == 'admin'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+    
+    try:
+        document = CTPProblemDocument.query.get_or_404(document_id)
+        
+        # Delete physical file if exists
+        if document.file_path:
+            file_full_path = os.path.join(current_app.instance_path, document.file_path)
+            if os.path.exists(file_full_path):
+                try:
+                    os.remove(file_full_path)
+                    logger.info(f"Deleted physical file: {file_full_path}")
+                except Exception as e:
+                    logger.warning(f"Failed to delete physical file {file_full_path}: {str(e)}")
+        
+        # Delete database record
+        db.session.delete(document)
+        db.session.commit()
+        
+        logger.info(f"Deleted CTPProblemDocument with id={document_id}")
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error deleting CTP problem document: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500

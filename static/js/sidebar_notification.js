@@ -7,9 +7,6 @@ const SidebarNotification = {
                 return;
             }
             const data = await response.json();
-            
-            // --- DEBUG: log payload untuk verifikasi struktur data ---
-            console.debug('[SidebarNotification] Notification payload:', data);
 
             // =========================
             // CTP Production Notifications
@@ -76,18 +73,6 @@ const SidebarNotification = {
                 designAdjustmentActive;
 
             this.updateParentNotification('prepressSubmenu', prepressHasNotifications);
-
-            console.debug('[SidebarNotification] Status flags:', {
-                ctpAdjustmentActive,
-                ctpBonActive,
-                ctpHasNotifications,
-                mountingAdjustmentActive,
-                curveAdjustmentActive,
-                mountingHasNotifications,
-                designAdjustmentActive,
-                pdndAdjustmentActive,
-                prepressHasNotifications
-            });
 
         } catch (error) {
             // Optional: silent fail in production

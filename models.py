@@ -67,10 +67,6 @@ class User(UserMixin, db.Model):
             return self.division.name
         return None
     
-    def is_admin(self):
-        """Check if user is admin"""
-        return self.role == 'admin'
-    
     def is_operator(self):
         """Check if user is operator"""
         return self.role == 'operator'
@@ -106,7 +102,7 @@ class User(UserMixin, db.Model):
         return self.can_access_division('PRESS')
     
     def can_access_rnd(self):
-        """Check if user can access Press production"""
+        """Check if user can access R&D production"""
         return self.can_access_division('RND')
         
     def get_accessible_divisions(self):

@@ -35,10 +35,12 @@ import pymysql
 # Local imports
 from config import DB_CONFIG
 from models import db, Division, User, CTPProductionLog, PlateAdjustmentRequest, PlateBonRequest, KartuStockPlateFuji, KartuStockPlateSaphira, KartuStockChemicalFuji, KartuStockChemicalSaphira, MonthlyWorkHours, ChemicalBonCTP, BonPlate, CTPMachine, CTPProblemLog, CTPProblemPhoto, CTPProblemDocument, CTPNotification, TaskCategory, Task, CloudsphereJob, JobTask, JobProgress, JobProgressTask, EvidenceFile
+from models_rnd import db, RNDProgressStep, RNDProgressTask, RNDJob, RNDJobProgressAssignment, RNDJobTaskAssignment, RNDLeadTimeTracking, RNDEvidenceFile, RNDTaskCompletion
 from export_routes import export_bp
 from ctp_log_routes import ctp_log_bp
 from ctp_dashboard_routes import ctp_dashboard_bp
 from cloudsphere import cloudsphere_bp
+from rnd_cloudsphere import rnd_cloudsphere_bp
 from plate_details import PLATE_DETAILS
 
 # Timezone untuk Jakarta
@@ -112,6 +114,7 @@ app.register_blueprint(export_bp)
 app.register_blueprint(ctp_log_bp)
 app.register_blueprint(ctp_dashboard_bp)
 app.register_blueprint(cloudsphere_bp)
+app.register_blueprint(rnd_cloudsphere_bp)
 
 # Initialize the db instance from models.py with the app
 db.init_app(app)

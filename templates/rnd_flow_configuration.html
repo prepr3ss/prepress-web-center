@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>R&D Flow Configuration Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        /* Page Header with gradient */
+        .page-header {
+            background: linear-gradient(135deg,
+                #667eea 0%,
+                #764ba2 25%,
+                #f093fb 50%,
+                #4facfe 75%,
+                #667eea 100%);
+            color: white;
+            padding: 2rem 0;
+            margin: -1rem -15px 2rem -15px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3),
+                        0 0 40px rgba(118, 75, 162, 0.1),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Filter section styling */
+        .filter-section {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        
+        /* Form controls clean styling */
+        .form-control-clean {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.95);
+        }
+        .form-control-clean:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25),
+                        0 2px 8px rgba(102, 126, 234, 0.1);
+            background: rgba(255, 255, 255, 0.98);
+        }
+        
+        .form-select, .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        .form-select:focus, .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25),
+                        0 2px 8px rgba(102, 126, 234, 0.1);
+            background: rgba(255, 255, 255, 0.98);
+        }
+        
+        .form-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+        
+        /* Button styling */
+        .btn-clean {
+            border: none;
+            border-radius: 25px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary-clean {
+            background: linear-gradient(135deg,
+                #667eea 0%,
+                #764ba2 50%,
+                #4facfe 100%);
+            color: white;
+            box-shadow: 0 2px 15px rgba(102, 126, 234, 0.4),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-primary-clean:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.5),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+        
+        /* Flow Configuration Specific Styles */
+        .step-item {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background-color: #f8f9fa;
+            position: relative;
+        }
+        .step-item.dragging {
+            opacity: 0.5;
+            transform: rotate(2deg);
+        }
+        .step-item .drag-handle {
+            cursor: move;
+            color: #6c757d;
+        }
+        .step-item .step-number {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 30px;
+            height: 30px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .step-item .step-content {
+            margin-left: 45px;
+        }
+        .step-item .step-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .available-steps {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .available-step-item {
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .available-step-item:hover {
+            background-color: #e9ecef;
+        }
+        .configuration-card {
+            margin-bottom: 20px;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+        }
+        .configuration-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+            border-color: rgba(102, 126, 234, 0.2);
+        }
+        .configuration-card .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            padding: 15px;
+        }
+        .configuration-card .card-body {
+            padding: 20px;
+        }
+        .badge-default {
+            background: #10b981 !important;
+            color: white !important;
+            padding: 0.35em 0.65em !important;
+            font-size: 0.75em !important;
+            font-weight: 600 !important;
+            border-radius: 0.375rem !important;
+        }
+        
+        /* Priority Badges */
+        .badge-status {
+            position: absolute;
+            top: 10px;
+            right: 16px;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* Additional badge styles to match rnd_cloudsphere.html theme */
+        .badge-status.not-active { background: #fee2e2; color: #dc2626; }
+        .badge-status.active { background: #dcfce7; color: #16a34a; }
+        .badge-status.default { background: #e7e5e5; color: #6b7280; margin-top: 30px;}     
+        .badge.required { background: #fee2e2; color: #dc2626;
+            position: absolute;
+            margin-left: 10px;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px; }
+        .badge.optional { background: #e7e5e5; color: #6b7280;
+            position: absolute;
+            margin-left: 10px;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px; }
+
+        .badge.bg-success {
+            background: #10b981 !important;
+            color: white !important;
+        }
+        
+        .badge.bg-secondary {
+            background: #6b7280 !important;
+            color: white !important;
+        }
+        
+        .badge.bg-primary {
+            background: #3b82f6 !important;
+            color: white !important;
+        }
+        .drop-zone {
+            min-height: 100px;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: #6c757d;
+            transition: all 0.3s;
+        }
+        .drop-zone.drag-over {
+            border-color: #007bff;
+            background-color: #f0f8ff;
+        }
+        .task-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        .task-item {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .task-item:last-child {
+            border-bottom: none;
+        }
+        
+        /* Loading and Empty States */
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+        
+        .empty-state svg {
+            margin-bottom: 24px;
+            opacity: 0.7;
+        }
+        
+        .empty-state h3 {
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-size: 1.5rem;
+        }
+        
+        .empty-state p {
+            color: #6b7280;
+            margin-bottom: 24px;
+            font-size: 1rem;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        /* Sample Type Icon Styling */
+        .sample-type-icon {
+            width: 16px;
+            height: 16px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        
+        .sample-type-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Sample Type Badge Colors - Matching rnd_cloudsphere.html theme */
+        .badge-blank {
+            background-color: #E3F2FD !important;
+            color: #1976D2 !important;
+        }
+        
+        .badge-rohs-icb {
+            background-color: #E8F5E9 !important;
+            color: #4CAF50 !important;
+        }
+        
+        .badge-rohs-ribbon {
+            background-color: #FFF3E0 !important;
+            color: #FF9800 !important;
+        }
+    </style>
+</head>
+<body>
+    {% include '_top_header.html' %}
+    <div class="d-flex" id="content-wrapper">
+        {% include '_sidebar.html' %}
+        <div id="page-content-wrapper">
+            <div class="container-fluid pt-3">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div class="container-fluid">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 class="mb-1 text-white">R&D Flow Configuration Management</h2>
+                                <p class="mb-0 opacity-75">Dynamic flow configuration system for sample types</p>
+                            </div>
+                            <div class="text-end">
+                                <button onclick="showCreateModal()" class="btn btn-primary-clean">
+                                    <i class="fas fa-plus-circle me-1"></i> Create New Configuration
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter Section -->
+                <div class="filter-section">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="sampleTypeFilter" class="form-label">Sample Type</label>
+                            <select id="sampleTypeFilter" class="form-select form-control-clean">
+                                <option value="">All Sample Types</option>
+                                <option value="Blank">Blank</option>
+                                <option value="RoHS ICB">RoHS ICB</option>
+                                <option value="RoHS Ribbon">RoHS Ribbon</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="statusFilter" class="form-label">Status</label>
+                            <select id="statusFilter" class="form-select form-control-clean">
+                                <option value="active">Active</option>
+                                <option value="all">All</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button class="btn btn-success" onclick="initializeDefaults()" id="initDefaultsBtn" style="display: none;">
+                                <i class="bi bi-arrow-clockwise"></i> Initialize Defaults
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Configurations List -->
+                <div id="configurationsList" class="row">
+                    <!-- Configurations will be loaded here -->
+                </div>
+                
+                <!-- Loading Spinner -->
+                <div class="loading-spinner" id="loadingSpinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading configurations...</p>
+                </div>
+                
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="60" cy="60" r="50" fill="#F3F4F6" stroke="#E5E7EB" stroke-width="2"/>
+                        <path d="M45 40C45 37.7909 46.7909 36 49 36H71C73.2091 36 75 37.7909 75 40V50H45V40Z" fill="#E5E7EB"/>
+                        <path d="M40 50H80C82.2091 50 84 51.7909 84 54V68C84 70.2091 82.2091 72 80 72H40C37.7909 72 36 70.2091 36 68V54C36 51.7909 37.7909 50 40 50Z" fill="#E5E7EB"/>
+                        <circle cx="45" cy="61" r="3" fill="#9CA3AF"/>
+                        <circle cx="60" cy="61" r="3" fill="#9CA3AF"/>
+                        <circle cx="75" cy="61" r="3" fill="#9CA3AF"/>
+                        <path d="M50 78H70C72.2091 78 74 79.7909 74 82C74 84.2091 72.2091 86 70 86H50C47.7909 86 46 84.2091 46 82C46 79.7909 47.7909 78 50 78Z" fill="#E5E7EB"/>
+                        <path d="M55 40V36M65 40V36" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <h3>No Configurations Found</h3>
+                    <p>There are no flow configurations matching your current filters.</p>
+                    <button class="btn btn-outline-primary" onclick="clearFilters()">
+                        Clear Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Configuration Modal -->
+    <div class="modal fade" id="configurationModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Create Flow Configuration</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="configurationForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="configName" class="form-label">Configuration Name *</label>
+                                    <input type="text" class="form-control form-control-clean" id="configName" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="configSampleType" class="form-label">Sample Type *</label>
+                                    <select class="form-select form-control-clean" id="configSampleType" required>
+                                        <option value="">Select Sample Type</option>
+                                        <option value="Blank">Blank</option>
+                                        <option value="RoHS ICB">RoHS ICB</option>
+                                        <option value="RoHS Ribbon">RoHS Ribbon</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="configDescription" class="form-label">Description</label>
+                            <textarea class="form-control form-control-clean" id="configDescription" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="configIsDefault">
+                                    <label class="form-check-label" for="configIsDefault">
+                                        Set as Default for this Sample Type
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="configIsActive" checked>
+                                    <label class="form-check-label" for="configIsActive">
+                                        Active
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <h6>Configure Flow Steps</h6>
+                        <div class="row">
+                            <div class="col-md-5">
+                                <h6>Available Steps</h6>
+                                <div id="availableSteps" class="available-steps">
+                                    <!-- Available steps will be loaded here -->
+                                </div>
+                            </div>
+                            <div class="col-md-7">
+                                <h6>Flow Steps (drag to reorder)</h6>
+                                <div id="flowSteps" class="drop-zone">
+                                    <p class="text-muted">Drag steps here to configure flow</p>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary-clean" onclick="saveConfiguration()">Save Configuration</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Configuration Modal -->
+    <div class="modal fade" id="viewConfigurationModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Flow Configuration Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="viewConfigurationContent">
+                    <!-- Configuration details will be loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    
+    <script>
+        window.currentUserRole = "{{ current_user.role|e }}";
+    </script>
+    <script src="{{ url_for('static', filename='js/rnd_flow_configuration.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/notification_system.js') }}"></script>
+</body>
+</html>

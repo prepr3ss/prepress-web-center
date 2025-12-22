@@ -28,7 +28,11 @@ document.addEventListener('DOMContentLoaded', function () {
         '/impact/log-ctp/suprasetter': {linkId: 'logCtpSuprasetterLink', parentSelector: '.log-ctp-submenu-parent', grandParentSelector: '.ctp-submenu-parent', greatGrandParentSelector: '.prepress-submenu-parent'},
         '/impact/log-ctp/platesetter': {linkId: 'logCtpPlatesetterLink', parentSelector: '.log-ctp-submenu-parent', grandParentSelector: '.ctp-submenu-parent', greatGrandParentSelector: '.prepress-submenu-parent'},
         '/impact/log-ctp/trendsetter': {linkId: 'logCtpTrendsetterLink', parentSelector: '.log-ctp-submenu-parent', grandParentSelector: '.ctp-submenu-parent', greatGrandParentSelector: '.prepress-submenu-parent'},
-        '/impact/cloudsphere/': {linkId: 'cloudsphereLink', parentSelector: '.rnd-submenu-parent', grandParentSelector: '.prepress-submenu-parent'}
+        '/impact/cloudsphere/': {linkId: 'cloudsphereLink', parentSelector: '.rnd-submenu-parent', grandParentSelector: '.prepress-submenu-parent'},
+        '/impact/rnd-cloudsphere/dashboard': {linkId: 'rndCloudsphereDashboardLink', parentSelector: '.rnd-submenu-parent', grandParentSelector: '.prepress-submenu-parent'},
+        '/impact/rnd-cloudsphere/dashboard': {linkId: 'rndCloudsphereDashboardLink', parentSelector: '.rnd-submenu-parent', grandParentSelector: '.prepress-submenu-parent'},
+        '/impact/rnd-cloudsphere/': {linkId: 'rndCloudsphereLink', parentSelector: '.rnd-submenu-parent', grandParentSelector: '.prepress-submenu-parent'},
+        '/impact/rnd-cloudsphere/flow-configuration': {linkId: 'rndFlowConfigurationLink', parentSelector: '.rnd-submenu-parent', grandParentSelector: '.prepress-submenu-parent'}
     };
     
     // Fungsi untuk mengaktifkan tautan dan parent submenu berdasarkan URL
@@ -78,9 +82,14 @@ document.addEventListener('DOMContentLoaded', function () {
         activeMapping = {linkId: 'cloudsphereLink', parentSelector: '.rnd-submenu-parent', grandParentSelector: '.prepress-submenu-parent'};
     }
 
-        if (!activeMapping && currentPath.match(/^\/impact\/edit-kpi-ctp\/\d+$/)) {
+    if (!activeMapping && currentPath.match(/^\/impact\/edit-kpi-ctp\/\d+$/)) {
         // Use cloudsphere mapping for job detail pages with any ID
         activeMapping = {linkId: 'inputKpiCtpLink', parentSelector: '.ctp-submenu-parent', grandParentSelector: '.prepress-submenu-parent'};
+    }
+
+    if (!activeMapping && currentPath.match(/^\/impact\/rnd-cloudsphere\/job\/\d+$/)) {
+        // Use cloudsphere mapping for job detail pages with any ID
+        activeMapping = {linkId: 'rndCloudsphereLink', parentSelector: '.rnd-submenu-parent', grandParentSelector: '.prepress-submenu-parent'};
     }
     
     // Panggil fungsi setActive untuk mengatur status awal

@@ -120,14 +120,25 @@
         }
 
         .step-tracker::before {
-            content: '';
+            display: none; /* Hide the default line */
+        }
+        
+        /* Individual connector lines between steps */
+        .step-connector {
             position: absolute;
             top: 20px;
-            left: 40px;
-            right: 40px;
-            height: 2px;
+            height: 10px;
             background: #e5e7eb;
-            z-index: 1;
+            z-index: 0; /* Behind the step circle (z-index: 2) */
+        }
+        
+        /* Connector colors based on step status */
+        .step-connector.completed {
+            background: var(--success-color);
+        }
+        
+        .step-connector.active {
+            background: linear-gradient(to right, var(--success-color) 50%, #e5e7eb 50%);
         }
 
         .step {
@@ -820,52 +831,64 @@
         
         // Get step structure based on sample type
         function getStepStructure(sampleType) {
-            const baseSteps = [
-                { id: 1, name: 'Job Created', description: 'Initial job creation' },
-                { id: 5, name: 'Job Finish', description: 'Job completion and approval' }
-            ];
+            let steps = [];
             
             switch (sampleType) {
                 case 'Blank':
-                    return [
-                        ...baseSteps.slice(0, 1),
-                        { id: 2, name: 'Initial Design & Documentation', description: 'Create technical drawings and layouts' },
-                        { id: 3, name: 'Physical Sample Creation & Assembly', description: 'Create and assemble physical samples' },
-                        { id: 4, name: 'Quality Testing & Final Validation', description: 'Perform quality tests and validation' },
-                        baseSteps[1]
+                    steps = [
+                        { name: 'Job Created', description: 'Initial job creation' },
+                        { name: 'Initial Plotter & Documentation', description: 'Create technical drawings and layouts' },
+                        { name: 'Physical Sample Creation & Assembly', description: 'Create and assemble physical samples' },
+                        { name: 'Quality Testing & Final Validation', description: 'Perform quality tests and validation' },
+                        { name: 'Job Finish', description: 'Job completion and approval' }
                     ];
+                    break;
                 case 'Mastercard':
-                    return [
-                        ...baseSteps.slice(0, 1),
-                        { id: 2, name: 'Mastercard Document Control & Release', description: 'Process and release mastercard documents' },
-                        baseSteps[1]
+                    steps = [
+                        { name: 'Job Created', description: 'Initial job creation' },
+                        { name: 'Mastercard Document Control & Release', description: 'Process and release mastercard documents' },
+                        { name: 'Job Finish', description: 'Job completion and approval' }
                     ];
+                    break;
                 case 'RoHS Regular ICB':
-                    return [
-                        ...baseSteps.slice(0, 1),
-                        { id: 2, name: 'Print Quality Approval', description: 'Approve print quality for offset and DFS' },
-                        { id: 3, name: 'Sample Production & Preparation', description: 'Produce and prepare samples' },
-                        { id: 4, name: 'Quality Testing & Final Validation', description: 'Perform quality tests and validation' },
-                        baseSteps[1]
+                    steps = [
+                        { name: 'Job Created', description: 'Initial job creation' },
+                        { name: 'Print Quality Approval', description: 'Approve print quality for offset and DFS' },
+                        { name: 'Sample Production & Preparation', description: 'Produce and prepare samples' },
+                        { name: 'Quality Testing & Final Validation', description: 'Perform quality tests and validation' },
+                        { name: 'Job Finish', description: 'Job completion and approval' }
                     ];
+                    break;
                 case 'RoHS Ribbon':
-                    return [
-                        ...baseSteps.slice(0, 1),
-                        { id: 2, name: 'Print & Spot UV Quality Approval', description: 'Approve print and UV quality' },
-                        { id: 3, name: 'Sample Production & Preparation', description: 'Produce and prepare samples' },
-                        { id: 4, name: 'Quality Testing & Final Validation', description: 'Perform quality tests and validation' },
-                        baseSteps[1]
+                    steps = [
+                        { name: 'Job Created', description: 'Initial job creation' },
+                        { name: 'Print & Spot UV Quality Approval', description: 'Approve print and UV quality' },
+                        { name: 'Sample Production & Preparation', description: 'Produce and prepare samples' },
+                        { name: 'Quality Testing & Final Validation', description: 'Perform quality tests and validation' },
+                        { name: 'Job Finish', description: 'Job completion and approval' }
                     ];
+                    break;
                 case 'Polymer Ribbon':
-                    return [
-                        ...baseSteps.slice(0, 1),
-                        { id: 2, name: 'Material Planning & Procurement', description: 'Plan and procure materials' },
-                        { id: 3, name: 'Material Receiving & Handover', description: 'Receive and handover materials' },
-                        baseSteps[1]
+                    steps = [
+                        { name: 'Job Created', description: 'Initial job creation' },
+                        { name: 'Material Planning & Procurement', description: 'Plan and procure materials' },
+                        { name: 'Material Receiving & Handover', description: 'Receive and handover materials' },
+                        { name: 'Job Finish', description: 'Job completion and approval' }
                     ];
+                    break;
                 default:
-                    return baseSteps;
+                    steps = [
+                        { name: 'Job Created', description: 'Initial job creation' },
+                        { name: 'Job Finish', description: 'Job completion and approval' }
+                    ];
             }
+            
+            // Add dynamic IDs based on position
+            return steps.map((step, index) => ({
+                id: index + 1,
+                name: step.name,
+                description: step.description
+            }));
         }
         
         // Group tasks by step based on their category
@@ -876,6 +899,10 @@
             stepStructure.forEach(step => {
                 tasksByStep[step.id] = [];
             });
+            
+            // Get the total number of steps for this sample type
+            const totalSteps = stepStructure.length;
+            const lastStepId = totalSteps; // Job Finish is always the last step
             
             // Group tasks by step based on their category
             tasks.forEach(task => {
@@ -901,6 +928,7 @@
                             }
                             break;
                         case 'Mastercard':
+                            // For Mastercard, step 2 is the middle step (Document Control)
                             stepId = 2;
                             break;
                         case 'RoHS Regular ICB':
@@ -953,8 +981,46 @@
             // Calculate step statuses
             const stepStatuses = calculateStepStatuses(stepStructure, tasksByStep, completedTasksMap);
             
+            // Set CSS variable for total steps
+            trackerContainer.style.setProperty('--total-steps', stepStructure.length);
+            
+            // Calculate step width percentage
+            const stepWidth = 100 / stepStructure.length;
+            
+            // Debug information
+            console.log('=== STEP TRACKER DEBUG ===');
+            console.log('Total Steps:', stepStructure.length);
+            console.log('Step Width (%):', stepWidth);
+            console.log('Step Structure:', stepStructure);
+            
+            // Create connectors first (as separate elements)
+            const connectorsHtml = stepStructure.slice(0, -1).map((step, index) => {
+                const status = stepStatuses[step.id];
+                // Position connector at the midpoint between current and next step centers
+                const leftPosition = (index + 0.5) * stepWidth;
+                // Width should be equal to the distance between step centers
+                const connectorWidth = stepWidth * 1.2; // Add 20% extra to ensure full coverage
+                
+                // Debug for each connector
+                console.log(`Connector ${index + 1}:`);
+                console.log(`  Step ID: ${step.id}`);
+                console.log(`  Status: ${status}`);
+                console.log(`  Left Position (%): ${leftPosition}`);
+                console.log(`  Width (%): ${connectorWidth}`);
+                
+                return `<div class="step-connector ${status}" style="left: ${leftPosition}%; width: ${connectorWidth}%"></div>`;
+            }).join('');
+            
+            // Create steps
             const stepsHtml = stepStructure.map((step, index) => {
                 const status = stepStatuses[step.id];
+                // Debug for each step
+                console.log(`Step ${index + 1}:`);
+                console.log(`  Step ID: ${step.id}`);
+                console.log(`  Name: ${step.name}`);
+                console.log(`  Status: ${status}`);
+                console.log(`  Expected Center Position (%): ${(index + 0.5) * stepWidth}`);
+                
                 return `
                     <div class="step ${status}" data-step-id="${step.id}">
                         <div class="step-circle">${step.id}</div>
@@ -963,12 +1029,16 @@
                 `;
             }).join('');
             
-            trackerContainer.innerHTML = stepsHtml;
+            trackerContainer.innerHTML = connectorsHtml + stepsHtml;
+            
+            console.log('=== END DEBUG ===');
         }
         
         // Calculate step statuses
         function calculateStepStatuses(stepStructure, tasksByStep, completedTasksMap) {
             const statuses = {};
+            const totalSteps = stepStructure.length;
+            const lastStepId = totalSteps; // Job Finish is always the last step
             
             stepStructure.forEach(step => {
                 const stepTasks = tasksByStep[step.id] || [];
@@ -976,7 +1046,7 @@
                 if (step.id === 1) {
                     // Job Created is always completed
                     statuses[step.id] = 'completed';
-                } else if (step.id === 5) {
+                } else if (step.id === lastStepId) {
                     // Job Finish - check if all previous steps are completed
                     const allPreviousStepsCompleted = stepStructure
                         .filter(s => s.id < step.id)
@@ -1008,7 +1078,11 @@
             // Calculate step statuses
             const stepStatuses = calculateStepStatuses(stepStructure, tasksByStep, completedTasksMap);
             
-            const contentsHtml = stepStructure.filter(step => step.id !== 1 && step.id !== 5).map(step => {
+            // Get the first and last step IDs dynamically
+            const firstStepId = 1; // Job Created is always first
+            const lastStepId = stepStructure.length; // Job Finish is always last
+            
+            const contentsHtml = stepStructure.filter(step => step.id !== firstStepId && step.id !== lastStepId).map(step => {
                 const stepTasks = tasksByStep[step.id] || [];
                 const status = stepStatuses[step.id];
                 

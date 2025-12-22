@@ -1138,81 +1138,94 @@ def init_cloudsphere_data():
             # Create categories and tasks
             categories_data = [
                 {
+                    'category_name': 'Design',
+                    'description': 'Tasks for Initial Design',
+                    'tasks': [
+                        'Check EPSON Blue Print', #Design Development & Artwork Approval
+                        'Send Email Initial Design to CSR', #Design Development & Artwork Approval                         
+                        'Create Simulation Artwork', #Design Development & Artwork Approval
+                        'Attend Meeting Proof', #Design Development & Artwork Approval
+                        'Create Final Artwork', #Design Development & Artwork Approval
+                        'Create Digital Print', #Design Development & Artwork Approval
+                        'Approval Digital Print to CSR' #Design Development & Artwork Approval                  
+                    ]
+                },                
+                {
                     'category_name': 'Blank',
                     'description': 'Tasks for Blank sample development',
                     'tasks': [
-                        'Check EPSON Blue Print', #Initial Design & Documentation (Step 2)
-                        'Create Technical Drawing', #Initial Design & Documentation (Step 2)
-                        'Create Plotter', #Initial Design & Documentation (Step 2)
-                        'Fitting Result Plotter', #Initial Design & Documentation (Step 2)
-                        'Create Simulation Layout', #Initial Design & Documentation (Step 2)
-                        'Create LPD Pisau & Millar', #Initial Design & Documentation (Step 2)
-                        'Create Material & Process Memo to PPIC', #Physical Sample Creation & Assembly (Step 3)
-                        'Laminator Process', #Physical Sample Creation & Assembly (Step 3)
-                        'Diecut Process & Fitting', #Physical Sample Creation & Assembly (Step 3)
-                        'Lamina Process & Fitting', #Physical Sample Creation & Assembly (Step 3)
-                        'Pack & Send Sample', #Physical Sample Creation & Assembly (Step 3)
-                        'Process CoA to QC', #Quality Testing & Final Validation (Step 4)
-                        'Moisture Test', #Quality Testing & Final Validation (Step 4)
-                        'Pushpull Test', #Quality Testing & Final Validation (Step 4)
-                        'Box Compression Test', #Quality Testing & Final Validation (Step 4)
-                        'Process Data PAC & Send Email' #Quality Testing & Final Validation (Step 4)
+                        'Check EPSON Blue Print', #Initial Plotter & Documentation 
+                        'Create Technical Drawing', #Initial Plotter & Documentation 
+                        'Create Plotter', #Initial Plotter & Documentation 
+                        'Fitting Result Plotter', #Initial Plotter & Documentation 
+                        'Create Simulation Layout', #Initial Plotter & Documentation 
+                        'Create LPD Pisau & Millar', #Initial Plotter & Documentation 
+                        'Create Material & Process Memo to PPIC', #Physical Sample Creation & Assembly 
+                        'Laminator Process', #Physical Sample Creation & Assembly 
+                        'Diecut Process & Fitting', #Physical Sample Creation & Assembly 
+                        'Lamina Process & Fitting', #Physical Sample Creation & Assembly 
+                        'Pack & Send Sample', #Physical Sample Creation & Assembly 
+                        'Process CoA to QC', #Quality Testing & Final Validation 
+                        'Moisture Test', #Quality Testing & Final Validation 
+                        'Pushpull Test', #Quality Testing & Final Validation 
+                        'Box Compression Test', #Quality Testing & Final Validation 
+                        'Process Data PAC & Send Email' #Quality Testing & Final Validation 
                     ]
                 },
                 {
                     'category_name': 'Mastercard',
                     'description': 'Tasks for Mastercard development',
                     'tasks': [
-                        'Receiving LPM', #Mastercard Document Control & Release (Step 2)
-                        'Create Mastercard', #Mastercard Document Control & Release (Step 2)
-                        'Printout Mastercard', #Mastercard Document Control & Release (Step 2)
-                        'Approval Mastercard', #Mastercard Document Control & Release (Step 2)
-                        'Scan & Copy Mastercard', #Mastercard Document Control & Release (Step 2)
-                        'Handover Mastercard to PPIC' #Mastercard Document Control & Release (Step 2)
+                        'Receiving LPM', #Mastercard Document Control & Release 
+                        'Create Mastercard', #Mastercard Document Control & Release 
+                        'Printout Mastercard', #Mastercard Document Control & Release 
+                        'Approval Mastercard', #Mastercard Document Control & Release 
+                        'Scan & Copy Mastercard', #Mastercard Document Control & Release 
+                        'Handover Mastercard to PPIC' #Mastercard Document Control & Release 
                     ]
                 },                
                 {
                     'category_name': 'RoHS Regular ICB',
                     'description': 'Tasks for RoHS Regular ICB compliance',
                     'tasks': [
-                        'Approval Press Offset', #Print Quality Approval (Step 2)
-                        'Approval Press DFS', #Print Quality Approval (Step 2)
-                        'Laminator Process', #Sample Production & Preparation (Step 3)
-                        'Diecut Process & Fitting', #Sample Production & Preparation (Step 3)
-                        'Lamina Process & Fitting', #Sample Production & Preparation (Step 3)
-                        'Pack & Send Sample', #Sample Production & Preparation (Step 3)          
-                        'Process CoA to QC', #Quality Testing & Final Validation (Step 4)
-                        'Moisture Test', #Quality Testing & Final Validation (Step 4)
-                        'Pushpull Test', #Quality Testing & Final Validation (Step 4)
-                        'Box Compression Test', #Quality Testing & Final Validation (Step 4)
-                        'Process Data PAC & Send Email' #Quality Testing & Final Validation (Step 4)
+                        'Approval Press Offset', #Print Quality Approval 
+                        'Approval Press DFS', #Print Quality Approval 
+                        'Laminator Process', #Sample Production & Preparation 
+                        'Diecut Process & Fitting', #Sample Production & Preparation 
+                        'Lamina Process & Fitting', #Sample Production & Preparation 
+                        'Pack & Send Sample', #Sample Production & Preparation           
+                        'Process CoA to QC', #Quality Testing & Final Validation 
+                        'Moisture Test', #Quality Testing & Final Validation 
+                        'Pushpull Test', #Quality Testing & Final Validation 
+                        'Box Compression Test', #Quality Testing & Final Validation 
+                        'Process Data PAC & Send Email' #Quality Testing & Final Validation 
                     ]
                 },
                 {
                     'category_name': 'RoHS Ribbon',
                     'description': 'Tasks for RoHS Ribbon compliance',
                     'tasks': [
-                        'Approval Press Offset', #Print & Spot UV Quality Approval (Step 2)
-                        'Approval Varnish / Spot UV', #Print & Spot UV Quality Approval (Step 2)
-                        'Diecut Process & Fitting', #Sample Production & Preparation (Step 3)
-                        'Glue Process & Fitting', #Sample Production & Preparation (Step 3)
-                        'Pack & Send Sample', #Sample Production & Preparation (Step 3)             
-                        'Process CoA to QC', #Quality Testing & Final Validation (Step 4)
-                        'Moisture Test', #Quality Testing & Final Validation (Step 4)
-                        'Pushpull Test', #Quality Testing & Final Validation (Step 4)
-                        'Process Data PAC & Send Email' #Quality Testing & Final Validation (Step 4)
+                        'Approval Press Offset', #Print & Spot UV Quality Approval 
+                        'Approval Varnish / Spot UV', #Print & Spot UV Quality Approval 
+                        'Diecut Process & Fitting', #Sample Production & Preparation 
+                        'Glue Process & Fitting', #Sample Production & Preparation 
+                        'Pack & Send Sample', #Sample Production & Preparation              
+                        'Process CoA to QC', #Quality Testing & Final Validation 
+                        'Moisture Test', #Quality Testing & Final Validation 
+                        'Pushpull Test', #Quality Testing & Final Validation 
+                        'Process Data PAC & Send Email' #Quality Testing & Final Validation 
                     ]
                 },
                 {
                     'category_name': 'Polymer Ribbon',
                     'description': 'Tasks for Polymer Ribbon compliance',
                     'tasks': [
-                        'Create Data Polymer & Millar', #Material Planning & Procurement (Step 2)
-                        'Create New Item Code Polymer', #Material Planning & Procurement (Step 2)
-                        'Create Memo PO to Supplier', #Material Planning & Procurement (Step 2)
-                        'Email Order Polymer to Supplier ', #Material Planning & Procurement (Step 2)
-                        'Request Millar to DC Service', #Material Planning & Procurement (Step 2)
-                        'Check Incoming Polymer & Handover to Varnish' #Material Receiving & Handover (Step 3)                     
+                        'Create Data Polymer & Millar', #Material Planning & Procurement 
+                        'Create New Item Code Polymer', #Material Planning & Procurement 
+                        'Create Memo PO to Supplier', #Material Planning & Procurement 
+                        'Email Order Polymer to Supplier ', #Material Planning & Procurement 
+                        'Request Millar to DC Service', #Material Planning & Procurement 
+                        'Check Incoming Polymer & Handover to Varnish' #Material Receiving & Handover                      
                     ]
                 }
             ]
