@@ -1494,8 +1494,11 @@ def get_all_plate_data():
                         matched_size = size
                         # Variant refinement using normalized material for robustness
                         if size == '1030':
+                            # PN detection for SAPHIRA 1030 PN (check first to avoid conflicts)
+                            if 'PN' in material_check:
+                                matched_size = '1030 PN'
                             # UV detection should also consider PJ2 codes commonly used for UV variants
-                            if 'UV' in material_check or 'PJ2' in material_check:
+                            elif 'UV' in material_check or 'PJ2' in material_check:
                                 matched_size = '1030 UV'
                             # Handle LH-PJA or LHPJA variant (accept both with/without hyphen)
                             elif 'LHPJA' in material_check or 'PJA' in material_check:
@@ -2675,13 +2678,18 @@ def print_bon():
 
             # Deteksi varian berdasarkan brand (robust normalization)
             normalized_material = material_upper.replace(' ', '').replace('-', '')
-            if base_size == '1030' and brand == 'FUJI':
-                # FUJI 1030 UV (consider PJ2 as UV indicator)
-                if 'UV' in normalized_material or 'PJ2' in normalized_material:
-                    resolved_size = '1030 UV'
-                # FUJI 1030 LHPJA (accept both LH-PJA and LHPJA, also PJA marker)
-                elif 'LHPJA' in normalized_material or 'PJA' in normalized_material:
-                    resolved_size = '1030 LHPJA'
+            if base_size == '1030':
+                if brand == 'FUJI':
+                    # FUJI 1030 UV (consider PJ2 as UV indicator)
+                    if 'UV' in normalized_material or 'PJ2' in normalized_material:
+                        resolved_size = '1030 UV'
+                    # FUJI 1030 LHPJA (accept both LH-PJA and LHPJA, also PJA marker)
+                    elif 'LHPJA' in normalized_material or 'PJA' in normalized_material:
+                        resolved_size = '1030 LHPJA'
+                elif brand == 'SAPHIRA':
+                    # SAPHIRA 1030 PN
+                    if 'PN' in normalized_material:
+                        resolved_size = '1030 PN'
             elif base_size == '1055':
                 if brand == 'SAPHIRA':
                     # SAPHIRA 1055 PN
@@ -2704,6 +2712,13 @@ def print_bon():
             if resolved_size and resolved_size in plate_details:
                 details = plate_details[resolved_size]
                 code = details['code']
+                
+                # Filter: hanya ambil Bon Konsinyasi (code dimulai dengan 02-049)
+                # Skip Bon Non Konsinyasi (02-023)
+                if not code.startswith('02-049'):
+                    app.logger.info(f"print_bon: skip non-konsinyasi item code='{code}'")
+                    continue
+                
                 total_jumlah = (log.num_plate_good or 0) + (log.num_plate_not_good or 0)
                 wo = (log.wo_number or '').strip()
 

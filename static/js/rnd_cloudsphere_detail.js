@@ -259,19 +259,12 @@ class RNDJobDetail {
                 
                 stepMeta = `<div class="step-meta">${datetimeInfo}</div>`;
             } else if (step.is_process_step) {
-                // Process step - show PIC and completion datetime (from last task)
+                // Process step - show PIC and completion datetime (from progress assignment)
                 let completionDatetime = '';
                 
-                if (step.status === 'completed' && step.tasks && step.tasks.length > 0) {
-                    // Find the last completed task datetime
-                    const completedTasks = step.tasks.filter(task => task.status === 'completed');
-                    if (completedTasks.length > 0) {
-                        // Sort by completion time and get the latest
-                        const lastCompletedTask = completedTasks.sort((a, b) =>
-                            new Date(b.updated_at || b.completed_at) - new Date(a.updated_at || a.completed_at)
-                        )[0];
-                        completionDatetime = this.formatDate(lastCompletedTask.updated_at || lastCompletedTask.completed_at);
-                    }
+                // Use finished_at from progress assignment, not from tasks
+                if (step.status === 'completed' && step.finished_at) {
+                    completionDatetime = this.formatDate(step.finished_at);
                 }
                 
                 stepMeta = `

@@ -620,7 +620,7 @@ class KartuStockPlateFuji(db.Model):
                 if item_code in PlateTypeMapping.FUJI_PLATES:
                     jumlah_per_box = 30 if '1630' not in item_name else 15
                 else: # Fallback untuk Saphira atau lainnya, meskipun ini seharusnya tidak terjadi di kelas Fuji
-                    if '1055 PN' in item_name:
+                    if '1055 PN' in item_name or '1030 PN' in item_name:
                         jumlah_per_box = 40
                     elif '1630' in item_name:
                         jumlah_per_box = 30
@@ -894,7 +894,7 @@ class KartuStockPlateSaphira(db.Model):
                 if item_code in PlateTypeMapping.FUJI_PLATES:
                     jumlah_per_box = 30 if '1630' not in item_name else 15
                 else: # Fallback untuk Saphira atau lainnya, meskipun ini seharusnya tidak terjadi di kelas Fuji
-                    if '1055 PN' in item_name:
+                    if '1055 PN' in item_name or '1030 PN' in item_name:
                         jumlah_per_box = 40
                     elif '1630' in item_name:
                         jumlah_per_box = 30

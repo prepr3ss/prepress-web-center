@@ -12,6 +12,7 @@ class PlateTypeMapping:
 
     SAPHIRA_PLATES = {
         '02-049-000-0000002': 'SAPHIRA 1030',    # Correct code
+        '02-023-000-0000006': 'SAPHIRA 1030 PN', # Correct code
         '02-049-000-0000003': 'SAPHIRA 1055',    # Correct code
         '02-049-000-0000011': 'SAPHIRA 1055 PN', # Correct code
         '02-049-000-0000001': 'SAPHIRA 1630'     # Correct code

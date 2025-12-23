@@ -819,14 +819,20 @@ document.addEventListener('DOMContentLoaded', function() {
             scoresDiv.className = 'score-items';
             
             stageOrder.forEach(stage => {
-                const scoreValue = user.scores[stage] || 0;
+                let scoreValue = user.scores[stage] || 0;
+                // Convert days to hours for Design stage
+                if (stage === 'Design') {
+                    scoreValue = scoreValue * 24;
+                }
                 const scoreItem = document.createElement('div');
                 scoreItem.className = 'score-item';
+                // Use 'jam' (hours) for Design, 'hari' (days) for others
+                const unit = stage === 'Design' ? 'jam' : 'hari';
                 scoreItem.innerHTML = `
                     <div class="score-item-label">${stage}</div>
                     <div>
                         <span class="score-item-value">${scoreValue.toFixed(2)}</span>
-                        <span class="score-item-unit">hari</span>
+                        <span class="score-item-unit">${unit}</span>
                     </div>
                 `;
                 scoresDiv.appendChild(scoreItem);

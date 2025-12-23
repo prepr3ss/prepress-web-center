@@ -128,6 +128,29 @@
             box-shadow: 0 0 0 0.2rem rgba(255, 149, 0, 0.25);
         }
 
+        /* Badge styling untuk Bon Type */
+        .badge-bon-manual {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            padding: 0.35rem 0.65rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+            display: inline-block;
+        }
+
+        .badge-bon-konsinyasi {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            padding: 0.35rem 0.65rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+            display: inline-block;
+        }
+
         /* Toast styling */
         .toast {
             border: none;
@@ -337,7 +360,7 @@
 
 <!-- Print Bon Manual Plate -->
  <div class="modal fade" id="printModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
@@ -376,7 +399,7 @@
                                     <tr>
                                         <th>Item Code</th>
                                         <th>Item Name</th>
-                                        <th style="width: 100px;">Jumlah</th>
+                                        <th>Jumlah</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -1105,7 +1128,17 @@ function getAndDisplayPrintData() {
                 data.plate_usage.forEach(item => {
                     const row = tbody.insertRow();
                     row.insertCell(0).textContent = item.item_code;
-                    row.insertCell(1).textContent = item.item_name;
+                    
+                    // Item Name dengan Badge berdasarkan item_code
+                    const itemNameCell = row.insertCell(1);
+                    let badge = '';
+                    if (item.item_code.startsWith('02-023')) {
+                        badge = ' <span class="badge badge-bon-manual">Bon Non Konsinyasi</span>';
+                    } else if (item.item_code.startsWith('02-049')) {
+                        badge = ' <span class="badge badge-bon-konsinyasi">Bon Konsinyasi</span>';
+                    }
+                    itemNameCell.innerHTML = item.item_name + badge;
+                    
                     row.insertCell(2).textContent = item.jumlah;
                 });
                 
@@ -1256,6 +1289,23 @@ function saveBonRequest() {
 function handlePrint() {
     const date = document.getElementById('printDate').value;
     const plateType = document.getElementById('printPlateType').value;
+    const tbody = document.getElementById('plateDataTable').querySelector('tbody');
+    
+    // Filter: ambil hanya items dengan code 02-049 (Bon Konsinyasi)
+    const rows = tbody.querySelectorAll('tr');
+    const validItems = [];
+    
+    rows.forEach(row => {
+        const itemCode = row.cells[0].textContent.trim();
+        if (itemCode.startsWith('02-049')) {
+            validItems.push(itemCode);
+        }
+    });
+    
+    if (validItems.length === 0) {
+        showToast('Tidak ada item Bon Konsinyasi untuk dicetak. Hanya Bon Konsinyasi yang dapat dicetak.', 'warning');
+        return;
+    }
 
     // Gunakan variabel global, yang sekarang sudah diperbarui
     if (globalRequestNumber) {

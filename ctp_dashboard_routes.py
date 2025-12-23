@@ -315,6 +315,7 @@ def get_ctp_plate_usage_by_type():
             'FUJI 1055 LHPL': 30,
             'FUJI 1630': 15,
             'SAPHIRA 1030': 50,
+            'SAPHIRA 1030 PN': 40,
             'SAPHIRA 1055': 50,
             'SAPHIRA 1055 PN': 40,
             'SAPHIRA 1630': 30
