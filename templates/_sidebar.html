@@ -317,7 +317,7 @@
                     </svg>
                     <span>Dashboard</span>
                 </a>
-                <a href="/impact/curve-data-adjustment" class="list-group-item list-group-item-action ps-5" id="curveDataAdjustmentLink">
+            <!--    <a href="/impact/curve-data-adjustment" class="list-group-item list-group-item-action ps-5" id="curveDataAdjustmentLink">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M12 3l9 4.5-9 4.5L3 7.5 12 3z"/>
                         <path d="M3 12l9 4.5L21 12"/>
@@ -331,12 +331,12 @@
                         <path d="M3 12l9 4.5L21 12"/>
                     </svg>
                     <span>Adjustment Press</span>
-                </a>
+                </a> -->
             </div>
             {% endif %}
 
             <!-- Design Production Submenu - Only show if user can access Design -->
-            {% if current_user.can_access_design() %}
+        <!--    {% if current_user.can_access_design() %}
             <a href="#designSubmenu" data-bs-toggle="collapse" aria-expanded="false"
                class="list-group-item list-group-item-action design-submenu-parent collapsed ps-4">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -358,9 +358,9 @@
                     <span>Adjustment Press</span>
                 </a>
             </div>
-            {% endif %}
+            {% endif %} -->
 
-            <!-- Design Production Submenu - Only show if user can access Design -->
+            <!-- R&D Production Submenu - Only show if user can access RND -->
             {% if current_user.can_access_rnd() %}
             <a href="#rndSubmenu" data-bs-toggle="collapse" aria-expanded="false"
                class="list-group-item list-group-item-action rnd-submenu-parent collapsed ps-4">
@@ -381,14 +381,6 @@
                     </svg>
                     <span>Dashboard</span>
                 </a>
-            <!--<a href="/impact/cloudsphere" class="list-group-item list-group-item-action ps-5" id="cloudsphereLink">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                        <path d="M12 8v8"/>
-                        <path d="M8 12h8"/>
-                    </svg>
-                    <span>Cloudsphere</span>
-                </a> -->
                 <a href="/impact/rnd-cloudsphere" class="list-group-item list-group-item-action ps-5" id="rndCloudsphereLink">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
