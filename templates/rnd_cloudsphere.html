@@ -633,9 +633,16 @@
                                 <p class="mb-0 opacity-75">Multi-PIC job tracking and progress management system</p>
                             </div>
                             <div class="text-end">
+                                {% if current_user.role == 'admin' %}
+                                <button onclick="showExportModal()" class="btn btn-success me-2" id="exportExcelBtn">
+                                    <i class="fas fa-file-excel me-1"></i> Export Data
+                                </button>
+                                {% endif %}
+                                {% if current_user.role == 'admin' %}
                                 <button onclick="createNewRNDJob()" class="btn btn-primary-clean me-2">
                                     <i class="fas fa-plus-circle me-1"></i> Create New Job
                                 </button>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -692,6 +699,7 @@
                         </div>
                     </div>
                 </div>
+
 
                 <div id="dataMessage" class="alert d-none" role="alert"></div>
                 
@@ -912,6 +920,58 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-danger" onclick="confirmDeleteJob()">Delete Job</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Export Modal -->
+    <div class="modal fade" id="exportModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-file-export me-2"></i>Export Data RND Jobs
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="exportForm">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="includeAllData" onchange="toggleExportFilters()">
+                                <label class="form-check-label" for="includeAllData">
+                                    <strong>Export semua data tanpa filter</strong>
+                                </label>
+                            </div>
+                            <small class="text-muted">Centang untuk mengabaikan filter tanggal dan sample type</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="exportDateFrom" class="form-label">Tanggal Dari</label>
+                            <input type="date" class="form-control form-control-clean" id="exportDateFrom" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="exportDateTo" class="form-label">Tanggal Sampai</label>
+                            <input type="date" class="form-control form-control-clean" id="exportDateTo" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="exportSampleType" class="form-label">Sample Type</label>
+                            <select class="form-control form-control-clean" id="exportSampleType">
+                                <option value="">Semua Sample Types</option>
+                                <option value="Blank">Blank</option>
+                                <option value="RoHS ICB">RoHS ICB</option>
+                                <option value="RoHS Ribbon">RoHS Ribbon</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Batal
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="exportWithFilters()">
+                        <i class="fas fa-file-excel me-2"></i>Export
+                    </button>
                 </div>
             </div>
         </div>

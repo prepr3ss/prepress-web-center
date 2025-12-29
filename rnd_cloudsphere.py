@@ -3396,3 +3396,83 @@ def complete_job_if_ready(job_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@rnd_cloudsphere_bp.route('/api/jobs/export/excel')
+@login_required
+@require_rnd_access
+def export_rnd_jobs_excel():
+    """Export RND jobs to Excel format with comprehensive data"""
+    try:
+        # Parse filters from request
+        filters = {}
+        
+        # Date range filters
+        start_date_str = request.args.get('start_date')
+        end_date_str = request.args.get('end_date')
+        
+        if start_date_str:
+            try:
+                # Parse date string (expecting YYYY-MM-DD format)
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+                # Convert to Jakarta timezone
+                if start_date.tzinfo is None:
+                    start_date = jakarta_tz.localize(start_date)
+                filters['start_date'] = start_date
+            except ValueError:
+                return jsonify({'success': False, 'error': 'Invalid start date format. Use YYYY-MM-DD'}), 400
+        
+        if end_date_str:
+            try:
+                # Parse date string (expecting YYYY-MM-DD format)
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+                # Add one day to make it inclusive
+                end_date = end_date.replace(hour=23, minute=59, second=59)
+                # Convert to Jakarta timezone
+                if end_date.tzinfo is None:
+                    end_date = jakarta_tz.localize(end_date)
+                filters['end_date'] = end_date
+            except ValueError:
+                return jsonify({'success': False, 'error': 'Invalid end date format. Use YYYY-MM-DD'}), 400
+        
+        # Other filters
+        sample_type = request.args.get('sample_type', '').strip()
+        if sample_type:
+            filters['sample_type'] = sample_type
+        
+        status = request.args.get('status', '').strip()
+        if status:
+            filters['status'] = status
+        
+        # Generate Excel file
+        from services.rnd_excel_export_service import RNDExcelExportService
+        export_service = RNDExcelExportService(db.session, jakarta_tz)
+        
+        excel_buffer = export_service.export_jobs_to_excel(filters)
+        filename = export_service.generate_filename()
+        
+        # Return file as download
+        return send_file(
+            excel_buffer,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        
+    except ValueError as ve:
+        if "No jobs found" in str(ve):
+            return jsonify({
+                'success': False,
+                'error': 'No data found matching the selected filters'
+            }), 404
+        else:
+            current_app.logger.error(f"Error exporting Excel: {str(ve)}")
+            return jsonify({
+                'success': False,
+                'error': f'Error exporting Excel file: {str(ve)}'
+            }), 400
+    except Exception as e:
+        current_app.logger.error(f"Error exporting Excel: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Error exporting Excel file: {str(e)}'
+        }), 500

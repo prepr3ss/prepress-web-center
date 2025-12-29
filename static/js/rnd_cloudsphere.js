@@ -1083,6 +1083,171 @@ function clearFilters() {
     }
 }
 
+
+function clearExportFilters() {
+    document.getElementById('exportDateFrom').value = '';
+    document.getElementById('exportDateTo').value = '';
+    document.getElementById('exportSampleType').value = '';
+    document.getElementById('includeAllData').checked = false;
+    toggleExportFilters(); // Enable inputs
+}
+
+function toggleExportFilters() {
+    const includeAllData = document.getElementById('includeAllData').checked;
+    const dateFrom = document.getElementById('exportDateFrom');
+    const dateTo = document.getElementById('exportDateTo');
+    const sampleType = document.getElementById('exportSampleType');
+    
+    if (includeAllData) {
+        dateFrom.disabled = true;
+        dateTo.disabled = true;
+        sampleType.disabled = true;
+        dateFrom.required = false;
+        dateTo.required = false;
+        dateFrom.classList.add('bg-light');
+        dateTo.classList.add('bg-light');
+        sampleType.classList.add('bg-light');
+    } else {
+        dateFrom.disabled = false;
+        dateTo.disabled = false;
+        sampleType.disabled = false;
+        dateFrom.required = true;
+        dateTo.required = true;
+        dateFrom.classList.remove('bg-light');
+        dateTo.classList.remove('bg-light');
+        sampleType.classList.remove('bg-light');
+    }
+}
+
+function showExportModal() {
+    // Set default date range (current month)
+    const today = new Date();
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    document.getElementById('exportDateFrom').value = firstDayOfMonth.toISOString().split('T')[0];
+    document.getElementById('exportDateTo').value = today.toISOString().split('T')[0];
+    document.getElementById('exportSampleType').value = '';
+    document.getElementById('includeAllData').checked = false;
+    toggleExportFilters(); // Ensure inputs are enabled
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('exportModal'));
+    modal.show();
+}
+
+async function exportWithFilters() {
+    try {
+        // Show loading indicator
+        const exportBtn = document.querySelector('#exportModal .btn-success');
+        const originalText = exportBtn.innerHTML;
+        exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Exporting...';
+        exportBtn.disabled = true;
+
+        // Get filter values from modal
+        const includeAllData = document.getElementById('includeAllData').checked;
+        let startDate, endDate, sampleType;
+
+        if (includeAllData) {
+            // Export all data without filters
+            startDate = '';
+            endDate = '';
+            sampleType = '';
+        } else {
+            // Get filter values
+            startDate = document.getElementById('exportDateFrom').value;
+            endDate = document.getElementById('exportDateTo').value;
+            sampleType = document.getElementById('exportSampleType').value;
+
+            // Validate required dates
+            if (!startDate || !endDate) {
+                throw new Error('Harap isi rentang tanggal');
+            }
+        }
+
+        // Build query parameters
+        const params = new URLSearchParams();
+        if (startDate) params.append('start_date', startDate);
+        if (endDate) params.append('end_date', endDate);
+        if (sampleType) params.append('sample_type', sampleType);
+
+        // Make export request
+        const response = await fetch(`/impact/rnd-cloudsphere/api/jobs/export/excel?${params.toString()}`);
+        
+        if (response.ok) {
+            // Check if response is empty (no data)
+            const contentLength = response.headers.get('content-length');
+            const contentType = response.headers.get('content-type');
+            
+            // If content type is not Excel, maybe it's an error message
+            if (contentType && !contentType.includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'No data found');
+            }
+            
+            // Get filename from response headers or generate default
+            const contentDisposition = response.headers.get('content-disposition');
+            let filename = 'RND_Job_Export.xlsx';
+            
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                if (filenameMatch && filenameMatch[1]) {
+                    filename = filenameMatch[1].replace(/['"]/g, '');
+                }
+            }
+
+            // Convert response to blob and download
+            const blob = await response.blob();
+            
+            // Check if blob is empty (size 0)
+            if (blob.size === 0) {
+                throw new Error('No data found');
+            }
+            
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            // Show success message and close modal
+            if (rndCloudsphere) {
+                rndCloudsphere.showMessage('success', 'Excel file exported successfully');
+            }
+            bootstrap.Modal.getInstance(document.getElementById('exportModal')).hide();
+        } else {
+            // Handle error response
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Export failed');
+        }
+
+    } catch (error) {
+        console.error('Error exporting Excel:', error);
+        
+        // Show error message (toast)
+        if (rndCloudsphere) {
+            rndCloudsphere.showMessage('error', `Export failed: ${error.message}`);
+        } else {
+            // Fallback error display
+            alert(`Export failed: ${error.message}`);
+        }
+    } finally {
+        // Restore button state
+        const exportBtn = document.querySelector('#exportModal .btn-success');
+        if (exportBtn) {
+            exportBtn.innerHTML = '<i class="fas fa-file-excel me-2"></i> Export';
+            exportBtn.disabled = false;
+        }
+    }
+}
+
+async function exportRNDJobsToExcel() {
+    // Show modal instead of direct export
+    showExportModal();
+}
+
 // Initialize application
 let rndCloudsphere;
 document.addEventListener('DOMContentLoaded', () => {

@@ -1307,7 +1307,7 @@
                             <div class="info-label">Started At</div>
                             <div class="info-value">
                                 {% if job.started_at %}
-                                    {{ job.started_at.strftime('%d') }} Desember {{ job.started_at.strftime('%Y') }} {{ job.started_at.strftime('%H:%M') }}
+                                    {{ job.started_at.strftime('%d') }} {{ job.started_at.strftime('%B') }} {{ job.started_at.strftime('%Y') }} {{ job.started_at.strftime('%H:%M') }}
                                 {% else %}
                                     Not started
                                 {% endif %}
@@ -1317,7 +1317,7 @@
                             <div class="info-label">Deadline</div>
                             <div class="info-value">
                                 {% if job.deadline_at %}
-                                    {{ job.deadline_at.strftime('%d') }} Desember {{ job.deadline_at.strftime('%Y') }} {{ job.deadline_at.strftime('%H:%M') }}
+                                    {{ job.deadline_at.strftime('%d') }} {{ job.deadline_at.strftime('%B') }} {{ job.deadline_at.strftime('%Y') }} {{ job.deadline_at.strftime('%H:%M') }}
                                 {% else %}
                                     No deadline
                                 {% endif %}
@@ -1327,7 +1327,7 @@
                             <div class="info-label">Finished At</div>
                             <div class="info-value">
                                 {% if job.finished_at %}
-                                    {{ job.finished_at.strftime('%d') }} Desember {{ job.finished_at.strftime('%Y') }} {{ job.finished_at.strftime('%H:%M') }}
+                                    {{ job.finished_at.strftime('%d') }} {{ job.finished_at.strftime('%B') }} {{ job.finished_at.strftime('%Y') }} {{ job.finished_at.strftime('%H:%M') }}
                                 {% else %}
                                     Not finished
                                 {% endif %}
