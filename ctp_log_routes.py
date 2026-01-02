@@ -172,6 +172,7 @@ def get_ctp_problem_logs():
                 'machine_id': log.machine_id,
                 'machine_name': log.machine.name,
                 'problem_date': log.problem_date.isoformat(),
+                'error_code': log.error_code,
                 'problem_description': log.problem_description,
                 'problem_photo': log.problem_photo,
                 'solution': log.solution,
@@ -241,7 +242,7 @@ def create_ctp_problem_log():
         # Handle multiple photo uploads
         if 'problem_photos' in request.files:
             photos = request.files.getlist('problem_photos')
-            upload_dir = os.path.join(current_app.instance_path, 'uploads', 'ctp_problems')
+            upload_dir = os.path.join(current_app.config['UPLOADS_PATH'], 'ctp_problems')
             os.makedirs(upload_dir, exist_ok=True)
             
             for i, photo in enumerate(photos):
@@ -266,7 +267,7 @@ def create_ctp_problem_log():
         # Handle document uploads
         if 'problem_documents' in request.files:
             documents = request.files.getlist('problem_documents')
-            upload_dir = os.path.join(current_app.instance_path, 'uploads', 'ctp_documents')
+            upload_dir = os.path.join(current_app.config['UPLOADS_PATH'], 'ctp_documents')
             os.makedirs(upload_dir, exist_ok=True)
             
             for i, doc in enumerate(documents):
@@ -457,7 +458,7 @@ def update_ctp_problem_log(log_id):
             # Handle multiple photo uploads if present
             if 'problem_photos' in request.files:
                 photos = request.files.getlist('problem_photos')
-                upload_dir = os.path.join(current_app.instance_path, 'uploads', 'ctp_problems')
+                upload_dir = os.path.join(current_app.config['UPLOADS_PATH'], 'ctp_problems')
                 os.makedirs(upload_dir, exist_ok=True)
                 
                 for i, photo in enumerate(photos):
@@ -484,7 +485,7 @@ def update_ctp_problem_log(log_id):
             # Handle document uploads if present
             if 'problem_documents' in request.files:
                 documents = request.files.getlist('problem_documents')
-                upload_dir = os.path.join(current_app.instance_path, 'uploads', 'ctp_documents')
+                upload_dir = os.path.join(current_app.config['UPLOADS_PATH'], 'ctp_documents')
                 os.makedirs(upload_dir, exist_ok=True)
                 
                 for i, doc in enumerate(documents):
@@ -627,7 +628,7 @@ def delete_ctp_problem_photo(photo_id):
         
         # Delete physical file if exists
         if photo.file_path:
-            file_full_path = os.path.join(current_app.instance_path, photo.file_path)
+            file_full_path = os.path.join(current_app.config['UPLOADS_PATH'], photo.file_path)
             if os.path.exists(file_full_path):
                 try:
                     os.remove(file_full_path)
@@ -657,7 +658,7 @@ def delete_ctp_problem_document(document_id):
         
         # Delete physical file if exists
         if document.file_path:
-            file_full_path = os.path.join(current_app.instance_path, document.file_path)
+            file_full_path = os.path.join(current_app.config['UPLOADS_PATH'], document.file_path)
             if os.path.exists(file_full_path):
                 try:
                     os.remove(file_full_path)

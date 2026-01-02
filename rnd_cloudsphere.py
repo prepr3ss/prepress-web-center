@@ -2003,7 +2003,7 @@ def upload_rnd_evidence():
             file_type = 'document'
         
         # Create upload directory if it doesn't exist
-        upload_dir = os.path.join('instance', 'uploads', 'rnd_evidence')
+        upload_dir = os.path.join(current_app.config['UPLOADS_PATH'], 'rnd_evidence')
         os.makedirs(upload_dir, exist_ok=True)
         
         # Generate unique filename

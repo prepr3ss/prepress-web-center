@@ -111,6 +111,10 @@ db_port = DB_CONFIG['port']
 app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Konfigurasi path untuk upload files (dapat menggunakan local atau network drive)
+# Gunakan environment variable untuk flexibility (default ke Y:\Impact untuk network drive)
+app.config['UPLOADS_PATH'] = os.environ.get('UPLOADS_PATH', r'Y:\Impact')
+
 # Register Blueprints
 app.register_blueprint(export_bp)
 app.register_blueprint(ctp_log_bp)
@@ -4667,9 +4671,9 @@ if __name__ == '__main__':
     )
     
     # Jalankan aplikasi Anda di port 5021
-    # Route to serve uploaded files
+    # Route to serve uploaded files from network drive or local instance
     @app.route('/uploads/<path:filename>')
     def serve_uploaded_file(filename):
-        return send_from_directory(os.path.join(app.instance_path, 'uploads'), filename)
+        return send_from_directory(app.config['UPLOADS_PATH'], filename)
     
     app.run(host='0.0.0.0', port=5021, debug=True)
