@@ -57,6 +57,23 @@ def require_rnd_access(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# Helper function to ensure job status is synced with completion
+def sync_job_status(job):
+    """
+    Ensure job.status is synced with completion_percentage.
+    Triggers the auto-sync property and commits if changes were made.
+    """
+    try:
+        # Access completion_percentage triggers auto-sync property
+        pct = job.completion_percentage
+        
+        # If property made changes, commit them
+        if db.session.is_modified(job):
+            db.session.commit()
+            print(f"DEBUG: Job status synced for {job.job_id}: {pct}% completion, status={job.status}")
+    except Exception as e:
+        print(f"ERROR in sync_job_status: {e}")
+
 # R&D Cloudsphere Routes
 @rnd_cloudsphere_bp.route('/')
 @login_required
@@ -896,6 +913,10 @@ def get_rnd_jobs():
                  
                 is_overdue = now > deadline and job.status != 'completed'
            
+            # IMPORTANT: Sync job status before adding to response
+            # This triggers the auto-sync property and commits changes if needed
+            sync_job_status(job)
+            
             jobs_data.append({
                 'id': job.id,
                 'job_id': job.job_id,
@@ -1116,6 +1137,10 @@ def get_rnd_job(job_id):
             'evidence_files': evidence_files
         }
         
+        # IMPORTANT: Sync job status before sending to frontend
+        # This ensures completion_percentage always matches status
+        sync_job_status(job)
+        
         # DEBUG: Log job data before sending to frontend
         print(f"DEBUG: Job data for job {job_id}:")
         print(f"  - Job status: {job.status}")
@@ -1243,6 +1268,68 @@ def delete_rnd_job(job_id):
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@rnd_cloudsphere_bp.route('/api/progress-steps/all')
+@login_required
+@require_rnd_access
+def get_all_progress_steps():
+    """Get progress steps relevant to sample type with proper mappings"""
+    try:
+        sample_type = request.args.get('sample_type', '')
+        
+        # Define the step sample types for each flow configuration
+        flow_mapping = {
+            'Blank': ['Design', 'Mastercard', 'Blank'],
+            'RoHS ICB': ['Design', 'Mastercard', 'RoHS ICB', 'Light-Standard-Dark Reference'],
+            'RoHS Ribbon': ['Design', 'Mastercard', 'Polymer Ribbon', 'RoHS Ribbon', 'Light-Standard-Dark Reference']
+        }
+        
+        # Get the step types to include based on the selected sample type
+        step_types_to_include = flow_mapping.get(sample_type, [sample_type] if sample_type else [])
+        
+        if not step_types_to_include:
+            return jsonify({'success': True, 'data': []})
+        
+        # Get progress steps that match the criteria
+        all_steps = RNDProgressStep.query.filter(
+            RNDProgressStep.sample_type.in_(step_types_to_include)
+        ).order_by(
+            RNDProgressStep.sample_type,
+            RNDProgressStep.step_order
+        ).all()
+        
+        if not all_steps:
+            return jsonify({'success': True, 'data': []})
+        
+        # Get tasks for each step and build response
+        steps_data = []
+        for step in all_steps:
+            tasks = RNDProgressTask.query.filter_by(progress_step_id=step.id)\
+                .order_by(RNDProgressTask.task_order).all()
+            
+            steps_data.append({
+                'id': step.id,
+                'name': step.name,
+                'sample_type': step.sample_type,
+                'step_order': step.step_order,
+                'description': step.description,
+                'is_required': True,
+                'tasks': [
+                    {
+                        'id': task.id,
+                        'name': task.name,
+                        'task_order': task.task_order,
+                        'description': task.description
+                    } for task in tasks
+                ]
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': steps_data
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @rnd_cloudsphere_bp.route('/api/progress-steps')
 @login_required
 @require_rnd_access
@@ -1252,8 +1339,41 @@ def get_progress_steps():
         sample_type = request.args.get('sample_type', '')
         flow_configuration_id = request.args.get('flow_configuration_id', type=int)
         
-        if not sample_type:
-            return jsonify({'success': False, 'error': 'Sample type is required'}), 400
+        # sample_type is now optional - if not provided, return all steps
+        if not sample_type and not flow_configuration_id:
+            # Return all steps if no filters provided
+            all_steps = RNDProgressStep.query.order_by(
+                RNDProgressStep.sample_type,
+                RNDProgressStep.step_order
+            ).all()
+            
+            steps_data = []
+            for step in all_steps:
+                tasks = RNDProgressTask.query.filter_by(progress_step_id=step.id)\
+                    .order_by(RNDProgressTask.task_order).all()
+                
+                steps_data.append({
+                    'id': step.id,
+                    'name': step.name,
+                    'sample_type': step.sample_type,
+                    'step_order': step.step_order,
+                    'description': step.description,
+                    'is_required': True,
+                    'tasks': [
+                        {
+                            'id': task.id,
+                            'name': task.name,
+                            'task_order': task.task_order,
+                            'description': task.description
+                        } for task in tasks
+                    ]
+                })
+            
+            return jsonify({
+                'success': True,
+                'data': steps_data,
+                'flow_configuration': None
+            })
         
         # If flow_configuration_id is provided, use that specific configuration
         if flow_configuration_id:
@@ -1350,86 +1470,30 @@ def get_progress_steps():
                 }
             })
         
-        # Fallback to static configuration if no dynamic configuration exists
-        # Define the complete flow for each sample type (legacy fallback)
-        flow_mapping = {
-            'Blank': ['Design', 'Mastercard', 'Blank'],
-            'RoHS ICB': ['Design', 'Mastercard', 'RoHS ICB'],
-            'RoHS Ribbon': ['Design', 'Mastercard', 'Polymer Ribbon', 'RoHS Ribbon']
-        }
+        # Fallback to dynamic steps loading from database
+        # Get ALL available progress steps from database (for flow configuration selection)
+        # This allows flexibility to add new sample types and steps without modifying code
+        all_progress_steps = RNDProgressStep.query.order_by(
+            RNDProgressStep.sample_type, 
+            RNDProgressStep.step_order
+        ).all()
         
-        # Define the step order for each sample type workflow (legacy fallback)
-        step_order_mapping = {
-            'Blank': [
-                'Design & Artwork Approval',
-                'Mastercard Release',
-                'Initial Plotter',
-                'Sample Production',
-                'Quality Validation'
-            ],
-            'RoHS ICB': [
-                'Design & Artwork Approval',
-                'Mastercard Release',
-                'Proof Approval',
-                'Sample Production',
-                'Quality Validation'
-            ],
-            'RoHS Ribbon': [
-                'Design & Artwork Approval',
-                'Mastercard Release',
-                'Polymer Order',
-                'Polymer Receiving',
-                'Proof Approval',
-                'Sample Production',
-                'Quality Validation'
-            ]
-        }
+        if not all_progress_steps:
+            return jsonify({'success': False, 'error': 'No progress steps available'}), 400
         
-        # Get the flow for the requested sample type
-        flow_steps = flow_mapping.get(sample_type, [])
-        
-        if not flow_steps:
-            return jsonify({'success': False, 'error': 'Invalid sample type'}), 400
-        
-        # Get all progress steps for the flow
-        progress_steps = RNDProgressStep.query.filter(
-            RNDProgressStep.sample_type.in_(flow_steps)
-        ).order_by(RNDProgressStep.sample_type, RNDProgressStep.step_order).all()
-        
-        # Create a unified step order across all sample types
-        unified_steps = []
-        step_order_counter = 1
-        
-        # Get the step order for the requested sample type
-        sample_type_order = step_order_mapping.get(sample_type, [])
-        
-        # Add steps in the correct order for this sample type
-        for step_name in sample_type_order:
-            # Find the progress step with this name
-            matching_steps = [s for s in progress_steps if s.name == step_name]
-            for step in matching_steps:
-                unified_steps.append({
-                    'id': step.id,
-                    'name': step.name,
-                    'sample_type': step.sample_type,
-                    'unified_order': step_order_counter,
-                    'original_order': step.step_order,
-                    'description': step.description
-                })
-                step_order_counter += 1
-        
-        # Get tasks for each step
+        # Get tasks for each step and build response
         steps_data = []
-        for step in unified_steps:
-            tasks = RNDProgressTask.query.filter_by(progress_step_id=step['id']).order_by(RNDProgressTask.task_order).all()
+        for step in all_progress_steps:
+            tasks = RNDProgressTask.query.filter_by(progress_step_id=step.id)\
+                .order_by(RNDProgressTask.task_order).all()
             
             steps_data.append({
-                'id': step['id'],
-                'name': step['name'],
-                'sample_type': step['sample_type'],
-                'step_order': step['unified_order'],  # Use unified order for proper progression
-                'description': step['description'],
-                'is_required': True,  # All steps are required in legacy mode
+                'id': step.id,
+                'name': step.name,
+                'sample_type': step.sample_type,
+                'step_order': step.step_order,
+                'description': step.description,
+                'is_required': True,
                 'tasks': [
                     {
                         'id': task.id,
@@ -1443,9 +1507,7 @@ def get_progress_steps():
         return jsonify({
             'success': True,
             'data': steps_data,
-            'flow': flow_steps,
-            'step_order': step_order_mapping.get(sample_type, []),
-            'flow_configuration': None  # Indicates legacy fallback mode
+            'flow_configuration': None  # Indicates fallback mode
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1713,31 +1775,19 @@ def complete_rnd_task(task_assignment_id):
             for assignment in all_assignments:
                 print(f"  - {assignment.progress_step.name} (status: {assignment.status})")
             
-            # Find the next step using dynamic flow configuration or fallback
-            next_assignment = get_next_progress_assignment(progress_assignment)
+            # IMPORTANT: Flush session to ensure current assignment status is saved
+            db.session.flush()
             
-            # DEBUG: Log next assignment info
-            if next_assignment:
-                print(f"DEBUG (complete): Found next assignment: {next_assignment.progress_step.name}")
-                print(f"DEBUG (complete): Next assignment status before update: {next_assignment.status}")
-                next_assignment.status = 'in_progress'
-                next_assignment.started_at = datetime.now(jakarta_tz)
-                print(f"DEBUG (complete): Next assignment status after update: {next_assignment.status}")
-            else:
-                print("DEBUG (complete): No next assignment found")
-            
-            # Check if all progress assignments are completed before marking job as completed
+            # Check if all progress assignments are completed BEFORE finding next step
+            # This must be done BEFORE we mark next assignment as in_progress
             all_assignments = RNDJobProgressAssignment.query.filter_by(job_id=progress_assignment.job_id).all()
             all_completed = all(pa.status == 'completed' for pa in all_assignments)
             
-            # DEBUG: Log all assignments status
+            # DEBUG: Log all assignments status BEFORE next assignment update
             print("DEBUG (complete): All assignments status check:")
             for assignment in all_assignments:
                 print(f"  - {assignment.progress_step.name}: {assignment.status}")
             
-            # DEBUG: Check if this is the final step
-            is_final_step = is_final_progress_step(progress_assignment)
-            print(f"DEBUG (complete): Is this the final step? {is_final_step}")
             print(f"DEBUG (complete): All assignments completed? {all_completed}")
             print(f"DEBUG (complete): Total assignments: {len(all_assignments)}, Completed: {sum(1 for pa in all_assignments if pa.status == 'completed')}")
             
@@ -1751,7 +1801,21 @@ def complete_rnd_task(task_assignment_id):
                 print(f"DEBUG (complete): Job status updated to: {job_obj.status}")
                 print(f"DEBUG (complete): Job finished_at set to: {job_obj.finished_at}")
             else:
+                # Only find and activate next step if job is NOT complete
                 print(f"DEBUG (complete): Not all assignments completed, job remains in progress. Completed: {sum(1 for pa in all_assignments if pa.status == 'completed')}/{len(all_assignments)}")
+                
+                # Find the next step using dynamic flow configuration or fallback
+                next_assignment = get_next_progress_assignment(progress_assignment)
+                
+                # DEBUG: Log next assignment info
+                if next_assignment:
+                    print(f"DEBUG (complete): Found next assignment: {next_assignment.progress_step.name}")
+                    print(f"DEBUG (complete): Next assignment status before update: {next_assignment.status}")
+                    next_assignment.status = 'in_progress'
+                    next_assignment.started_at = datetime.now(jakarta_tz)
+                    print(f"DEBUG (complete): Next assignment status after update: {next_assignment.status}")
+                else:
+                    print("DEBUG (complete): No next assignment found")
         
         db.session.commit()
         
@@ -1761,6 +1825,16 @@ def complete_rnd_task(task_assignment_id):
         db.session.refresh(job_obj)
         print(f"DEBUG (complete): Job status after commit: {job_obj.status}")
         print(f"DEBUG (complete): Job finished_at after commit: {job_obj.finished_at}")
+        
+        # AUTO-SYNC CHECK: Ensure completion % matches status
+        # This triggers the property which will auto-update status if needed
+        if job_obj.completion_percentage == 100 and job_obj.status != 'completed':
+            print(f"DEBUG (complete): Auto-syncing job status from completion_percentage property")
+            job_obj.status = 'completed'
+            if not job_obj.finished_at:
+                job_obj.finished_at = datetime.now(jakarta_tz)
+            db.session.commit()
+            print(f"DEBUG (complete): Job status after auto-sync: {job_obj.status}")
         
         return jsonify({
             'success': True,
@@ -1862,6 +1936,10 @@ def toggle_rnd_task(task_assignment_id):
             print(f"DEBUG: Task '{ta.progress_task.name}': {ta.status}")
         print(f"DEBUG: All tasks completed? {all_tasks_completed}")
         
+        # HANDLE BOTH DIRECTIONS:
+        # 1. If all tasks completed -> mark assignment as completed
+        # 2. If any task incomplete -> reset assignment to in_progress
+        
         if all_tasks_completed and progress_assignment.status != 'completed':
             db.session.execute(
                 text("""UPDATE rnd_job_progress_assignments
@@ -1927,8 +2005,31 @@ def toggle_rnd_task(task_assignment_id):
                 print(f"DEBUG: Job finished_at set to: {job_obj.finished_at}")
             else:
                 print(f"DEBUG: Not all assignments completed, job remains in progress. Completed: {sum(1 for pa in all_assignments if pa.status == 'completed')}/{len(all_assignments)}")
+        else:
+            # REVERSE: If any task was unchecked and assignment is now incomplete, reset it
+            if not all_tasks_completed and progress_assignment.status == 'completed':
+                print(f"DEBUG: Task unchecked! Resetting assignment status from completed to in_progress")
+                db.session.execute(
+                    text("""UPDATE rnd_job_progress_assignments
+                       SET status = 'in_progress'
+                       WHERE id = :progress_assignment_id"""),
+                    {'progress_assignment_id': progress_assignment.id}
+                )
         
         db.session.commit()
+        
+        # RESET JOB STATUS IF NEEDED
+        # If completion_percentage < 100 and job.status = completed, reset to in_progress
+        job_obj = progress_assignment.job
+        db.session.refresh(job_obj)
+        
+        completion_pct = job_obj.completion_percentage
+        if completion_pct < 100 and job_obj.status == 'completed':
+            print(f"DEBUG: Completion is now {completion_pct}%, resetting job status to in_progress")
+            job_obj.status = 'in_progress'
+            job_obj.finished_at = None  # Clear finished_at since job is no longer complete
+            db.session.commit()
+            print(f"DEBUG: Job status reset to: {job_obj.status}")
         
         # DEBUG: Verify job status after commit
         # Get the job object to refresh
@@ -1936,6 +2037,7 @@ def toggle_rnd_task(task_assignment_id):
         db.session.refresh(job_obj)
         print(f"DEBUG: Job status after commit: {job_obj.status}")
         print(f"DEBUG: Job finished_at after commit: {job_obj.finished_at}")
+        print(f"DEBUG: Job completion_percentage: {job_obj.completion_percentage}%")
         
         # Refresh objects to get updated state
         db.session.refresh(task_assignment)
@@ -2540,7 +2642,25 @@ def init_rnd_data():
                             ]
                         }
                     ]
-                }
+                },
+                {
+                    'sample_type': 'Light-Standard-Dark Reference',
+                    'steps': [
+                        {
+                            'name': 'Determine Light-Standard-Dark Reference',
+                            'step_order': 1,
+                            'tasks': [
+                                'Prepare Light-Standard-Dark Samples',
+                                'Create LSD Reference Sheet',
+                                'Approval LSD by Press',
+                                'Approval LSD by Quality Control',
+                                'Approval LSD by Marketing',
+                                'Approval LSD by Prepress',
+                                'Handover LSD to Quality Control'
+                            ]
+                        }
+                    ]
+                }                                
             ]
             
             # Create progress steps and tasks

@@ -101,12 +101,40 @@ class RNDJob(db.Model):
     
     @property
     def completion_percentage(self):
-        """Calculate completion percentage based on progress steps"""
+        """Calculate completion percentage based on task completion and auto-sync status"""
         if not self.progress_assignments:
             return 0
-        total_steps = len(self.progress_assignments)
-        completed_steps = len([pa for pa in self.progress_assignments if pa.status == 'completed'])
-        return round((completed_steps / total_steps) * 100, 2) if total_steps > 0 else 0
+        
+        # Calculate based on TASK completion, not assignment status
+        total_tasks = 0
+        completed_tasks = 0
+        
+        for assignment in self.progress_assignments:
+            for task_assign in assignment.task_assignments:
+                total_tasks += 1
+                if task_assign.status == 'completed':
+                    completed_tasks += 1
+        
+        pct = round((completed_tasks / total_tasks) * 100, 2) if total_tasks > 0 else 0
+        
+        # AUTO-SYNC FORWARD: If completion is 100% and status is not completed, update it
+        if pct == 100 and self.status != 'completed':
+            print(f"DEBUG (property): Auto-syncing {self.job_id} - 100% completion detected, updating status to completed")
+            self.status = 'completed'
+            if not self.finished_at:
+                self.finished_at = datetime.now(jakarta_tz)
+            # Mark for update
+            self.updated_at = datetime.now(jakarta_tz)
+        
+        # AUTO-SYNC REVERSE: If completion is < 100% and status is completed, reset it
+        elif pct < 100 and self.status == 'completed':
+            print(f"DEBUG (property): Auto-syncing {self.job_id} - completion {pct}% < 100%, resetting status to in_progress")
+            self.status = 'in_progress'
+            self.finished_at = None  # Clear finished_at since job is no longer complete
+            # Mark for update
+            self.updated_at = datetime.now(jakarta_tz)
+        
+        return pct
     
     @property
     def current_progress_step(self):
