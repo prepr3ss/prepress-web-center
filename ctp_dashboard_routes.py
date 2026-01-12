@@ -35,7 +35,7 @@ import pymysql
 
 # Local imports
 from config import DB_CONFIG
-from models import db, Division, User, CTPProductionLog, PlateAdjustmentRequest, PlateBonRequest, KartuStockPlateFuji, KartuStockPlateSaphira, KartuStockChemicalFuji, KartuStockChemicalSaphira, MonthlyWorkHours, ChemicalBonCTP, BonPlate, CTPMachine, CTPProblemLog, CTPProblemPhoto, CTPProblemDocument, CTPNotification
+from models import db, Division, User, CTPProductionLog, PlateAdjustmentRequest, PlateBonRequest, KartuStockPlateFuji, KartuStockPlateSaphira, KartuStockChemicalFuji, KartuStockChemicalSaphira, MonthlyWorkHours, ChemicalBonCTP, BonPlate, CTPMachine, CTPProblemLog, CTPProblemPhoto, CTPProblemDocument
 from plate_mappings import PlateTypeMapping
 
 # Timezone untuk Jakarta
@@ -105,18 +105,19 @@ def get_ctp_plate_usage():
         year = request.args.get('year', type=int)
         month = request.args.get('month', type=int)
 
-        if not year:
-            year = datetime.now().year
-
-        # Base filters
-        filters = [extract('year', CTPProductionLog.log_date) == year]
+        # Base filters - only add year filter if year is provided
+        filters = []
+        if year:
+            filters.append(extract('year', CTPProductionLog.log_date) == year)
         if month:
             filters.append(extract('month', CTPProductionLog.log_date) == month)
 
         # Build trend
         if month:
             granularity = 'daily'
-            days = calendar.monthrange(year, month)[1]
+            # If year is provided, use it; otherwise use current year for calendar range
+            year_for_calendar = year if year else datetime.now().year
+            days = calendar.monthrange(year_for_calendar, month)[1]
             labels = [str(d) for d in range(1, days + 1)]
             totals = [0] * days
             goods = [0] * days
@@ -245,15 +246,17 @@ def get_ctp_plate_usage_by_type():
         # Inputs
         year = request.args.get('year', type=int)
         month = request.args.get('month', type=int)
-        if not year:
-            year = datetime.now().year
 
         # Build filters and labels based on granularity
-        filters = [extract('year', CTPProductionLog.log_date) == year]
+        filters = []
+        if year:
+            filters.append(extract('year', CTPProductionLog.log_date) == year)
 
         if month:
             filters.append(extract('month', CTPProductionLog.log_date) == month)
-            days = calendar.monthrange(year, month)[1]
+            # If year is provided, use it; otherwise use current year for calendar range
+            year_for_calendar = year if year else datetime.now().year
+            days = calendar.monthrange(year_for_calendar, month)[1]
             labels = [str(d) for d in range(1, days + 1)]
             index_key = 'd'
             dim = extract('day', CTPProductionLog.log_date).label(index_key)
@@ -356,15 +359,17 @@ def get_ctp_plate_usage_by_print_machine():
         # Inputs
         year = request.args.get('year', type=int)
         month = request.args.get('month', type=int)
-        if not year:
-            year = datetime.now().year
 
         # Build filters and labels based on granularity
-        filters = [extract('year', CTPProductionLog.log_date) == year]
+        filters = []
+        if year:
+            filters.append(extract('year', CTPProductionLog.log_date) == year)
 
         if month:
             filters.append(extract('month', CTPProductionLog.log_date) == month)
-            days = calendar.monthrange(year, month)[1]
+            # If year is provided, use it; otherwise use current year for calendar range
+            year_for_calendar = year if year else datetime.now().year
+            days = calendar.monthrange(year_for_calendar, month)[1]
             labels = [str(d) for d in range(1, days + 1)]
             index_key = 'd'
             dim = extract('day', CTPProductionLog.log_date).label(index_key)

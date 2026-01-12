@@ -597,12 +597,19 @@ class RNDJobDetail {
                         </div>
                     `).join('')}
                 </div>
-                ${stepGroup.status === 'completed' && canUploadEvidence ? `
+                ${this.canUploadEvidenceForStep(stepGroup) ? `
                     <div class="upload-area" onclick="rndJobDetail.uploadEvidenceForStep(${stepGroup.step_id})" id="uploadArea_${stepGroup.step_id}">
-                        <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
-                        <h6>Upload Evidence for ${stepGroup.step_name}</h6>
-                        <p class="text-muted mb-0">Click to browse or drag and drop files here</p>
+                        <div class="upload-content">
+                            <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
+                            <h6>Upload Evidence for ${stepGroup.step_name}</h6>
+                            <p class="text-muted mb-0">Click to browse, drag and drop files, or paste image (Ctrl+V)</p>
+                        </div>
                         <input type="file" id="fileInput_${stepGroup.step_id}" style="display: none;" multiple accept=".pdf,.docx,.xlsx,.jpg,.jpeg,.png">
+                        <div class="paste-indicator" id="pasteIndicator_${stepGroup.step_id}" style="display: none;">
+                            <i class="fas fa-paste fa-2x mb-2 text-primary"></i>
+                            <h6 class="text-primary">Image detected in clipboard!</h6>
+                            <p class="text-muted mb-0">Click here to paste the image</p>
+                        </div>
                     </div>
                 ` : ''}
             </div>
@@ -629,42 +636,74 @@ class RNDJobDetail {
     setupDragAndDrop() {
         this.job.progress_assignments.forEach(assignment => {
             // Only setup drag and drop for visible assignments
-            if (assignment.is_visible && assignment.status === 'completed') {
-                const uploadArea = document.getElementById(`uploadArea_${assignment.id}`);
-                const fileInput = document.getElementById(`fileInput_${assignment.id}`);
+            if (assignment.is_visible) {
+                // Check if this assignment should have upload area
+                const stepGroup = {
+                    step_id: assignment.id,
+                    pic_id: assignment.pic_id,
+                    status: assignment.status,
+                    tasks: assignment.tasks || []
+                };
                 
-                if (uploadArea && fileInput) {
-                    fileInput.addEventListener('change', (e) => {
-                        this.handleFileSelect(e.target.files, assignment.id);
-                    });
+                if (this.canUploadEvidenceForStep(stepGroup)) {
+                    const uploadArea = document.getElementById(`uploadArea_${assignment.id}`);
+                    const fileInput = document.getElementById(`fileInput_${assignment.id}`);
+                    const pasteIndicator = document.getElementById(`pasteIndicator_${assignment.id}`);
+                    
+                    if (uploadArea && fileInput) {
+                        fileInput.addEventListener('change', (e) => {
+                            this.handleFileSelect(e.target.files, assignment.id);
+                        });
 
-                    uploadArea.addEventListener('dragover', (e) => {
-                        e.preventDefault();
-                        uploadArea.classList.add('dragover');
-                    });
+                        uploadArea.addEventListener('dragover', (e) => {
+                            e.preventDefault();
+                            uploadArea.classList.add('dragover');
+                        });
 
-                    uploadArea.addEventListener('dragleave', () => {
-                        uploadArea.classList.remove('dragover');
-                    });
+                        uploadArea.addEventListener('dragleave', () => {
+                            uploadArea.classList.remove('dragover');
+                        });
 
-                    uploadArea.addEventListener('drop', (e) => {
-                        e.preventDefault();
-                        uploadArea.classList.remove('dragover');
-                        this.handleFileSelect(e.dataTransfer.files, assignment.id);
-                    });
+                        uploadArea.addEventListener('drop', (e) => {
+                            e.preventDefault();
+                            uploadArea.classList.remove('dragover');
+                            this.handleFileSelect(e.dataTransfer.files, assignment.id);
+                        });
+                        
+                        // Setup paste indicator click handler
+                        if (pasteIndicator) {
+                            pasteIndicator.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                this.handlePasteFromClipboard(assignment.id);
+                            });
+                        }
+                    }
                 }
             }
         });
+        
+        // Setup global paste event listener
+        this.setupGlobalPasteListener();
     }
 
     async handleFileSelect(files, stepId) {
         if (files.length === 0) return;
 
         try {
-            this.showMessage('info', 'Uploading files...');
+            // Check if any of the files are pasted images
+            const hasPastedImage = Array.from(files).some(file =>
+                file.name.startsWith('pasted_image_')
+            );
+            
+            if (hasPastedImage) {
+                this.showMessage('info', 'Processing pasted image...');
+            } else {
+                this.showMessage('info', 'Uploading files...');
+            }
             
             // Upload files one by one to match the API which expects single file
             let allSuccessful = true;
+            let uploadedCount = 0;
             
             for (let i = 0; i < files.length; i++) {
                 const formData = new FormData();
@@ -680,20 +719,137 @@ class RNDJobDetail {
 
                 const data = await response.json();
                 
-                if (!data.success) {
+                if (data.success) {
+                    uploadedCount++;
+                } else {
                     this.showMessage('error', `Failed to upload ${files[i].name}: ${data.message || 'Unknown error'}`);
                     allSuccessful = false;
                 }
             }
             
             if (allSuccessful) {
-                this.showMessage('success', 'All files uploaded successfully');
+                if (hasPastedImage) {
+                    this.showMessage('success', `Pasted image uploaded successfully`);
+                } else {
+                    this.showMessage('success', `All ${uploadedCount} files uploaded successfully`);
+                }
+            } else if (uploadedCount > 0) {
+                this.showMessage('warning', `${uploadedCount} of ${files.length} files uploaded successfully`);
             }
             
             this.loadJobDetail(); // Reload to show new evidence
         } catch (error) {
             console.error('Error uploading files:', error);
             this.showMessage('error', 'Error uploading files');
+        }
+    }
+
+    setupGlobalPasteListener() {
+        // Store reference to current instance for use in event listener
+        const self = this;
+        
+        // Add paste event listener to document
+        document.addEventListener('paste', function(e) {
+            // Check if clipboard contains image data
+            const items = e.clipboardData.items;
+            let hasImage = false;
+            
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    hasImage = true;
+                    break;
+                }
+            }
+            
+            if (hasImage) {
+                // Find the first visible upload area
+                const uploadAreas = document.querySelectorAll('.upload-area');
+                let targetUploadArea = null;
+                let targetStepId = null;
+                
+                for (let area of uploadAreas) {
+                    if (area.style.display !== 'none' && area.offsetParent !== null) {
+                        // Check if this upload area belongs to a step that can upload
+                        const stepId = area.id.replace('uploadArea_', '');
+                        const assignment = self.job.progress_assignments.find(pa => pa.id == stepId);
+                        
+                        if (assignment) {
+                            const stepGroup = {
+                                step_id: assignment.id,
+                                pic_id: assignment.pic_id,
+                                status: assignment.status,
+                                tasks: assignment.tasks || []
+                            };
+                            
+                            if (self.canUploadEvidenceForStep(stepGroup)) {
+                                targetUploadArea = area;
+                                targetStepId = stepId;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                if (targetUploadArea && targetStepId) {
+                    e.preventDefault();
+                    
+                    // Show paste indicator
+                    const pasteIndicator = document.getElementById(`pasteIndicator_${targetStepId}`);
+                    if (pasteIndicator) {
+                        pasteIndicator.style.display = 'flex';
+                        targetUploadArea.classList.add('paste-active');
+                        
+                        // Auto-hide after 5 seconds
+                        setTimeout(() => {
+                            pasteIndicator.style.display = 'none';
+                            targetUploadArea.classList.remove('paste-active');
+                        }, 5000);
+                    }
+                }
+            }
+        });
+    }
+
+    async handlePasteFromClipboard(stepId) {
+        try {
+            // Get clipboard data
+            const clipboardItems = await navigator.clipboard.read();
+            
+            for (const clipboardItem of clipboardItems) {
+                for (const type of clipboardItem.types) {
+                    if (type.startsWith('image/')) {
+                        const blob = await clipboardItem.getType(type);
+                        
+                        // Create a File object from the blob
+                        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+                        const extension = type.split('/')[1] || 'png';
+                        const filename = `pasted_image_${timestamp}.${extension}`;
+                        
+                        const file = new File([blob], filename, { type: type });
+                        
+                        // Hide paste indicator
+                        const pasteIndicator = document.getElementById(`pasteIndicator_${stepId}`);
+                        const uploadArea = document.getElementById(`uploadArea_${stepId}`);
+                        
+                        if (pasteIndicator) {
+                            pasteIndicator.style.display = 'none';
+                        }
+                        if (uploadArea) {
+                            uploadArea.classList.remove('paste-active');
+                        }
+                        
+                        // Handle the pasted file
+                        this.handleFileSelect([file], stepId);
+                        
+                        return;
+                    }
+                }
+            }
+            
+            this.showMessage('warning', 'No image found in clipboard');
+        } catch (error) {
+            console.error('Error pasting from clipboard:', error);
+            this.showMessage('error', 'Failed to paste image from clipboard');
         }
     }
 
@@ -1013,6 +1169,27 @@ class RNDJobDetail {
         }
         
         return false;
+    }
+
+    canUploadEvidenceForStep(stepGroup) {
+        // Check if current user can upload evidence for this step
+        const canUploadEvidence = window.currentUserRole === 'admin' || stepGroup.pic_id == window.currentUserId;
+        
+        if (!canUploadEvidence) {
+            return false;
+        }
+        
+        // Find the assignment for this step
+        const assignment = this.job.progress_assignments.find(pa => pa.id === stepGroup.step_id);
+        
+        if (!assignment || !assignment.tasks) {
+            return false;
+        }
+        
+        // Check if at least one task is completed
+        const hasCompletedTask = assignment.tasks.some(task => task.status === 'completed');
+        
+        return hasCompletedTask;
     }
 
     getFileIcon(fileType) {

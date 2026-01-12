@@ -35,7 +35,8 @@ import pymysql
 
 # Local imports
 from config import DB_CONFIG
-from models import db, Division, User, CTPProductionLog, PlateAdjustmentRequest, PlateBonRequest, KartuStockPlateFuji, KartuStockPlateSaphira, KartuStockChemicalFuji, KartuStockChemicalSaphira, MonthlyWorkHours, ChemicalBonCTP, BonPlate, CTPMachine, CTPProblemLog, CTPProblemPhoto, CTPProblemDocument, CTPNotification
+from models import db, Division, User, CTPProductionLog, PlateAdjustmentRequest, PlateBonRequest, KartuStockPlateFuji, KartuStockPlateSaphira, KartuStockChemicalFuji, KartuStockChemicalSaphira, MonthlyWorkHours, ChemicalBonCTP, BonPlate, CTPMachine, CTPProblemLog, CTPProblemPhoto, CTPProblemDocument
+from services.notification_service import NotificationDispatcher
 from plate_mappings import PlateTypeMapping
 
 # Timezone untuk Jakarta
@@ -325,16 +326,7 @@ def create_ctp_problem_log():
         )
         
         db.session.add(log)
-        db.session.flush()  # ensure log.id is available before creating notification
-        
-        # Create notification using validated machine object
-        notification = CTPNotification(
-            machine_id=machine_id,
-            log_id=log.id,
-            notification_type='new_problem',
-            message=f"Problem baru pada {machine.name}: {problem_description[:50]}..."
-        )
-        db.session.add(notification)
+        db.session.flush()  # ensure log.id is available
         
         # Save uploaded photos to database
         if uploaded_photos:
@@ -363,6 +355,19 @@ def create_ctp_problem_log():
 
         # Final commit for all related data
         db.session.commit()
+        
+        # Send notification for new problem
+        try:
+            NotificationDispatcher.dispatch_ctp_problem_new(
+                machine_name=machine.name,
+                machine_id=machine_id,
+                machine_nickname=machine.nickname,
+                problem_id=log.id,
+                problem_description=problem_description,
+                triggered_by_user_id=current_user.id
+            )
+        except Exception as e:
+            logger.error(f"Failed to send CTP problem new notification: {str(e)}", exc_info=True)
         
         # Log successful creation for debugging
         logger.info(
@@ -583,16 +588,20 @@ def update_ctp_problem_log(log_id):
                 log.end_time = end_time_jakarta
                 log.status = 'completed'
 
-                # Create notification for completed problem
-                notification = CTPNotification(
-                    machine_id=log.machine_id,
-                    log_id=log.id,
-                    notification_type='problem_resolved',
-                    message=f"Problem pada {log.machine.name} telah selesai"
-                )
-                db.session.add(notification)
-
         db.session.commit()
+        
+        # Send notification if problem was just completed
+        if log.status == 'completed' and log.end_time:
+            try:
+                NotificationDispatcher.dispatch_ctp_problem_resolved(
+                    machine_name=log.machine.name,
+                    machine_id=log.machine_id,
+                    machine_nickname=log.machine.nickname,
+                    problem_id=log.id,
+                    triggered_by_user_id=current_user.id
+                )
+            except Exception as e:
+                logger.error(f"Failed to send CTP problem resolved notification: {str(e)}", exc_info=True)
         
         return jsonify({'success': True})
     except Exception as e:

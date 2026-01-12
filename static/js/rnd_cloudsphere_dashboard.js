@@ -798,7 +798,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Stage order for display
-        const stageOrder = ['Design', 'Mastercard', 'Blank', 'RoHS ICB', 'RoHS Ribbon', 'Polymer Ribbon'];
+        const stageOrder = ['Design', 'Mastercard', 'Blank', 'RoHS ICB', 'RoHS Ribbon', 'Polymer Ribbon', 'Light-Standard-Dark'];
         
         // Create card for each user
         usersData.forEach(user => {

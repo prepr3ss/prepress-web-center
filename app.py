@@ -34,7 +34,7 @@ import pymysql
 
 # Local imports
 from config import DB_CONFIG
-from models import db, Division, User, CTPProductionLog, PlateAdjustmentRequest, PlateBonRequest, KartuStockPlateFuji, KartuStockPlateSaphira, KartuStockChemicalFuji, KartuStockChemicalSaphira, MonthlyWorkHours, ChemicalBonCTP, BonPlate, CTPMachine, CTPProblemLog, CTPProblemPhoto, CTPProblemDocument, CTPNotification, TaskCategory, Task, CloudsphereJob, JobTask, JobProgress, JobProgressTask, EvidenceFile
+from models import db, Division, User, CTPProductionLog, PlateAdjustmentRequest, PlateBonRequest, KartuStockPlateFuji, KartuStockPlateSaphira, KartuStockChemicalFuji, KartuStockChemicalSaphira, MonthlyWorkHours, ChemicalBonCTP, BonPlate, CTPMachine, CTPProblemLog, CTPProblemPhoto, CTPProblemDocument, TaskCategory, Task, CloudsphereJob, JobTask, JobProgress, JobProgressTask, EvidenceFile, UniversalNotification, NotificationRecipient
 from models_rnd import db, RNDProgressStep, RNDProgressTask, RNDJob, RNDJobProgressAssignment, RNDJobTaskAssignment, RNDLeadTimeTracking, RNDEvidenceFile, RNDTaskCompletion
 from models_mounting import MountingWorkOrderIncoming
 from export_routes import export_bp
@@ -42,7 +42,9 @@ from ctp_log_routes import ctp_log_bp
 from ctp_dashboard_routes import ctp_dashboard_bp
 from cloudsphere import cloudsphere_bp
 from rnd_cloudsphere import rnd_cloudsphere_bp
+from rnd_webcenter import rnd_webcenter_bp
 from mounting_work_order import mounting_work_order_bp
+from blueprints.notification_routes import notification_bp
 from plate_details import PLATE_DETAILS
 
 # Timezone untuk Jakarta
@@ -121,7 +123,9 @@ app.register_blueprint(ctp_log_bp)
 app.register_blueprint(ctp_dashboard_bp)
 app.register_blueprint(cloudsphere_bp)
 app.register_blueprint(rnd_cloudsphere_bp)
+app.register_blueprint(rnd_webcenter_bp)
 app.register_blueprint(mounting_work_order_bp)
+app.register_blueprint(notification_bp)  # NEW: Universal Notification System
 
 # Initialize the db instance from models.py with the app
 db.init_app(app)
@@ -3754,40 +3758,6 @@ def get_chemical_bon_ctp_months():
             'error': str(e)
         }), 500
 
-@app.route('/api/ctp-notifications', methods=['GET'])
-@login_required
-def get_ctp_notifications():
-    try:
-        notifications = CTPNotification.query.order_by(CTPNotification.created_at.desc()).limit(50).all()
-        
-        return jsonify({
-            'success': True,
-            'data': [{
-                'id': n.id,
-                'machine_name': n.machine.name,
-                'message': n.message,
-                'notification_type': n.notification_type,
-                'is_read': n.is_read,
-                'read_at': n.read_at.isoformat() if n.read_at else None,
-                'created_at': n.created_at.isoformat()
-            } for n in notifications]
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/ctp-notifications/<int:notification_id>/read', methods=['PUT'])
-@login_required
-def mark_notification_read(notification_id):
-    try:
-        notification = CTPNotification.query.get_or_404(notification_id)
-        notification.is_read = True
-        notification.read_at = datetime.utcnow()
-        db.session.commit()
-        
-        return jsonify({'success': True})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
 
 # Initialize CTP machines function
 def initialize_ctp_machines():

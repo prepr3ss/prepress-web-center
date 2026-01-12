@@ -447,6 +447,7 @@
             transition: all 0.3s ease;
             cursor: pointer;
             margin-top: 1rem;
+            position: relative;
         }
         
         .upload-area:hover {
@@ -457,6 +458,105 @@
         .upload-area.dragover {
             border-color: #3b82f6;
             background: #dbeafe;
+        }
+        
+        .upload-area.paste-active {
+            border-color: #10b981;
+            background: #d1fae5;
+        }
+        
+        .upload-content {
+            transition: opacity 0.3s ease;
+        }
+        
+        .upload-area.paste-active .upload-content {
+            opacity: 0.3;
+        }
+        
+        .paste-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(16, 185, 129, 0.1);
+            border: 2px dashed #10b981;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .paste-indicator:hover {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: #059669;
+        }
+        
+        .paste-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(59, 130, 246, 0.1);
+            border: 2px dashed #3b82f6;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .paste-indicator:hover {
+            background: rgba(59, 130, 246, 0.2);
+        }
+        
+        .upload-area {
+            position: relative;
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .upload-area.paste-active {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        
+        .upload-content {
+            text-align: center;
+            z-index: 1;
+            position: relative;
+        }
+        
+        .paste-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(59, 130, 246, 0.95);
+            border: 2px dashed #3b82f6;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+        
+        .paste-indicator:hover {
+            background: rgba(59, 130, 246, 1);
         }
         
         /* Job Notes Section */
@@ -1551,7 +1651,6 @@
     <!-- Only load detail-specific scripts, not the dashboard script -->
     <script src="{{ url_for('static', filename='js/rnd_cloudsphere_detail.js') }}"></script>
     <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/notification_system.js') }}"></script>
     <script>
         // Create a simple utility function to get sample icon
         function getSampleIcon(sampleType) {

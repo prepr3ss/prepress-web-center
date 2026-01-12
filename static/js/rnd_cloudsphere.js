@@ -207,19 +207,29 @@ class RNDCloudsphere {
         // Create dynamic PIC display
         const picDisplay = this.createPicDisplay(job.pic_assignments || [], job.current_pic_name);
         
+        // Get status badge info
+        const statusInfo = this.getStatusBadgeInfo(job.status);
+        
+        // Only show deadline for in_progress jobs
+        const deadlineDisplay = job.status === 'in_progress' 
+            ? `<div class="deadline-display ${job.is_overdue ? 'overdue' : ''}"><i class="fas fa-clock"></i> ${this.formatDeadline(job.deadline_at)}</div>`
+            : '';
+        
         return `
-            <div class="rnd-job-card" onclick="viewJobDetail(${job.id})">
+            <div class="rnd-job-card status-${job.status}" data-status="${job.status}" onclick="viewJobDetail(${job.id})">
                 <div class="sample-icon ${sampleTypeClass}">
                     ${this.getSampleIcon(job.sample_type)}
                 </div>
                 <div class="sample-type-label ${sampleTypeClass}">${job.sample_type}</div>
                 
                 <div class="priority-badge-new ${priorityClass}">${job.priority_level}</div>
-                <div class="deadline-display ${job.is_overdue ? 'overdue' : ''}">
-                    <i class="fas fa-clock"></i> ${this.formatDeadline(job.deadline_at)}
+                <div class="status-badge ${statusInfo.class}">
+                    <i class="fas ${statusInfo.icon}"></i> ${statusInfo.label}
                 </div>
+                ${deadlineDisplay}
                 
                 <div class="card-content">
+                    <div class="job-id-label">${job.job_id}</div>
                     <div class="pic-name">${picDisplay}</div>
                     <div class="item-name">${job.item_name}</div>
                     
@@ -231,14 +241,14 @@ class RNDCloudsphere {
                     </div>
                     
                     <div class="card-actions">
-                        <div class="view-button" onclick="event.stopPropagation(); viewJobDetail(${job.id})">
+                        <div class="view-button" onclick="event.stopPropagation(); viewJobDetail(${job.id})" title="View job details">
                             <i class="fas fa-eye me-1"></i> View
                         </div>
                         ${window.currentUserRole === 'admin' ? `
-                            <div class="edit-button" onclick="event.stopPropagation(); editJob(${job.id})">
+                            <div class="edit-button" onclick="event.stopPropagation(); editJob(${job.id})" title="Edit job">
                                 <i class="fas fa-edit"></i>
                             </div>
-                            <div class="delete-button" onclick="event.stopPropagation(); deleteJob(${job.id})">
+                            <div class="delete-button" onclick="event.stopPropagation(); deleteJob(${job.id})" title="Delete job">
                                 <i class="fas fa-trash"></i>
                             </div>
                         ` : ''}
@@ -246,6 +256,15 @@ class RNDCloudsphere {
                 </div>
             </div>
         `;
+    }
+    
+    getStatusBadgeInfo(status) {
+        const statusMap = {
+            'in_progress': { label: 'In Progress', icon: 'fa-spinner', class: 'status-in-progress' },
+            'completed': { label: 'Completed', icon: 'fa-check-circle', class: 'status-completed' },
+            'rejected': { label: 'Rejected', icon: 'fa-times-circle', class: 'status-rejected' }
+        };
+        return statusMap[status] || { label: 'Unknown', icon: 'fa-circle', class: 'status-unknown' };
     }
 
     createPicDisplay(picAssignments, currentPicName) {
@@ -381,6 +400,9 @@ class RNDCloudsphere {
     async loadEditFlowConfigurations() {
         try {
             const sampleType = document.getElementById('edit_sample_type').value;
+            console.log('DEBUG loadEditFlowConfigurations: sampleType =', sampleType);
+            console.log('DEBUG loadEditFlowConfigurations: currentEditJob =', this.currentEditJob);
+            
             if (!sampleType) {
                 document.getElementById('edit_flow_configuration_id').innerHTML = '<option value="">Select Sample Type First</option>';
                 return;
@@ -389,8 +411,43 @@ class RNDCloudsphere {
             const response = await fetch(`/impact/rnd-cloudsphere/api/flow-configurations?sample_type=${encodeURIComponent(sampleType)}&include_inactive=false`);
             const data = await response.json();
             
+            console.log('DEBUG loadEditFlowConfigurations: API response =', data);
+            
             if (data.success) {
+                console.log('DEBUG loadEditFlowConfigurations: configurations data =', data.data);
                 this.populateFlowConfigurationSelect(data.data, 'edit_flow_configuration_id');
+                
+                // Use setTimeout to ensure DOM is ready before setting the value
+                setTimeout(() => {
+                    console.log('DEBUG loadEditFlowConfigurations: Inside setTimeout');
+                    console.log('DEBUG loadEditFlowConfigurations: currentEditJob.flow_configuration_id =', this.currentEditJob ? this.currentEditJob.flow_configuration_id : 'undefined');
+                    console.log('DEBUG loadEditFlowConfigurations: currentEditJob.flow_configuration =', this.currentEditJob ? this.currentEditJob.flow_configuration : 'undefined');
+                    console.log('DEBUG loadEditFlowConfigurations: currentEditJob.flow_config_id =', this.currentEditJob ? this.currentEditJob.flow_config_id : 'undefined');
+                    
+                    // Try different possible field names for flow configuration ID
+                    const flowConfigId = this.currentEditJob.flow_configuration_id ||
+                                      this.currentEditJob.flow_configuration ||
+                                      this.currentEditJob.flow_config_id ||
+                                      this.currentEditJob.flowConfigurationId;
+                    
+                    console.log('DEBUG loadEditFlowConfigurations: Final flowConfigId =', flowConfigId);
+                    
+                    // After populating, set the correct flow configuration if we have job data
+                    if (this.currentEditJob && flowConfigId) {
+                        const editFlowConfigSelect = document.getElementById('edit_flow_configuration_id');
+                        console.log('DEBUG loadEditFlowConfigurations: editFlowConfigSelect element =', editFlowConfigSelect);
+                        console.log('DEBUG loadEditFlowConfigurations: Setting value to =', flowConfigId);
+                        
+                        if (editFlowConfigSelect) {
+                            editFlowConfigSelect.value = flowConfigId;
+                            console.log('DEBUG loadEditFlowConfigurations: Value after setting =', editFlowConfigSelect.value);
+                            
+                            // Trigger change event to ensure any listeners are notified
+                            const changeEvent = new Event('change', { bubbles: true });
+                            editFlowConfigSelect.dispatchEvent(changeEvent);
+                        }
+                    }
+                }, 300); // Increased delay to 300ms
             } else {
                 this.showMessage('error', data.message || 'Failed to load flow configurations');
             }
@@ -418,22 +475,23 @@ class RNDCloudsphere {
         
         select.innerHTML = options;
         
-        // Auto-select default configuration if available
-        const defaultConfig = configurations.find(config => config.is_default);
-        if (defaultConfig) {
-            select.value = defaultConfig.id;
-            // Auto-load progress steps for default configuration
-            if (selectId === 'flow_configuration_id') {
+        console.log(`DEBUG populateFlowConfigurationSelect: selectId=${selectId}, configurationsCount=${configurations.length}`);
+        
+        // Only auto-select default configuration for Create modal, not for Edit modal
+        // For Edit modal, we want to preserve the job's original configuration
+        if (selectId === 'flow_configuration_id') {
+            const defaultConfig = configurations.find(config => config.is_default);
+            if (defaultConfig) {
+                select.value = defaultConfig.id;
+                console.log(`DEBUG populateFlowConfigurationSelect: Auto-selected default config ${defaultConfig.id} for Create modal`);
+                // Auto-load progress steps for default configuration
                 setTimeout(() => {
                     this.loadProgressSteps();
                 }, 100);
-            } else if (selectId === 'edit_flow_configuration_id') {
-                const sampleType = document.getElementById('edit_sample_type').value;
-                setTimeout(() => {
-                    this.loadEditProgressSteps(sampleType);
-                }, 100);
             }
         }
+        // For Edit modal, don't auto-select - let the existing job data set the value
+        console.log(`DEBUG populateFlowConfigurationSelect: Final value for ${selectId} = ${select.value}`);
     }
 
     renderProgressFlow(allSteps, containerId) {
@@ -539,6 +597,7 @@ class RNDCloudsphere {
                 deadline_at: document.getElementById('deadline_at').value,
                 notes: document.getElementById('notes').value,
                 flow_configuration_id: document.getElementById('flow_configuration_id').value,
+                is_full_process: document.getElementById('is_full_process').checked,
                 progress_assignments: []
             };
            
@@ -622,25 +681,72 @@ class RNDCloudsphere {
     }
 
     async loadJobForEdit(jobId) {
-            // Load users first to ensure they're available for PIC selects
-            await this.loadUsers();
+        // Load users first to ensure they're available for PIC selects
+        await this.loadUsers();
         try {
             const response = await fetch(`/impact/rnd-cloudsphere/api/jobs/${jobId}`);
             const data = await response.json();
             
+            console.log('DEBUG loadJobForEdit: API response =', data);
+            
             if (data.success) {
-                this.populateEditForm(data.data);
-                // Load flow configurations first, then progress steps
+                // Store job data first
+                this.currentEditJob = data.data;
+                console.log('DEBUG loadJobForEdit: Stored currentEditJob =', this.currentEditJob);
+                console.log('DEBUG loadJobForEdit: All job keys =', Object.keys(this.currentEditJob));
+                console.log('DEBUG loadJobForEdit: flow_configuration_id =', this.currentEditJob.flow_configuration_id);
+                console.log('DEBUG loadJobForEdit: flow_configuration =', this.currentEditJob.flow_configuration);
+                console.log('DEBUG loadJobForEdit: flow_config_id =', this.currentEditJob.flow_config_id);
+                
+                // Populate basic form fields (except flow configuration)
+                this.populateEditFormBasic(data.data);
+                
+                // Load flow configurations first, then set the correct value
                 await this.loadEditFlowConfigurations();
+                
                 // Load progress steps for job's sample type and flow configuration
                 this.loadEditProgressSteps(data.data.sample_type);
+                
+                return Promise.resolve();
             } else {
                 this.showMessage('error', data.message || 'Failed to load job');
+                return Promise.reject(new Error(data.message || 'Failed to load job'));
             }
         } catch (error) {
             console.error('Error loading job:', error);
             this.showMessage('error', 'Error loading job');
+            return Promise.reject(error);
         }
+    }
+
+    populateEditFormBasic(job) {
+        const editJobId = document.getElementById('editJobId');
+        const editStartedAt = document.getElementById('edit_started_at');
+        const editDeadlineAt = document.getElementById('edit_deadline_at');
+        const editItemName = document.getElementById('edit_item_name');
+        const editSampleType = document.getElementById('edit_sample_type');
+        const editPriorityLevel = document.getElementById('edit_priority_level');
+        const editStatus = document.getElementById('edit_status');
+        const editNotes = document.getElementById('edit_notes');
+        
+        console.log('DEBUG populateEditFormBasic: job data =', job);
+        
+        if (editJobId) editJobId.value = job.id;
+        if (editStartedAt) editStartedAt.value = this.formatDateTimeForInput(job.started_at);
+        if (editDeadlineAt) editDeadlineAt.value = this.formatDateTimeForInput(job.deadline_at);
+        if (editItemName) editItemName.value = job.item_name || '';
+        if (editSampleType) editSampleType.value = job.sample_type || '';
+        if (editPriorityLevel) editPriorityLevel.value = job.priority_level || '';
+        if (editStatus) editStatus.value = job.status || '';
+        if (editNotes) editNotes.value = job.notes || '';
+        
+        // Set is_full_process checkbox
+        const editIsFullProcess = document.getElementById('edit_is_full_process');
+        if (editIsFullProcess) {
+            editIsFullProcess.checked = job.is_full_process || false;
+        }
+        
+        console.log('DEBUG populateEditFormBasic: Form populated, sample_type =', job.sample_type);
     }
 
     populateEditForm(job) {
@@ -662,46 +768,50 @@ class RNDCloudsphere {
         if (editStatus) editStatus.value = job.status || '';
         if (editNotes) editNotes.value = job.notes || '';
         
+        // Set is_full_process checkbox
+        const editIsFullProcess = document.getElementById('edit_is_full_process');
+        if (editIsFullProcess) {
+            editIsFullProcess.checked = job.is_full_process || false;
+        }
+        
         // Store job data for later use in populating progress assignments
         this.currentEditJob = job;
         
         // Load flow configurations for the job's sample type
         if (job.sample_type) {
             this.loadEditFlowConfigurations().then(() => {
-                // Set the flow configuration if job has one
-                if (job.flow_configuration_id) {
-                    const editFlowConfigSelect = document.getElementById('edit_flow_configuration_id');
-                    if (editFlowConfigSelect) {
-                        editFlowConfigSelect.value = job.flow_configuration_id;
-                    }
-                }
+                // The flow configuration will be set in loadEditFlowConfigurations() after populating
+                // This ensures the select is populated before we try to set its value
             });
         }
     }
 
     async loadEditProgressSteps(sampleType) {
         try {
-            const flowConfigurationId = document.getElementById('edit_flow_configuration_id').value;
-            
-            if (!sampleType) {
-                document.getElementById('editProgressStepsContainer').innerHTML = '<p class="text-muted">Please select a sample type first</p>';
-                return;
-            }
-            
-            if (!flowConfigurationId) {
-                document.getElementById('editProgressStepsContainer').innerHTML = '<p class="text-muted">Please select a flow configuration first</p>';
-                return;
-            }
-            
-            // Get progress steps for specific flow configuration
-            const response = await fetch(`/impact/rnd-cloudsphere/api/progress-steps?sample_type=${encodeURIComponent(sampleType)}&flow_configuration_id=${flowConfigurationId}`);
-            const data = await response.json();
-            
-            if (data.success) {
-                this.renderEditProgressFlow(data.data, null, 'editProgressStepsContainer');
-            } else {
-                this.showMessage('error', data.message || 'Failed to load progress steps');
-            }
+            // Add a small delay to ensure flow configuration is set
+            setTimeout(async () => {
+                const flowConfigurationId = document.getElementById('edit_flow_configuration_id').value;
+                
+                if (!sampleType) {
+                    document.getElementById('editProgressStepsContainer').innerHTML = '<p class="text-muted">Please select a sample type first</p>';
+                    return;
+                }
+                
+                if (!flowConfigurationId) {
+                    document.getElementById('editProgressStepsContainer').innerHTML = '<p class="text-muted">Please select a flow configuration first</p>';
+                    return;
+                }
+                
+                // Get progress steps for specific flow configuration
+                const response = await fetch(`/impact/rnd-cloudsphere/api/progress-steps?sample_type=${encodeURIComponent(sampleType)}&flow_configuration_id=${flowConfigurationId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.renderEditProgressFlow(data.data, null, 'editProgressStepsContainer');
+                } else {
+                    this.showMessage('error', data.message || 'Failed to load progress steps');
+                }
+            }, 500); // Increased delay to 500ms to ensure flow configuration is set
         } catch (error) {
             console.error('Error loading progress steps:', error);
             this.showMessage('error', 'Error loading progress steps');
@@ -768,19 +878,25 @@ class RNDCloudsphere {
                 const picSelect = document.getElementById(`edit_pic_${step.id}`);
                 if (picSelect) {
                     this.populateUserSelect(picSelect);
-                   
+                    
                     // Set selected PIC if we have job data
                     if (this.currentEditJob && this.currentEditJob.progress_assignments) {
                         const assignment = this.currentEditJob.progress_assignments.find(
                             pa => pa.progress_step_id === step.id
                         );
-                       
+                        
                         if (assignment && assignment.pic_id) {
                             picSelect.value = assignment.pic_id;
                         }
                     }
                 }
             });
+            
+            // Set is_full_process checkbox based on job data
+            const editIsFullProcessCheckbox = document.getElementById('edit_is_full_process');
+            if (editIsFullProcessCheckbox && this.currentEditJob) {
+                editIsFullProcessCheckbox.checked = this.currentEditJob.is_full_process || false;
+            }
         }, 100);
     }
 
@@ -805,6 +921,7 @@ class RNDCloudsphere {
                 status: editStatus ? editStatus.value : '',
                 notes: editNotes ? editNotes.value : '',
                 flow_configuration_id: document.getElementById('edit_flow_configuration_id').value,
+                is_full_process: document.getElementById('edit_is_full_process').checked,
                 progress_assignments: []
             };
            
@@ -1043,9 +1160,13 @@ function viewJobDetail(jobId) {
 
 function editJob(jobId) {
     if (rndCloudsphere) {
-        rndCloudsphere.loadJobForEdit(jobId);
-        const modal = new bootstrap.Modal(document.getElementById('editJobModal'));
-        modal.show();
+        // Load job data first, then show modal after data is loaded
+        rndCloudsphere.loadJobForEdit(jobId).then(() => {
+            const modal = new bootstrap.Modal(document.getElementById('editJobModal'));
+            modal.show();
+        }).catch(error => {
+            console.error('Error loading job for edit:', error);
+        });
     }
 }
 

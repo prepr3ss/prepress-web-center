@@ -72,6 +72,7 @@ class RNDJob(db.Model):
     priority_level = db.Column(db.String(10), nullable=False, default='Middle')  # Low, Middle, High
     status = db.Column(db.String(20), nullable=False, default='in_progress')  # in_progress, completed, rejected
     notes = db.Column(db.Text, nullable=True)
+    is_full_process = db.Column(db.Boolean, nullable=False, default=False)  # Flag to indicate if job follows full process workflow
     flow_configuration_id = db.Column(db.Integer, db.ForeignKey('rnd_flow_configurations.id'), nullable=True)  # Link to dynamic flow configuration
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(jakarta_tz))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(jakarta_tz), onupdate=lambda: datetime.now(jakarta_tz))
@@ -93,10 +94,12 @@ class RNDJob(db.Model):
             'priority_level': self.priority_level,
             'status': self.status,
             'notes': self.notes,
+            'is_full_process': self.is_full_process,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'completion_percentage': self.completion_percentage,
-            'current_progress_step': self.current_progress_step
+            'current_progress_step': self.current_progress_step,
+            'flow_configuration_id': self.flow_configuration_id  # Add flow configuration ID
         }
     
     @property

@@ -31,7 +31,6 @@
                         Loading notifications...
                     </div>
                 </li>
-                <li><hr class="dropdown-divider"></li>
                 <li class="notification-dropdown-footer">
                     <a href="/impact/notifications" class="dropdown-item text-center">
                         <small>View all notifications</small>
@@ -39,7 +38,6 @@
                 </li>
             </ul>
         </div>
-        
         <div class="dropdown">
             <button class="btn impact-user-toggle d-flex align-items-center" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="me-2" aria-hidden="true">
@@ -77,3 +75,9 @@
     </div>
     {% endif %}
 </header>
+
+<!-- Notification System CSS -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/notification-dropdown.css') }}">
+
+<!-- Notification System JavaScript -->
+<script src="{{ url_for('static', filename='js/notification-manager.js') }}"></script>

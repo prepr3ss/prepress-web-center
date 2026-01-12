@@ -1169,7 +1169,6 @@ class CTPMachine(db.Model):
     
     # Relationships
     problem_logs = db.relationship('CTPProblemLog', backref='machine', lazy=True, cascade='all, delete-orphan')
-    notifications = db.relationship('CTPNotification', backref='machine', lazy=True, cascade='all, delete-orphan')
 
 class CTPProblemLog(db.Model):
     __tablename__ = 'ctp_problem_logs'
@@ -1201,7 +1200,6 @@ class CTPProblemLog(db.Model):
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(jakarta_tz), onupdate=lambda: datetime.now(jakarta_tz))
     
     # Relationships
-    notifications = db.relationship('CTPNotification', backref='problem_log', lazy=True, cascade='all, delete-orphan')
     creator = db.relationship('User', foreign_keys=[created_by], backref=db.backref('created_problem_logs', lazy='dynamic'))
     
     # Property untuk menghitung downtime
@@ -1259,51 +1257,6 @@ class CTPProblemDocument(db.Model):
     
     # Relationship
     problem_log = db.relationship('CTPProblemLog', backref=db.backref('documents', lazy=True, cascade='all, delete-orphan'))
-
-class CTPNotification(db.Model):
-    __tablename__ = 'ctp_notifications'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    machine_id = db.Column(db.Integer, db.ForeignKey('ctp_machines.id'), nullable=False)
-    log_id = db.Column(db.Integer, db.ForeignKey('ctp_problem_logs.id'), nullable=False)
-    
-    notification_type = db.Column(db.String(50), nullable=False)  # new_problem, problem_resolved
-    message = db.Column(db.Text, nullable=False)
-    is_read = db.Column(db.Boolean, default=False)
-    
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(jakarta_tz))
-    read_at = db.Column(db.DateTime, nullable=True)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'tanggal': self.tanggal.strftime('%Y-%m-%d') if self.tanggal else None,
-            'mesin_cetak': self.mesin_cetak,
-            'pic': self.pic,
-            'remarks': self.remarks,
-            'wo_number': self.wo_number,
-            'mc_number': self.mc_number,
-            'run_length': self.run_length,
-            'item_name': self.item_name,
-            'paper_type': self.paper_type,
-            'jumlah_plate': self.jumlah_plate,
-            'note': self.note,
-            'machine_off_at': self.machine_off_at.isoformat() if self.machine_off_at else None,
-            'plate_start_at': self.plate_start_at.isoformat() if self.plate_start_at else None,
-            'plate_finish_at': self.plate_finish_at.isoformat() if self.plate_finish_at else None,
-            'plate_delivered_at': self.plate_delivered_at.isoformat() if self.plate_delivered_at else None,
-            'ctp_by': self.ctp_by,
-            'ctp_group': self.ctp_group,
-            'status': self.status,
-            'cancellation_reason': self.cancellation_reason,
-            'cancelled_by': self.cancelled_by,
-            'cancelled_at': self.cancelled_at.isoformat() if self.cancelled_at else None,
-            'declined_by': self.declined_by,
-            'declined_at': self.declined_at.isoformat() if self.declined_at else None,
-            'decline_reason': self.decline_reason,
-            'is_declined': self.is_declined
-        }
-
 # --- Cloudsphere Task Management System Models ---
 
 class TaskCategory(db.Model):
@@ -1521,4 +1474,120 @@ class EvidenceFile(db.Model):
             'uploaded_by': self.uploaded_by,
             'uploader_name': self.uploader.name if self.uploader else None,
             'uploaded_at': self.uploaded_at.isoformat() if self.uploaded_at else None
+        }
+
+
+# --- Universal Notification System Models ---
+# Safe to add at the end - tidak mengganggu existing models
+
+class UniversalNotification(db.Model):
+    """
+    Universal Notification Model untuk semua modul (CTP, RND, dll)
+    Menyimpan notifikasi global yang akan dikirim ke multiple users
+    """
+    __tablename__ = 'universal_notifications'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Notification Type (enum-like)
+    notification_type = db.Column(db.String(50), nullable=False)
+    # Contoh: 'ctp_problem_new', 'ctp_problem_resolved', 'rnd_job_created', 
+    #         'rnd_progress_completed', 'rnd_team_note'
+    
+    # Content
+    title = db.Column(db.String(255), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    
+    # Related Resource (untuk tracking ke source)
+    related_resource_type = db.Column(db.String(50), nullable=False)
+    # Contoh: 'ctp_problem', 'rnd_job', 'rnd_progress', 'rnd_team_note'
+    related_resource_id = db.Column(db.Integer, nullable=False)
+    
+    # Who triggered this notification
+    triggered_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    # Additional metadata (JSON stored as string for flexibility)
+    notification_metadata = db.Column(db.Text, nullable=True)  # JSON string untuk data tambahan
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(jakarta_tz))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(jakarta_tz), onupdate=lambda: datetime.now(jakarta_tz))
+    
+    # Relationships
+    triggered_by = db.relationship('User', backref=db.backref('triggered_notifications', lazy='dynamic'))
+    recipients = db.relationship('NotificationRecipient', backref='notification', lazy=True, cascade='all, delete-orphan')
+    
+    def to_dict(self, include_recipient_status=None):
+        """
+        Convert to dict
+        include_recipient_status: jika user_id diberikan, include is_read status untuk user itu
+        """
+        # Parse metadata JSON if available
+        metadata = None
+        if self.notification_metadata:
+            try:
+                import json
+                metadata = json.loads(self.notification_metadata)
+            except:
+                metadata = self.notification_metadata
+        
+        data = {
+            'id': self.id,
+            'notification_type': self.notification_type,
+            'title': self.title,
+            'message': self.message,
+            'related_resource_type': self.related_resource_type,
+            'related_resource_id': self.related_resource_id,
+            'triggered_by_user_id': self.triggered_by_user_id,
+            'triggered_by_name': self.triggered_by.name if self.triggered_by else 'Unknown',
+            'metadata': metadata,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+        
+        if include_recipient_status:
+            recipient = NotificationRecipient.query.filter_by(
+                notification_id=self.id,
+                user_id=include_recipient_status
+            ).first()
+            if recipient:
+                data['is_read'] = recipient.is_read
+                data['read_at'] = recipient.read_at.isoformat() if recipient.read_at else None
+        
+        return data
+
+
+class NotificationRecipient(db.Model):
+    """
+    Track per-user notification status
+    One notification dapat dikirim ke multiple users
+    Setiap user memiliki status read/unread tersendiri
+    """
+    __tablename__ = 'notification_recipients'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Foreign Keys
+    notification_id = db.Column(db.Integer, db.ForeignKey('universal_notifications.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    # Status per user (PENTING: ini yang membedakan dengan old system)
+    is_read = db.Column(db.Boolean, default=False)
+    read_at = db.Column(db.DateTime, nullable=True)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(jakarta_tz))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(jakarta_tz), onupdate=lambda: datetime.now(jakarta_tz))
+    
+    # Relationship
+    user = db.relationship('User', backref=db.backref('notification_recipients', lazy='dynamic'))
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'notification_id': self.notification_id,
+            'user_id': self.user_id,
+            'is_read': self.is_read,
+            'read_at': self.read_at.isoformat() if self.read_at else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None
         }

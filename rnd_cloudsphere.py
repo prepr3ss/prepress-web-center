@@ -2,18 +2,23 @@ from datetime import datetime, timedelta
 from flask import Blueprint, jsonify, request, render_template, send_file, current_app
 from flask_login import login_required, current_user
 from functools import wraps
-from models import db, User
+from models import db, User, UniversalNotification
 from models_rnd import (
     RNDJob, RNDProgressStep, RNDProgressTask, RNDJobProgressAssignment,
     RNDJobTaskAssignment, RNDLeadTimeTracking, RNDEvidenceFile, RNDTaskCompletion,
     RNDJobNote, RNDFlowConfiguration, RNDFlowStep
 )
+from services.notification_service import NotificationDispatcher
 from werkzeug.utils import secure_filename
 import os
 import pytz
 import io
 from PIL import Image
 from sqlalchemy import and_, or_, func, text
+import logging
+
+# Setup logging
+logger = logging.getLogger(__name__)
 
 # Create Blueprint
 rnd_cloudsphere_bp = Blueprint('rnd_cloudsphere', __name__, url_prefix='/rnd-cloudsphere')
@@ -473,8 +478,8 @@ def get_dashboard_sla():
         
         # If no year provided, return all data (like CTP dashboard)
         if not year:
-            # Get all completed jobs without date filtering
-            completed_jobs = RNDJob.query.filter_by(status='completed').all()
+            # Get all completed jobs without date filtering (only full process jobs)
+            completed_jobs = RNDJob.query.filter_by(status='completed', is_full_process=True).all()
             
             total_count = len(completed_jobs)
             on_time_count = sum(1 for job in completed_jobs if job.finished_at and job.finished_at <= job.deadline_at)
@@ -503,9 +508,10 @@ def get_dashboard_sla():
         print(f"DEBUG: SLA filter - year: {year}, month: {month}")
         print(f"DEBUG: SLA date range: {start_date} to {end_date}")
         
-        # Get completed jobs only
+        # Get completed jobs only (only full process jobs for accurate SLA)
         completed_jobs = RNDJob.query.filter(
             RNDJob.status == 'completed',
+            RNDJob.is_full_process == True,  # Filter only full process jobs for accurate SLA
             RNDJob.started_at >= start_date,
             RNDJob.started_at < end_date
         ).all()
@@ -538,8 +544,8 @@ def get_dashboard_performance_indicators():
         
         # If no year provided, return all data
         if not year:
-            # Get all completed jobs without date filtering
-            completed_jobs = RNDJob.query.filter_by(status='completed').all()
+            # Get all completed jobs without date filtering, but only full process jobs
+            completed_jobs = RNDJob.query.filter_by(status='completed', is_full_process=True).all()
         else:
             # Build date range
             start_date = jakarta_tz.localize(datetime(year, month if month else 1, 1))
@@ -554,9 +560,10 @@ def get_dashboard_performance_indicators():
                 # Whole year
                 end_date = jakarta_tz.localize(datetime(year + 1, 1, 1))
             
-            # Get completed jobs for period
+            # Get completed jobs for period (only full process jobs)
             completed_jobs = RNDJob.query.filter(
                 RNDJob.status == 'completed',
+                RNDJob.is_full_process == True,  # Filter only full process jobs
                 RNDJob.started_at >= start_date,
                 RNDJob.started_at < end_date
             ).all()
@@ -731,7 +738,8 @@ def get_dashboard_individual_scores():
             'Blank': 'Initial Plotter',
             'RoHS ICB': 'Proof Approval',
             'RoHS Ribbon': 'Proof Approval',
-            'Polymer Ribbon': 'Polymer Order'
+            'Polymer Ribbon': 'Polymer Order',
+            'Light-Standard-Dark': 'Determine Light-Standard-Dark Reference'
         }
         
         users_scores = []
@@ -747,7 +755,8 @@ def get_dashboard_individual_scores():
                     'Blank': 0.0,
                     'RoHS ICB': 0.0,
                     'RoHS Ribbon': 0.0,
-                    'Polymer Ribbon': 0.0
+                    'Polymer Ribbon': 0.0,
+                    'Light-Standard-Dark': 0.0
                 }
             }
             
@@ -825,12 +834,22 @@ def get_rnd_jobs():
         sample_type_filter = request.args.get('sample_type', '').strip()
         user_id_filter = request.args.get('user_id', type=int)
         
-        # Base query - no role filtering, all users with RND access can see all data
-        query = RNDJob.query
-        if user_id_filter:
+        # Base query with role-based filtering
+        # Admin users can see all jobs, PIC users can only see jobs assigned to them
+        if user.is_admin():
+            # Admin can see all jobs
+            query = RNDJob.query
+        else:
+            # PIC users can only see jobs where they are assigned as PIC
+            query = RNDJob.query.join(RNDJobProgressAssignment).filter(
+                RNDJobProgressAssignment.pic_id == user.id
+            ).distinct()
+        
+        # Additional user_id_filter for admin to filter by specific user
+        if user_id_filter and user.is_admin():
             query = query.join(RNDJobProgressAssignment).filter(
                 RNDJobProgressAssignment.pic_id == user_id_filter
-            )
+            ).distinct()
         
         # Apply search filter
         if search:
@@ -930,6 +949,7 @@ def get_rnd_jobs():
                 'current_pic_name': current_pic_name,
                 'pic_assignments': pic_assignments,  # All PIC assignments
                 'is_overdue': is_overdue,
+                'is_full_process': job.is_full_process,
                 'started_at': job.started_at.strftime('%Y-%m-%d %H:%M') if job.started_at else None,
                 'finished_at': job.finished_at.strftime('%Y-%m-%d %H:%M') if job.finished_at else None,
                 'created_at': job.created_at.strftime('%Y-%m-%d %H:%M') if job.created_at else None
@@ -971,6 +991,9 @@ def create_rnd_job():
             if not data.get(field):
                 return jsonify({'success': False, 'error': f'{field} is required'}), 400
         
+        # Get is_full_process field (optional, defaults to False)
+        is_full_process = data.get('is_full_process', False)
+        
         # Parse dates
         started_at = datetime.now(jakarta_tz)
         if data.get('started_at'):
@@ -993,6 +1016,7 @@ def create_rnd_job():
             started_at=started_at,
             deadline_at=deadline_at,
             notes=data.get('notes', ''),
+            is_full_process=is_full_process,  # Add is_full_process field
             flow_configuration_id=data.get('flow_configuration_id'),  # Add flow configuration
             status='in_progress'
         )
@@ -1034,6 +1058,19 @@ def create_rnd_job():
                 db.session.add(task_assignment)
         
         db.session.commit()
+        
+        # Send notification for new job
+        try:
+            NotificationDispatcher.dispatch_rnd_job_created(
+                job_db_id=job.id,
+                job_id=job.job_id,
+                item_name=job.item_name,
+                sample_type=job.sample_type,
+                priority_level=job.priority_level,
+                triggered_by_user_id=current_user.id
+            )
+        except Exception as e:
+            logger.error(f"Failed to send RND job created notification: {str(e)}", exc_info=True)
         
         return jsonify({
             'success': True,
@@ -1131,10 +1168,12 @@ def get_rnd_job(job_id):
             'finished_at': job.finished_at.strftime('%Y-%m-%d %H:%M') if job.finished_at else None,
             'status': job.status,
             'notes': job.notes,
+            'is_full_process': job.is_full_process,
             'completion_percentage': job.completion_percentage,
             'current_progress_step': job.current_progress_step,
             'progress_assignments': progress_assignments,
-            'evidence_files': evidence_files
+            'evidence_files': evidence_files,
+            'flow_configuration_id': job.flow_configuration_id  # Add flow configuration ID
         }
         
         # IMPORTANT: Sync job status before sending to frontend
@@ -1182,45 +1221,103 @@ def update_rnd_job(job_id):
             job.status = data['status']
         if data.get('notes'):
             job.notes = data['notes']
+        if 'is_full_process' in data:
+            job.is_full_process = data['is_full_process']
         
         # Update progress assignments if provided
+        # IMPORTANT: Only update assignments that are in 'pending' status
+        # Preserve in_progress and completed assignments to maintain progress history
         if 'progress_assignments' in data:
-            # Delete existing progress assignments and their task assignments
-            for assignment in job.progress_assignments:
-                for task_assignment in assignment.task_assignments:
-                    db.session.delete(task_assignment)
-                db.session.delete(assignment)
-            
-            # Create new progress assignments
             progress_assignments = data['progress_assignments']
+            
+            # Preserve existing assignments that are in_progress or completed
+            # Only delete/recreate pending assignments
+            existing_assignments = {
+                (a.progress_step_id, a.status): a 
+                for a in job.progress_assignments
+            }
+            
+            # Collect IDs of assignments to keep
+            assignments_to_preserve = set()
+            
+            # Process new assignments from frontend
             for i, assignment in enumerate(progress_assignments):
                 progress_step_id = assignment.get('progress_step_id')
                 pic_id = assignment.get('pic_id')
+                task_ids = assignment.get('task_ids', [])
                 
                 if not progress_step_id or not pic_id:
                     continue
                 
-                # Create progress assignment
-                progress_assignment = RNDJobProgressAssignment(
-                    job_id=job.id,
-                    progress_step_id=progress_step_id,
-                    pic_id=pic_id,
-                    started_at=job.started_at if i == 0 else None,  # First step starts immediately
-                    status='pending' if i > 0 else 'in_progress'  # First step is in progress
-                )
+                # Check if this step already has an in_progress or completed assignment
+                existing_assignment = None
+                for existing in job.progress_assignments:
+                    if existing.progress_step_id == progress_step_id and existing.status in ['in_progress', 'completed']:
+                        existing_assignment = existing
+                        assignments_to_preserve.add(existing.id)
+                        break
                 
-                db.session.add(progress_assignment)
-                db.session.flush()  # Get assignment ID
-                
-                # Create task assignments for this progress step
-                task_ids = assignment.get('task_ids', [])
-                for task_id in task_ids:
-                    task_assignment = RNDJobTaskAssignment(
-                        job_progress_assignment_id=progress_assignment.id,
-                        progress_task_id=task_id,
-                        status='pending'
-                    )
-                    db.session.add(task_assignment)
+                if existing_assignment:
+                    # Preserve the assignment, only update PIC if changed
+                    if existing_assignment.pic_id != pic_id:
+                        existing_assignment.pic_id = pic_id
+                    # Don't touch task assignments or status - they're maintained
+                else:
+                    # This is a new assignment, check if we're updating pending ones
+                    pending_assignment = None
+                    for existing in job.progress_assignments:
+                        if existing.progress_step_id == progress_step_id and existing.status == 'pending':
+                            pending_assignment = existing
+                            break
+                    
+                    if pending_assignment:
+                        # Update pending assignment
+                        pending_assignment.pic_id = pic_id
+                        assignments_to_preserve.add(pending_assignment.id)
+                        
+                        # Update task assignments for pending assignment
+                        # Delete old task assignments
+                        for task_assignment in pending_assignment.task_assignments:
+                            db.session.delete(task_assignment)
+                        
+                        # Add new task assignments
+                        for task_id in task_ids:
+                            task_assignment = RNDJobTaskAssignment(
+                                job_progress_assignment_id=pending_assignment.id,
+                                progress_task_id=task_id,
+                                status='pending'
+                            )
+                            db.session.add(task_assignment)
+                    else:
+                        # Create new assignment
+                        progress_assignment = RNDJobProgressAssignment(
+                            job_id=job.id,
+                            progress_step_id=progress_step_id,
+                            pic_id=pic_id,
+                            started_at=job.started_at if i == 0 else None,
+                            status='pending' if i > 0 else 'in_progress'
+                        )
+                        db.session.add(progress_assignment)
+                        db.session.flush()  # Get assignment ID
+                        assignments_to_preserve.add(progress_assignment.id)
+                        
+                        # Create task assignments
+                        for task_id in task_ids:
+                            task_assignment = RNDJobTaskAssignment(
+                                job_progress_assignment_id=progress_assignment.id,
+                                progress_task_id=task_id,
+                                status='pending'
+                            )
+                            db.session.add(task_assignment)
+            
+            # Delete only assignments that are not being preserved
+            for assignment in job.progress_assignments:
+                if assignment.id not in assignments_to_preserve:
+                    # Only delete if they're pending (safe to remove)
+                    if assignment.status == 'pending':
+                        for task_assignment in assignment.task_assignments:
+                            db.session.delete(task_assignment)
+                        db.session.delete(assignment)
         
         db.session.commit()
         
@@ -1280,7 +1377,8 @@ def get_all_progress_steps():
         flow_mapping = {
             'Blank': ['Design', 'Mastercard', 'Blank'],
             'RoHS ICB': ['Design', 'Mastercard', 'RoHS ICB', 'Light-Standard-Dark Reference'],
-            'RoHS Ribbon': ['Design', 'Mastercard', 'Polymer Ribbon', 'RoHS Ribbon', 'Light-Standard-Dark Reference']
+            'RoHS Ribbon': ['Design', 'Mastercard', 'Polymer Ribbon', 'RoHS Ribbon', 'Light-Standard-Dark Reference'],
+            'Light-Standard-Dark Reference': ['Light-Standard-Dark Reference']
         }
         
         # Get the step types to include based on the selected sample type
@@ -1760,6 +1858,10 @@ def complete_rnd_task(task_assignment_id):
             progress_assignment.status = 'completed'
             progress_assignment.finished_at = datetime.now(jakarta_tz)
             
+            # DEBUG: Log assignment details
+            print(f"DEBUG (complete): Step marked as completed: {progress_assignment.progress_step.name}")
+            print(f"DEBUG (complete): Note: This route (/api/task/<id>/complete) is deprecated, use /api/tasks/<id>/toggle instead")
+            
             # DEBUG: Log current step and job info
             print(f"DEBUG (complete): Current step name: {progress_assignment.progress_step.name}")
             print(f"DEBUG (complete): Job ID: {progress_assignment.job_id}")
@@ -2015,6 +2117,35 @@ def toggle_rnd_task(task_assignment_id):
                        WHERE id = :progress_assignment_id"""),
                     {'progress_assignment_id': progress_assignment.id}
                 )
+        
+        # SEND NOTIFICATION FOR STEP COMPLETION (toggle_rnd_task route)
+        # Note: all_tasks_completed is the flag for step completion, check this instead of ORM status
+        if all_tasks_completed and progress_assignment.status != 'completed':
+            # This is the block where we just marked the step as completed, so send notification
+            try:
+                print(f"DEBUG (toggle notification): Preparing to send step completion notification from toggle route")
+                print(f"DEBUG (toggle notification): Job ID: {progress_assignment.job.id}")
+                print(f"DEBUG (toggle notification): Job job_id: {progress_assignment.job.job_id}")
+                print(f"DEBUG (toggle notification): Step name: {progress_assignment.progress_step.name}")
+                print(f"DEBUG (toggle notification): PIC: {progress_assignment.pic}")
+                if progress_assignment.pic:
+                    print(f"DEBUG (toggle notification): PIC name: {progress_assignment.pic.name}")
+                else:
+                    print(f"DEBUG (toggle notification): PIC is None!")
+                
+                print(f"DEBUG (toggle notification): Calling dispatch_rnd_step_completed...")
+                result = NotificationDispatcher.dispatch_rnd_step_completed(
+                    job_db_id=progress_assignment.job.id,
+                    job_id=progress_assignment.job.job_id,
+                    item_name=progress_assignment.job.item_name,
+                    step_name=progress_assignment.progress_step.name,
+                    pic_name=progress_assignment.pic.name if progress_assignment.pic else 'Unknown',
+                    triggered_by_user_id=current_user.id
+                )
+                print(f"DEBUG (toggle notification): Notification sent successfully! Result: {result}")
+            except Exception as e:
+                print(f"DEBUG (toggle notification): ERROR in dispatch_rnd_step_completed: {str(e)}")
+                logger.error(f"Failed to send RND step completed notification: {str(e)}", exc_info=True)
         
         db.session.commit()
         
@@ -2807,6 +2938,21 @@ def add_job_note(job_id):
         db.session.add(note)
         db.session.commit()
         
+        # Dispatch notification to job PICs + admins (excluding the note author)
+        try:
+            NotificationDispatcher.dispatch_team_note_new(
+                job_db_id=job.id,
+                job_id=job.job_id,
+                item_name=job.item_name,
+                note_author_id=current_user.id,
+                note_author_name=current_user.name,
+                note_content=note_content,
+                triggered_by_user_id=current_user.id
+            )
+        except Exception as e:
+            logger.error(f"Error dispatching team note notification: {str(e)}")
+            # Don't fail the note creation if notification dispatch fails
+        
         return jsonify({
             'success': True,
             'message': 'Note added successfully',
@@ -3502,6 +3648,9 @@ def complete_job_if_ready(job_id):
                 pa.finished_at = datetime.now(jakarta_tz)
 
         db.session.commit()
+        
+        # Send notification for job completion
+        send_rnd_job_completed_notification(job)
 
         # Refresh and return
         db.session.refresh(job)
@@ -3516,6 +3665,34 @@ def complete_job_if_ready(job_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+def send_rnd_job_completed_notification(job):
+    """Helper function to send RND job completed notification - only once per job"""
+    try:
+        if job.status == 'completed' and job.finished_at:
+            # Check if we already sent a completion notification for this job to avoid duplicates
+            from services.notification_service import NotificationService
+            existing_notification = UniversalNotification.query.filter_by(
+                notification_type='rnd_job_completed',
+                related_resource_id=job.id
+            ).first()
+            
+            # Only send if no previous notification exists
+            if not existing_notification:
+                NotificationDispatcher.dispatch_rnd_job_completed(
+                    job_db_id=job.id,
+                    job_id=job.job_id,
+                    item_name=job.item_name,
+                    sample_type=job.sample_type,
+                    triggered_by_user_id=current_user.id
+                )
+                print(f"DEBUG: Sent job completion notification for job {job.id}")
+            else:
+                print(f"DEBUG: Job completion notification already sent for job {job.id}, skipping duplicate")
+    except Exception as e:
+        logger.error(f"Failed to send RND job completed notification: {str(e)}", exc_info=True)
+
 
 @rnd_cloudsphere_bp.route('/api/jobs/export/excel')
 @login_required

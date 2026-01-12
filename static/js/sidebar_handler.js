@@ -33,7 +33,8 @@ document.addEventListener('DOMContentLoaded', function () {
         '/impact/rnd-cloudsphere/dashboard': {linkId: 'rndCloudsphereDashboardLink', parentSelector: '.rnd-submenu-parent', grandParentSelector: '.prepress-submenu-parent'},
         '/impact/rnd-cloudsphere/': {linkId: 'rndCloudsphereLink', parentSelector: '.rnd-submenu-parent', grandParentSelector: '.prepress-submenu-parent'},
         '/impact/rnd-cloudsphere/flow-configuration': {linkId: 'rndFlowConfigurationLink', parentSelector: '.rnd-submenu-parent', grandParentSelector: '.prepress-submenu-parent'},
-        '/impact/mounting-work-order-incoming': {linkId: 'mountingWorkOrderIncomingLink', parentSelector: '.mounting-submenu-parent', grandParentSelector: '.prepress-submenu-parent'}
+        '/impact/mounting-work-order-incoming': {linkId: 'mountingWorkOrderIncomingLink', parentSelector: '.mounting-submenu-parent', grandParentSelector: '.prepress-submenu-parent'},
+        '/impact/rnd-webcenter/': {linkId: 'rndWebcenterLink', parentSelector: '.rnd-submenu-parent', grandParentSelector: '.prepress-submenu-parent'}
     };
     
     // Fungsi untuk mengaktifkan tautan dan parent submenu berdasarkan URL

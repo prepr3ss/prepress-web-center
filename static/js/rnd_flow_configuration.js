@@ -166,8 +166,8 @@ function loadAvailableSteps() {
         return;
     }
     
-    // Load all progress steps for this sample type
-    fetch(`/impact/rnd-cloudsphere/api/progress-steps?sample_type=${sampleType}`)
+    // Load progress steps relevant to selected sample type (including common steps)
+    fetch(`/impact/rnd-cloudsphere/api/progress-steps/all?sample_type=${sampleType}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {

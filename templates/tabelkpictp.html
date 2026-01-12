@@ -629,6 +629,48 @@
         .modal-body td {
             max-width: 100% !important;
         }
+        
+        /* CMYK Color Table Styling */
+        #cmykTableDetail thead th:nth-child(2) {
+            background: linear-gradient(135deg, #00bfff 0%, #0099dd 100%);
+            color: white;
+            font-weight: 600;
+        }
+        
+        #cmykTableDetail thead th:nth-child(3) {
+            background: linear-gradient(135deg, #ff00a6 0%, #dd0088 100%);
+            color: white;
+            font-weight: 600;
+        }
+        
+        #cmykTableDetail thead th:nth-child(4) {
+            background: linear-gradient(135deg, #ffe600 0%, #ffc107 100%);
+            color: #333;
+            font-weight: 600;
+        }
+        
+        #cmykTableDetail thead th:nth-child(5) {
+            background: linear-gradient(135deg, #333 0%, #000 100%);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* CMYK Table Row Styling with 40% opacity */
+        #cmykTableDetail tbody td:nth-child(2) {
+            background-color: rgba(0, 191, 255, 0.4); /* Cyan with 40% opacity */
+        }
+        
+        #cmykTableDetail tbody td:nth-child(3) {
+            background-color: rgba(255, 0, 166, 0.4); /* Magenta with 40% opacity */
+        }
+        
+        #cmykTableDetail tbody td:nth-child(4) {
+            background-color: rgba(255, 230, 0, 0.4); /* Yellow with 40% opacity */
+        }
+        
+        #cmykTableDetail tbody td:nth-child(5) {
+            background-color: rgba(51, 51, 51, 0.4); /* Black with 40% opacity */
+        }
     </style>
 </head>
 <body>
@@ -1536,6 +1578,5 @@
         </script>
         <script src="{{ url_for('static', filename='js/kpi_ctp_handler.js') }}?v=20251211"></script>
     <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/notification_system.js') }}"></script>
 </body>
 </html>
