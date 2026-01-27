@@ -1,0 +1,620 @@
+/**
+ * RND WebCenter - File Explorer CSS
+ * Modern, clean, and minimalistic styling for the file explorer interface
+ */
+
+/* File Container Styles */
+.file-container {
+    min-height: 400px;
+}
+
+/* File Card Styles for Grid View */
+.file-card {
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    border: 1px solid #dee2e6;
+}
+
+.file-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-color: #0d6efd;
+}
+
+.file-icon {
+    color: #6c757d;
+}
+
+.file-icon i {
+    transition: color 0.2s ease-in-out;
+}
+
+.file-card:hover .file-icon i {
+    color: #0d6efd;
+}
+
+.file-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #495057;
+}
+
+/* File Type Icon Colors */
+.bi-file-earmark-pdf {
+    color: #dc3545 !important;
+}
+
+.bi-file-earmark-word {
+    color: #0d6efd !important;
+}
+
+.bi-file-earmark-excel {
+    color: #198754 !important;
+}
+
+.bi-file-earmark-ppt {
+    color: #fd7e14 !important;
+}
+
+.bi-file-earmark-image {
+    color: #6610f2 !important;
+}
+
+.bi-file-earmark-zip {
+    color: #6f42c1 !important;
+}
+
+.bi-file-earmark-music {
+    color: #0dcaf0 !important;
+}
+
+.bi-file-earmark-play {
+    color: #d63384 !important;
+}
+
+.bi-file-earmark-code {
+    color: #212529 !important;
+}
+
+.bi-folder {
+    color: #ffc107 !important;
+}
+
+.bi-folder2 {
+    color: #ffc107 !important;
+}
+
+.bi-folder2-open {
+    color: #ffc107 !important;
+}
+
+/* List View Styles */
+.table-hover tbody tr:hover {
+    cursor: pointer;
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+    background-color: #f8f9fa;
+}
+
+/* Breadcrumb Styles */
+.breadcrumb {
+    background-color: #f8f9fa;
+    padding: 0.75rem 1rem;
+    border-radius: 0.375rem;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    content: ">";
+    color: #6c757d;
+}
+
+.breadcrumb-item a {
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    text-decoration: underline;
+}
+
+/* Search Bar Styles */
+.input-group-text {
+    background-color: #f8f9fa;
+    border-right: none;
+}
+
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Button Styles */
+.btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-outline-primary:hover {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+/* Connection Status Styles */
+.alert {
+    border: none;
+    border-radius: 0.5rem;
+}
+
+.alert-info {
+    background-color: #e7f5ff;
+    color: #055160;
+}
+
+.alert-success {
+    background-color: #ebfbee;
+    color: #0f5132;
+}
+
+.alert-warning {
+    background-color: #fff4e5;
+    color: #664d03;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #842029;
+}
+
+/* Loading Spinner Styles */
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Empty State Styles */
+#emptyState i {
+    opacity: 0.5;
+}
+
+/* Error State Styles */
+#errorState i {
+    opacity: 0.7;
+}
+
+/* File Info Modal Styles */
+.modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #4facfe 100%);
+    color: white;
+    border: none;
+    border-radius: 15px 15px 0 0;
+    padding: 1rem 1.5rem;
+}
+
+.modal-header .modal-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.modal-header .btn-close {
+    filter: invert(1);
+    opacity: 0.8;
+}
+
+.modal-header .btn-close:hover {
+    opacity: 1;
+}
+
+.modal-content {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+}
+
+.modal-body {
+    padding: 1.5rem;
+    background: white;
+}
+
+.modal-footer {
+    border-top: 1px solid rgba(102, 126, 234, 0.1);
+    padding: 1rem 1.5rem;
+    background: white;
+    border-radius: 0 0 15px 15px;
+}
+
+.modal-body .row {
+    border-bottom: 1px solid #f1f3f5;
+    padding: 0.75rem 0;
+    align-items: center;
+}
+
+.modal-body .row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+.modal-body .col-4 {
+    color: #495057;
+    font-weight: 600;
+    font-size: 0.9rem;
+    word-break: break-word;
+    text-align: right;
+}
+
+.modal-body .col-8 {
+    color: #212121;
+    font-size: 0.95rem;
+    word-break: break-word;
+    padding-left: 1rem;
+}
+
+/* Modal Button Styling */
+.modal-footer .btn-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    padding: 0.5rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.modal-footer .btn-secondary:hover {
+    background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+    color: white;
+}
+
+/* Responsive Adjustments - Following responsive-mobile-framework pattern */
+
+/* ----- MOBILE RESPONSIVE (320px - 767.98px) ----- */
+@media (max-width: 767.98px) {
+    /* Card Header - Stack items vertically */
+    .card-header {
+        padding: 0.75rem;
+    }
+    
+    .card-header h5 {
+        font-size: 0.95rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Breadcrumb - Make responsive */
+    nav.breadcrumb {
+        margin-bottom: 0.5rem;
+    }
+    
+    .breadcrumb {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+    }
+    
+    /* Search container - flex layout instead of absolute positioning */
+    .search-container {
+        width: 100% !important;
+        margin-bottom: 0.5rem;
+    }
+    
+    .search-container .form-control {
+        padding-right: 0.75rem;
+        font-size: 0.875rem;
+    }
+    
+    .search-container .btn {
+        position: relative;
+        padding: 0.4rem 0.5rem;
+    }
+    
+    /* View mode toggle - smaller on mobile */
+    .btn-group-sm {
+        width: 100%;
+    }
+    
+    .btn-group-sm > .btn {
+        padding: 0.35rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    /* File cards - 1 column on mobile */
+    .file-card {
+        margin-bottom: 1rem;
+    }
+    
+    .col-md-3 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+    
+    .file-name {
+        font-size: 0.8rem;
+    }
+    
+    .file-icon i {
+        font-size: 2.5rem !important;
+    }
+    
+    /* Page header - reduce padding */
+    .page-header {
+        padding: 1rem 0;
+        margin: -0.75rem -15px 1.5rem -15px;
+    }
+    
+    .page-header h2 {
+        font-size: 1.25rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .page-header p {
+        font-size: 0.8rem;
+        margin: 0;
+    }
+    
+    /* Header button layout - stack on mobile */
+    .page-header > .container-fluid > .d-flex {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .page-header > .container-fluid > .d-flex > div:last-child {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .page-header .btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+    }
+    
+    /* Modal - make responsive */
+    .modal-dialog {
+        max-width: 95%;
+        margin: auto;
+    }
+    
+    /* Table responsive */
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    /* Alert - adjust padding */
+    .alert {
+        padding: 0.75rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* ----- TABLET RESPONSIVE (768px - 991.98px) ----- */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    /* Adjust card columns for tablet */
+    .col-md-3 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+    
+    .file-name {
+        font-size: 0.85rem;
+    }
+    
+    .search-container {
+        width: auto;
+    }
+    
+    .page-header > .container-fluid > .d-flex {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .page-header > .container-fluid > .d-flex > div:last-child {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+}
+
+/* ----- DESKTOP RESPONSIVE (992px+) ----- */
+@media (min-width: 992px) {
+    /* Default desktop layout */
+    .col-md-3 {
+        flex: 0 0 25%;
+        max-width: 25%;
+    }
+    
+    .page-header > .container-fluid > .d-flex {
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .page-header > .container-fluid > .d-flex > div:last-child {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+}
+
+/* Animation Classes */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.slide-up {
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Search Highlighting */
+mark {
+    background-color: #fff3cd;
+    padding: 0.1em 0.2em;
+    border-radius: 0.2em;
+}
+
+/* Custom Scrollbar */
+.file-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.file-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.file-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.file-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* View Mode Toggle Styles */
+.btn-group .btn-check:checked + .btn {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+.btn-group .btn-check:not(:checked) + .btn {
+    background-color: white;
+    border-color: #dee2e6;
+    color: #6c757d;
+}
+
+.btn-group .btn-check:not(:checked) + .btn:hover {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+    color: #495057;
+}
+
+/* File Info Button Styles */
+.file-info-btn {
+    border: none;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    border-radius: 0.2rem;
+}
+
+.file-info-btn:hover {
+    background-color: #e7f5ff;
+    border-color: #bde0fe;
+    color: #055160;
+}
+
+/* Accessibility Improvements */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Focus Styles */
+.file-card:focus,
+.btn:focus,
+.form-control:focus {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+/* Modal Responsive Adjustments */
+@media (max-width: 767.98px) {
+    .modal-dialog {
+        max-width: 95%;
+        margin: auto;
+    }
+    
+    .modal-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    .modal-header .modal-title {
+        font-size: 1rem;
+    }
+    
+    .modal-body {
+        padding: 1rem;
+    }
+    
+    .modal-footer {
+        padding: 0.75rem 1rem;
+    }
+    
+    .modal-body .col-4 {
+        font-size: 0.8rem;
+        padding-right: 0.5rem;
+    }
+    
+    .modal-body .col-8 {
+        font-size: 0.85rem;
+        padding-left: 0.5rem;
+    }
+    
+    .modal-body .row {
+        padding: 0.5rem 0;
+    }
+    
+    .modal-footer .btn-secondary {
+        padding: 0.4rem 1.2rem;
+        font-size: 0.85rem;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .modal-dialog {
+        max-width: 90%;
+    }
+}
+
+@media (min-width: 992px) {
+    .modal-dialog {
+        max-width: 500px;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .btn,
+    .btn-group,
+    .input-group,
+    .alert {
+        display: none !important;
+    }
+    
+    .file-container {
+        box-shadow: none;
+        border: 1px solid #dee2e6;
+    }
+    
+    .file-card {
+        break-inside: avoid;
+    }
+}

@@ -3,8 +3,10 @@ class RNDJobDetail {
     constructor() {
         this.jobId = window.jobId;
         this.job = null;
+        this.jobData = null;  // Store complete job data for external delay handler
         this.progressSteps = [];
         this.evidenceFiles = [];
+        this.externalDelayHandler = null;  // Will be initialized after loadJobDetail
         // Prevent repeated automatic finalize attempts
         this._completeIfReadyAttempted = false;
         this._lastCompleteIfReadyAttemptAt = 0; // epoch ms
@@ -44,6 +46,7 @@ class RNDJobDetail {
             
             if (data.success) {
                 this.job = data.data;
+                this.jobData = data.data;  // Store complete data for external delay handler
                 
                 // Job data loaded; details are available for rendering
                 
@@ -52,6 +55,17 @@ class RNDJobDetail {
                     this.renderEvidenceByStep();
                     this.loadJobNotes();
                     this.calculateAndDisplayLeadTime();
+                    
+                    // Initialize external delay handler on first load
+                    if (!this.externalDelayHandler) {
+                        this.externalDelayHandler = new ExternalDelayHandler(this);
+                        this.externalDelayHandler.init();
+                    } else {
+                        // Reload external delays on subsequent loads
+                        this.externalDelayHandler.loadExternalDelays().then(() => {
+                            this.externalDelayHandler.renderExternalDelayIndicators();
+                        });
+                    }
                     
                     // Recalculate connector positions after all content is rendered
                     setTimeout(() => {
@@ -296,7 +310,7 @@ class RNDJobDetail {
             }
             
             return `
-                <div class="process-step" data-step-index="${index}">
+                <div class="process-step" data-step-index="${index}" ${step.is_process_step ? `data-progress-assignment-id="${step.id}"` : ''}>
                     <div class="step-indicator ${statusClass}">${stepNumber}</div>
                     <div class="step-content">
                         <div class="step-title">${step.name}</div>
@@ -306,12 +320,103 @@ class RNDJobDetail {
             `;
         }).join('');
 
-        const timelineHTML = `
-            <div class="horizontal-steps">
-                ${connectorsHtml}
-                ${stepsHtml}
-            </div>
-        `;
+        // Interleave connectors and steps: STEP - CONNECTOR - STEP - CONNECTOR - STEP...
+        let timelineContent = '';
+        for (let i = 0; i < steps.length; i++) {
+            // Add step
+            timelineContent += stepsHtml.split('</div>')[0].split('><')[i]?.match(/^<div[^>]*>[\s\S]*?<\/div>$/) || '';
+        }
+        
+        // Actually, let's rebuild with proper interleaving
+        const stepsArray = steps.map((step, index) => {
+            const statusClass = step.status.replace(' ', '-');
+            const stepNumber = index + 1;
+            let stepMeta = '';
+            
+            if (step.is_job_created) {
+                let datetimeInfo = '';
+                if (step.created_at) {
+                    datetimeInfo += `
+                        <div class="step-meta-item">
+                            <i class="fas fa-calendar-plus"></i>
+                            <span>Created: ${this.formatDate(step.created_at)}</span>
+                        </div>
+                    `;
+                }
+                if (step.started_at) {
+                    datetimeInfo += `
+                        <div class="step-meta-item">
+                            <span>${this.formatDate(step.started_at)}</span>
+                        </div>
+                    `;
+                }
+                if (!datetimeInfo) {
+                    datetimeInfo = `
+                        <div class="step-meta-item">
+                            <i class="fas fa-calendar"></i>
+                            <span>No date available</span>
+                        </div>
+                    `;
+                }
+                stepMeta = `<div class="step-meta">${datetimeInfo}</div>`;
+            } else if (step.is_process_step) {
+                let completionDatetime = '';
+                if (step.status === 'completed' && step.finished_at) {
+                    completionDatetime = this.formatDate(step.finished_at);
+                }
+                stepMeta = `
+                    <div class="step-meta">
+                        ${step.pic_name ? `
+                            <div class="step-meta-item">
+                                <i class="fas fa-user"></i>
+                                <span>${step.pic_name}</span>
+                            </div>
+                        ` : ''}
+                        ${completionDatetime ? `
+                            <div class="step-meta-item">
+                                <span>${completionDatetime}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            } else if (step.is_job_finished) {
+                stepMeta = `
+                    <div class="step-meta">
+                        ${step.finished_at ? `
+                            <div class="step-meta-item">
+                                <span>${this.formatDate(step.finished_at)}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+            
+            return {
+                html: `
+                <div class="process-step" data-step-index="${index}" ${step.is_process_step ? `data-progress-assignment-id="${step.id}"` : ''}>
+                    <div class="step-indicator ${statusClass}">${stepNumber}</div>
+                    <div class="step-content">
+                        <div class="step-title">${step.name}</div>
+                        ${stepMeta}
+                    </div>
+                </div>
+                `,
+                index: index
+            };
+        });
+
+        // Build interleaved HTML: step[0] - connector[0] - step[1] - connector[1] - ... - step[n]
+        let timelineHTML = '<div class="horizontal-steps">';
+        for (let i = 0; i < steps.length; i++) {
+            // Add step
+            timelineHTML += stepsArray[i].html;
+            // Add connector after step (except after last step)
+            if (i < steps.length - 1) {
+                const connectorStatus = steps[i].status.replace(' ', '-');
+                timelineHTML += `<div class="step-connector ${connectorStatus}" data-step-index="${i}"></div>`;
+            }
+        }
+        timelineHTML += '</div>';
 
         container.innerHTML = timelineHTML;
         
@@ -588,8 +693,8 @@ class RNDJobDetail {
                                 <button class="btn btn-sm btn-outline-primary" onclick="rndJobDetail.downloadEvidence(${file.id})">
                                     <i class="fas fa-download"></i>
                                 </button>
-                                ${window.currentUserRole === 'admin' ? `
-                                    <button class="btn btn-sm btn-outline-danger" onclick="rndJobDetail.deleteEvidence(${file.id})">
+                                ${(window.currentUserRole === 'admin' || (file.uploaded_by === Number(window.currentUserId))) ? `
+                                    <button class="btn btn-sm btn-outline-danger" onclick="rndJobDetail.deleteEvidence(${file.id})" title="Delete evidence">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 ` : ''}
@@ -876,6 +981,11 @@ class RNDJobDetail {
                 if (wasChecked) {
                     // Task was just completed, reload data to check for auto-progress
                     this.showMessage('success', 'Task completed successfully');
+                    
+                    // Try to auto-complete external delay if applicable
+                    if (this.externalDelayHandler) {
+                        await this.externalDelayHandler.autoCompleteExternalDelay(taskId);
+                    }
                     
                     // Reload full data immediately to show auto-progress
                     setTimeout(() => {

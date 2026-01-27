@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detail 5W1H - Impact 360</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-mobile-framework.css') }}">
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <style>
+    /* Page Header with RND gradient */
+    .page-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #667eea 100%);
+      color: white;
+      padding: 2rem 0;
+      margin: -1rem -15px 2rem -15px;
+      border-radius: 0 0 20px 20px;
+      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3), 0 0 40px rgba(118, 75, 162, 0.1), inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+
+    /* Info Section */
+    .info-section {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 2rem;
+      border: 1px solid rgba(102, 126, 234, 0.1);
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .info-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+    }
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .info-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #6c757d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.5rem;
+    }
+
+    .info-value {
+      font-size: 1rem;
+      font-weight: 500;
+      color: #1f2937;
+      word-break: break-word;
+    }
+
+    .info-value-textarea {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 1rem;
+      font-size: 0.95rem;
+      color: #374151;
+      line-height: 1.6;
+      min-height: 80px;
+      font-family: inherit;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      width: fit-content;
+    }
+
+    .status-badge.draft {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .status-badge.open {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .status-badge.closed {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    /* Attachment Section */
+    .attachment-section {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 2rem;
+      border: 1px solid rgba(102, 126, 234, 0.1);
+    }
+
+    .attachment-section h5 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .attachment-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .attachment-card {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .attachment-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border-color: #667eea;
+    }
+
+    .attachment-icon {
+      font-size: 2rem;
+      color: #667eea;
+    }
+
+    .attachment-name {
+      font-size: 0.875rem;
+      color: #374151;
+      word-break: break-word;
+      font-weight: 500;
+    }
+
+    .attachment-preview {
+      width: 100%;
+      height: 120px;
+      background: #f3f4f6;
+      border-radius: 6px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .attachment-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .attachment-preview:hover {
+      filter: brightness(0.95);
+    }
+
+    .attachment-download {
+      padding: 6px 12px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .attachment-download:hover {
+      background: #5568d3;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+      color: white;
+      text-decoration: none;
+    }
+
+    .empty-attachment {
+      text-align: center;
+      padding: 2rem;
+      color: #9ca3af;
+    }
+
+    .empty-attachment i {
+      font-size: 2.5rem;
+      color: #d1d5db;
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    /* Action Buttons */
+    /* Preview Container Styles */
+    .preview-container {
+      position: relative;
+      margin-bottom: 0.5rem;
+      width: 100%;
+      height: 120px;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .preview-container:hover {
+      background: #e9ecef;
+      transform: scale(1.02);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .preview-container img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: cover;
+    }
+
+    .file-icon-preview {
+      font-size: 3rem;
+      color: #6b7280;
+    }
+
+    .file-icon-preview.pdf { color: #dc2626; }
+    .file-icon-preview.word { color: #2563eb; }
+    .file-icon-preview.excel { color: #16a34a; }
+    .file-icon-preview.generic { color: #6b7280; }
+
+    .file-type-badge {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .btn-action {
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-edit {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-edit:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      color: white;
+      text-decoration: none;
+    }
+
+    .btn-back {
+      background: #f3f4f6;
+      color: #374151;
+      border: 1px solid #d1d5db;
+    }
+
+    .btn-back:hover {
+      background: #e5e7eb;
+      text-decoration: none;
+    }
+
+    .btn-export {
+      background: #10b981;
+      color: white;
+    }
+
+    .btn-export:hover {
+      background: #059669;
+      color: white;
+      text-decoration: none;
+    }
+
+    /* Print Styles untuk PDF */
+    @media print {
+      * {
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-size: 10pt;
+        line-height: 1.4;
+      }
+
+      .page-header,
+      .action-buttons,
+      .modal,
+      .btn-action {
+        display: none !important;
+      }
+
+      .info-section,
+      .attachment-section {
+        page-break-inside: avoid;
+        margin-bottom: 20pt;
+        border: 1px solid #ddd;
+      }
+
+      .page-break {
+        page-break-before: always;
+      }
+
+      .print-title {
+        font-size: 16pt;
+        font-weight: bold;
+        margin-bottom: 15pt;
+        text-align: center;
+      }
+
+      .print-meta {
+        font-size: 9pt;
+        color: #666;
+        margin-bottom: 10pt;
+      }
+
+      .info-grid {
+        margin-bottom: 15pt;
+      }
+
+      .info-item {
+        margin-bottom: 10pt;
+      }
+
+      .info-label {
+        font-weight: bold;
+        font-size: 9pt;
+        margin-bottom: 3pt;
+      }
+
+      .info-value,
+      .info-value-textarea {
+        font-size: 10pt;
+      }
+
+      .status-badge {
+        padding: 3pt 6pt;
+        border-radius: 3pt;
+      }
+
+      .attachment-preview img {
+        max-width: 100%;
+        height: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+<div id="wrapper">
+  {% include '_top_header.html' %}
+  <div class="d-flex" id="content-wrapper">
+    {% include '_sidebar.html' %}
+    <div id="page-content-wrapper">
+      <div class="container-fluid pt-3">
+        <!-- Page Header -->
+        <div class="page-header">
+          <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h2 class="mb-1 text-white">Detail 5W1H</h2>
+                <p class="mb-0 opacity-75">Rincian lengkap entri 5W1H</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Info Section -->
+        <div class="info-section">
+          <!-- Title & Status Row -->
+          <div style="margin-bottom: 2rem;">
+            <div class="info-label">Judul</div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: #1f2937; margin-bottom: 1rem;">{{ entry.title }}</div>
+            <div class="status-badge {{ entry.status.name }}">
+              <i class="fas fa-{{ 'file-alt' if entry.status.name == 'draft' else 'envelope-open' if entry.status.name == 'open' else 'check-circle' }}"></i>
+              {{ entry.status.value }}
+            </div>
+          </div>
+
+          <!-- Creator & Metadata -->
+          <div style="margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid #e5e7eb;">
+            <div class="info-grid" style="gap: 1rem;">
+              <div class="info-item">
+                <div class="info-label">Dibuat oleh</div>
+                <div class="info-value">
+                  <i class="fas fa-user-circle" style="color: #667eea; margin-right: 0.5rem;"></i>
+                  {{ entry.owner.name if entry.owner else '-' }}
+                </div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Tanggal Dibuat</div>
+                <div class="info-value">{{ entry.created_at.strftime('%d %B %Y - %H:%M') if entry.created_at else '-' }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5W1H Fields Grid -->
+          <div class="info-grid">
+            <!-- Who -->
+            <div class="info-item">
+              <div class="info-label">Siapa (Who)</div>
+              <div class="info-value-textarea">{{ entry.who }}</div>
+            </div>
+            <!-- What -->
+            <div class="info-item">
+              <div class="info-label">Apa (What)</div>
+              <div class="info-value-textarea">{{ entry.what }}</div>
+            </div>
+            <!-- When -->
+            <div class="info-item">
+              <div class="info-label">Kapan (When)</div>
+              <div class="info-value">{{ entry.when_.strftime('%d %B %Y - %H:%M') }}</div>
+            </div>
+            <!-- Where -->
+            <div class="info-item">
+              <div class="info-label">Dimana (Where)</div>
+              <div class="info-value-textarea">{{ entry.where }}</div>
+            </div>
+            <!-- Why -->
+            <div class="info-item">
+              <div class="info-label">Mengapa (Why)</div>
+              <div class="info-value-textarea">{{ entry.why }}</div>
+            </div>
+            <!-- How -->
+            <div class="info-item">
+              <div class="info-label">Bagaimana (How)</div>
+              <div class="info-value-textarea">{{ entry.how }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Attachment Section -->
+        {% if entry.attachments and entry.attachments|length > 0 %}
+        <div class="attachment-section">
+          <h5>
+            <i class="fas fa-paperclip" style="color: #667eea;"></i>
+            Lampiran File ({{ entry.attachments|length }})
+          </h5>
+          <div class="attachment-grid">
+            {% for attachment in entry.attachments %}
+            <div class="attachment-card">
+              {% set filename = attachment.split('_')[-1] %}
+              {% set ext = filename.split('.')[-1].lower() %}
+              <div class="preview-container" data-file-type="{{ ext }}" data-preview-url="{{ url_for('tools_5w1h.download_attachment', filename=attachment) }}" style="cursor: pointer;">
+                {% if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')) %}
+                  <img src="{{ url_for('tools_5w1h.download_attachment', filename=attachment) }}" alt="{{ filename }}">
+                {% elif ext == 'pdf' %}
+                  <div class="file-icon-preview pdf"><i class="fas fa-file-pdf"></i></div>
+                {% elif ext in ['doc', 'docx'] %}
+                  <div class="file-icon-preview word"><i class="fas fa-file-word"></i></div>
+                {% elif ext in ['xls', 'xlsx'] %}
+                  <div class="file-icon-preview excel"><i class="fas fa-file-excel"></i></div>
+                {% else %}
+                  <div class="file-icon-preview generic"><i class="fas fa-file"></i></div>
+                {% endif %}
+                <span class="file-type-badge">{{ ext }}</span>
+              </div>
+              <div class="attachment-name">{{ filename }}</div>
+              <a href="{{ url_for('tools_5w1h.download_attachment', filename=attachment) }}" class="attachment-download" download>
+                <i class="fas fa-download"></i>
+              </a>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% elif entry.attachment_path %}
+        <div class="attachment-section">
+          <h5>
+            <i class="fas fa-paperclip" style="color: #667eea;"></i>
+            Lampiran File
+          </h5>
+          <div class="attachment-grid">
+            <div class="attachment-card">
+              {% set filename = entry.attachment_path.split('/')[-1] %}
+              {% set ext = filename.split('.')[-1].lower() %}
+              <div class="preview-container" data-file-type="{{ ext }}" data-preview-url="{{ url_for('tools_5w1h.download_attachment', filename=entry.attachment_path) }}" style="cursor: pointer;">
+                {% if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')) %}
+                  <img src="{{ url_for('tools_5w1h.download_attachment', filename=entry.attachment_path) }}" alt="{{ filename }}">
+                {% elif ext == 'pdf' %}
+                  <div class="file-icon-preview pdf"><i class="fas fa-file-pdf"></i></div>
+                {% elif ext in ['doc', 'docx'] %}
+                  <div class="file-icon-preview word"><i class="fas fa-file-word"></i></div>
+                {% elif ext in ['xls', 'xlsx'] %}
+                  <div class="file-icon-preview excel"><i class="fas fa-file-excel"></i></div>
+                {% else %}
+                  <div class="file-icon-preview generic"><i class="fas fa-file"></i></div>
+                {% endif %}
+                <span class="file-type-badge">{{ ext }}</span>
+              </div>
+              <div class="attachment-name">{{ filename }}</div>
+              <a href="{{ url_for('tools_5w1h.download_attachment', filename=entry.attachment_path) }}" class="attachment-download" download>
+                <i class="fas fa-download"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <div class="attachment-section">
+          <h5>
+            <i class="fas fa-paperclip" style="color: #667eea;"></i>
+            Lampiran File
+          </h5>
+          <div class="empty-attachment">
+            <i class="fas fa-inbox"></i>
+            <p>Tidak ada lampiran untuk entri ini</p>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <a href="javascript:void(0);" class="btn-action btn-export" onclick="exportToPDF()">
+            <i class="fas fa-file-pdf"></i> Export PDF
+          </a>
+          {% if can_edit %}
+            <a href="{{ url_for('tools_5w1h.edit_5w1h', entry_id=entry.id) }}" class="btn-action btn-edit">
+              <i class="fas fa-edit"></i> Edit
+            </a>
+          {% endif %}
+          <a href="{{ url_for('tools_5w1h.dashboard_5w1h') }}" class="btn-action btn-back">
+            <i class="fas fa-arrow-left"></i> Kembali
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+  <div id="liveToast" class="toast border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast-body bg-success text-white rounded">
+      <span class="message-text"></span>
+      <button type="button" class="btn-close btn-close-white float-end" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Image Preview Modal -->
+<div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-labelledby="imagePreviewModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="border-bottom: 1px solid #e5e7eb;">
+        <h5 class="modal-title" id="imagePreviewModalLabel">Pratinjau Gambar</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img id="previewImage" src="" alt="Preview" style="max-width: 100%; max-height: 70vh; border-radius: 8px;">
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  // Set PDF.js worker
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+</script>
+<script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
+<script>
+  // Event delegation untuk preview container clicks
+  document.addEventListener('click', function(e) {
+    const previewContainer = e.target.closest('.preview-container');
+    if (previewContainer) {
+      e.stopPropagation();
+      e.preventDefault();
+      handlePreview(previewContainer);
+      return false;
+    }
+  }, true);
+
+  function handlePreview(element) {
+    const fileType = element.getAttribute('data-file-type');
+    const previewUrl = element.getAttribute('data-preview-url');
+    
+    console.log('Preview clicked:', { fileType, previewUrl });
+    
+    if (fileType === 'pdf') {
+      // Open PDF in new tab using browser's PDF viewer
+      window.open(previewUrl, '_blank');
+    } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileType)) {
+      // Open image modal for image files
+      openImagePreview(previewUrl);
+    }
+    // For other file types (doc, docx, xls, xlsx, etc.), do nothing - they can only be downloaded
+  }
+
+  function openImagePreview(src) {
+    document.getElementById('previewImage').src = src;
+    var modal = new bootstrap.Modal(document.getElementById('imagePreviewModal'));
+    modal.show();
+  }
+
+  // Function to render PDF thumbnail
+  function renderPdfThumbnail(pdfUrl, containerElement) {
+    fetch(pdfUrl)
+      .then(response => response.arrayBuffer())
+      .then(data => {
+        pdfjsLib.getDocument(data).promise.then(pdf => {
+          pdf.getPage(1).then(page => {
+            const scale = 1.5;
+            const viewport = page.getViewport({ scale: scale });
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            
+            page.render({
+              canvasContext: context,
+              viewport: viewport
+            }).promise.then(() => {
+              const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+              const img = document.createElement('img');
+              img.src = dataUrl;
+              img.style.maxWidth = '100%';
+              img.style.maxHeight = '100%';
+              img.style.objectFit = 'contain';
+              
+              // Hide icon and add preview image, keep badge
+              const iconDiv = containerElement.querySelector('.file-icon-preview');
+              if (iconDiv) {
+                iconDiv.style.display = 'none';
+              }
+              
+              // Check if image already exists
+              const existingImg = containerElement.querySelector('img');
+              if (existingImg) {
+                existingImg.replaceWith(img);
+              } else {
+                containerElement.insertBefore(img, containerElement.querySelector('.file-type-badge'));
+              }
+            });
+          });
+        }).catch(err => {
+          console.error('PDF rendering error:', err);
+        });
+      })
+      .catch(err => console.error('Fetch error:', err));
+  }
+
+  // Initialize PDF thumbnails on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    const previewContainers = document.querySelectorAll('.preview-container');
+    previewContainers.forEach(container => {
+      const ext = container.querySelector('.file-type-badge');
+      if (ext && ext.textContent.toLowerCase() === 'pdf') {
+        // Check if this is not an image
+        if (!container.querySelector('img')) {
+          // Get the PDF URL from the download button
+          const downloadBtn = container.closest('.attachment-card').querySelector('.attachment-download');
+          if (downloadBtn) {
+            const pdfUrl = downloadBtn.href;
+            // Render PDF thumbnail without removing badge
+            renderPdfThumbnail(pdfUrl, container);
+          }
+        }
+      }
+    });
+  });
+
+  // Toast notification function
+  function showMessage(type, message) {
+    const toastEl = document.getElementById('liveToast');
+    const toastBody = toastEl.querySelector('.message-text');
+    
+    toastBody.textContent = message;
+    
+    // Update toast styling based on type
+    const toastBodyElement = toastEl.querySelector('.toast-body');
+    toastBodyElement.className = `toast-body rounded text-white bg-${type === 'error' ? 'danger' : type === 'info' ? 'info' : 'success'}`;
+    
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
+  }
+
+  // Backwards compatibility alias
+  function showToast(message, type = 'success') {
+    showMessage(type, message);
+  }
+
+  function exportToPDF() {
+    const element = document.getElementById('page-content-wrapper');
+    const title = document.querySelector('h2').textContent;
+    
+    const opt = {
+      margin: [8, 8, 8, 8],
+      filename: `5W1H_${title.replace(/\s+/g, '_')}_{{ entry.id }}.pdf`,
+      image: { type: 'jpeg', quality: 0.85 },
+      html2canvas: { scale: 1.5, useCORS: true, logging: false },
+      jsPDF: { 
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4',
+        compress: true
+      },
+      pagebreak: { mode: 'avoid-all' }
+    };
+
+    // Sembunyikan tombol action saat export
+    const actionButtons = document.querySelector('.action-buttons');
+    const pageHeader = document.querySelector('.page-header');
+    actionButtons.style.display = 'none';
+    pageHeader.style.display = 'none';
+
+    // Hide unnecessary elements
+    const infoValue = document.querySelectorAll('.info-value-textarea');
+    infoValue.forEach(el => {
+      el.style.border = 'none';
+      el.style.background = 'transparent';
+    });
+
+    html2pdf().set(opt).from(element).save().finally(() => {
+      // Tampilkan kembali tombol action
+      actionButtons.style.display = 'flex';
+      pageHeader.style.display = 'block';
+      infoValue.forEach(el => {
+        el.style.border = '';
+        el.style.background = '';
+      });
+      showMessage('success', 'Export Form 5W1H berhasil');
+    });
+  }
+</script>
+</body>
+</html>

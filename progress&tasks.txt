@@ -1,0 +1,100 @@
+Progress: Design
+Total Step: 1. Design Development & Artwork Approval
+Tasks Design Development & Artwork Approval:
+1. Check EPSON Blue Print
+2. Send Email Initial Design to CSR                      
+3. Create Simulation Artwork
+4. Attend Meeting Proof
+5. Create Final Artwork
+6. Create Digital Print
+7. Approval Digital Print to CSR 
+               
+Progress: Blank
+Total Step: 1. Initial Plotter & Documentation
+            2. Sample Production & Preparation 
+            3. Quality Testing & Final Validation
+Tasks Initial Plotter & Documentation:
+1. Check EPSON Blue Print
+2. Create Technical Drawing
+3. Create Plotter
+4. Fitting Result Plotter
+5. Create Simulation Layout
+6. Create LPD Pisau & Millar
+
+Tasks Sample Production & Preparation:
+1. Create Material & Process Memo to PPIC
+2. Laminator Process
+3. Diecut Process & Fitting
+4. Lamina Process & Fitting
+5. Pack & Send Sample
+
+Tasks Quality Testing & Final Validation:
+1. Process CoA to QC
+2. Moisture Test
+3. Pushpull Test
+4. Box Compression Test
+5. Process Data PAC & Send Email
+
+
+Progress: Mastercard
+Total Step: 1. Mastercard Document Control & Release 
+Tasks Mastercard Document Control & Release:
+1. Receiving LPM
+2. Create Mastercard
+3. Printout Mastercard
+4. Approval Mastercard
+5. Scan & Copy Mastercard
+6. Handover Mastercard to PPIC
+
+Progress: RoHS Regular ICB
+Total Step: 1. Print Quality Approval
+            2. Sample Production & Preparation
+            3. Quality Testing & Final Validation
+Tasks Print Quality Approval:
+1. Approval Press Offset
+
+Tasks Sample Production & Preparation:
+1. Laminator Process
+2. Diecut Process & Fitting
+3. Lamina Process & Fitting
+4. Pack & Send Sample
+
+Tasks Quality Testing & Final Validation:
+1. Process CoA to QC
+2. Moisture Test
+3. Pushpull Test
+4. Box Compression Test
+5. Process Data PAC & Send Email
+
+Progress: RoHS Ribbon
+Total Step: 1. Print & Spot UV Quality Approval
+            2. Sample Production & Preparation
+            3. Quality Testing & Final Validation
+Tasks Print & Spot UV Quality Approval:
+1. Approval Press Offset
+2. Approval Varnish / Spot UV
+
+Tasks Sample Production & Preparation:
+1. Diecut Process & Fitting
+2. Glue Process & Fitting
+3. Pack & Send Sample
+
+Tasks Quality Testing & Final Validation:
+1. Process CoA to QC
+2. Moisture Test
+3. Pushpull Test
+4. Box Compression Test
+5. Process Data PAC & Send Email
+
+Progress: Polymer Ribbon
+Total Step: 1. Material Planning & Procurement
+            2. Material Receiving & Handover
+Tasks Material Planning & Procurement:
+1. Create Data Polymer & Millar
+2. Create New Item Code Polymer
+3. Create Memo PO to Supplier
+4. Send Email Order Polymer to Supplier
+5. Request Millar to DC Service
+
+Tasks Material Receiving & Handover
+1. Check Incoming Polymer & Handover to Varnish

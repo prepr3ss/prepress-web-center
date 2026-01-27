@@ -740,7 +740,27 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('dwell_time').value = data.dwell_time || '';
             document.getElementById('raster').value = data.raster || '';
             document.getElementById('plate_type_material').value = data.plate_type_material || '';
-            document.getElementById('paper_type').value = data.paper_type || '';
+            
+            // Handle paper type dropdown and custom input
+            const paperTypeSelect = document.getElementById('paper_type_select');
+            const paperTypeCustom = document.getElementById('paper_type_custom');
+            const paperTypes = ['HANSOL', 'CMI', 'LEEMAN', 'FAJAR', 'SURYA PEMENANG', 'APPCHINA', 'DONGGUAN', 'SOWAN', 'NINE DRAGON', 'CHENG', 'BUANA', 'RIAU', 'SUNPAPER', 'SUPARMA'];
+            
+            if (paperTypeSelect && paperTypeCustom) {
+                if (data.paper_type && paperTypes.includes(data.paper_type)) {
+                    paperTypeSelect.value = data.paper_type;
+                    paperTypeCustom.value = '';
+                    togglePaperTypeInput(); // Ensure correct visibility
+                } else if (data.paper_type) {
+                    paperTypeSelect.value = 'Lainnya';
+                    paperTypeCustom.value = data.paper_type;
+                    togglePaperTypeInput(); // Ensure correct visibility
+                } else {
+                    paperTypeSelect.value = '';
+                    paperTypeCustom.value = '';
+                    togglePaperTypeInput(); // Ensure correct visibility
+                }
+            }
             document.getElementById('num_plate_good').value = data.num_plate_good || '0';
             document.getElementById('num_plate_not_good').value = data.num_plate_not_good || '0';
             document.getElementById('not_good_reason').value = data.not_good_reason || '';
@@ -805,9 +825,62 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // --- Logika untuk dropdown Jenis Kertas ---
+    function togglePaperTypeInput() {
+        const paperTypeSelect = document.getElementById('paper_type_select');
+        const paperTypeCustom = document.getElementById('paper_type_custom');
+        const paperTypeCancelBtn = document.getElementById('paper_type_cancel_btn');
+        
+        if (paperTypeSelect && paperTypeCustom && paperTypeCancelBtn) {
+            if (paperTypeSelect.value === 'Lainnya') {
+                paperTypeSelect.classList.add('d-none');
+                paperTypeCustom.classList.remove('d-none');
+                paperTypeCancelBtn.classList.remove('d-none');
+                paperTypeCustom.setAttribute('required', 'true');
+                paperTypeSelect.removeAttribute('required');
+            } else {
+                paperTypeSelect.classList.remove('d-none');
+                paperTypeCustom.classList.add('d-none');
+                paperTypeCancelBtn.classList.add('d-none');
+                paperTypeSelect.setAttribute('required', 'true');
+                paperTypeCustom.removeAttribute('required');
+                paperTypeCustom.value = ''; // Clear custom input when switching back
+            }
+        }
+    }
+
+    function cancelCustomPaperType() {
+        const paperTypeSelect = document.getElementById('paper_type_select');
+        const paperTypeCustom = document.getElementById('paper_type_custom');
+        const paperTypeCancelBtn = document.getElementById('paper_type_cancel_btn');
+        
+        if (paperTypeSelect && paperTypeCustom && paperTypeCancelBtn) {
+            paperTypeSelect.value = '';
+            paperTypeSelect.classList.remove('d-none');
+            paperTypeCustom.classList.add('d-none');
+            paperTypeCancelBtn.classList.add('d-none');
+            paperTypeSelect.setAttribute('required', 'true');
+            paperTypeCustom.removeAttribute('required');
+            paperTypeCustom.value = '';
+        }
+    }
+    // --- Akhir logika Jenis Kertas ---
+
     if (numPlateNotGoodInput) {
         numPlateNotGoodInput.addEventListener('input', toggleNotGoodReason);
         toggleNotGoodReason();
+    }
+    
+    // Add event listener for paper type dropdown
+    const paperTypeSelect = document.getElementById('paper_type_select');
+    const paperTypeCancelBtn = document.getElementById('paper_type_cancel_btn');
+    
+    if (paperTypeSelect) {
+        paperTypeSelect.addEventListener('change', togglePaperTypeInput);
+    }
+    
+    if (paperTypeCancelBtn) {
+        paperTypeCancelBtn.addEventListener('click', cancelCustomPaperType);
     }
 
     // --- Handle form submission (untuk halaman input-kpi-ctp dan edit-kpi-ctp) ---
@@ -817,6 +890,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const formData = new FormData(ctpLogForm);
             const data = Object.fromEntries(formData.entries());
+
+            // Handle paper type logic
+            const paperTypeSelect = document.getElementById('paper_type_select');
+            const paperTypeCustom = document.getElementById('paper_type_custom');
+            
+            if (paperTypeSelect && paperTypeCustom) {
+                if (paperTypeSelect.value === 'Lainnya') {
+                    data.paper_type = paperTypeCustom.value;
+                } else {
+                    data.paper_type = paperTypeSelect.value;
+                }
+                
+                // Remove the select field from data since we're using paper_type field
+                delete data.paper_type_select;
+            }
 
             data.run_length_sheet = data.run_length_sheet ? parseInt(data.run_length_sheet) : null;
             data.num_plate_good = parseInt(data.num_plate_good);

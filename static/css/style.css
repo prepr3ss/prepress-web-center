@@ -202,6 +202,25 @@ body {
     border-radius: 0 0 15px 15px;
 }
 
+/* Desktop breakpoint - ensure sidebar displays normally */
+@media (min-width: 768px) {
+    #sidebar-wrapper {
+        position: static !important;
+        left: auto !important;
+        top: auto !important;
+        width: 16rem !important;
+        min-width: 16rem !important;
+        max-width: 16rem !important;
+        margin-left: -16rem !important;
+        height: auto !important;
+        z-index: auto !important;
+        transition: margin .25s ease-out !important;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.05) !important;
+        border-right: 1px solid var(--light-border) !important;
+        margin-right: 0 !important;
+    }
+}
+
 #sidebar-wrapper .sidebar-heading {
     padding: 1rem 1.25rem;
     font-size: 1.1rem;

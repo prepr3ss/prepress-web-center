@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RND Management Center</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-mobile-framework.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rnd_webcenter.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <style>
+        /* Page Header with gradient */
+        .page-header {
+            background: linear-gradient(135deg,
+                #667eea 0%,
+                #764ba2 25%,
+                #f093fb 50%,
+                #4facfe 75%,
+                #667eea 100%);
+            color: white;
+            padding: 2rem 0;
+            margin: -1rem -15px 2rem -15px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3),
+                        0 0 40px rgba(118, 75, 162, 0.1),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Form controls clean styling */
+        .form-control-clean {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.95);
+        }
+        .form-control-clean:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25),
+                        0 2px 8px rgba(102, 126, 234, 0.1);
+            background: rgba(255, 255, 255, 0.98);
+        }
+        
+        .form-select, .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        .form-select:focus, .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25),
+                        0 2px 8px rgba(102, 126, 234, 0.1);
+            background: rgba(255, 255, 255, 0.98);
+        }
+        
+        .form-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+        
+        /* Button styling */
+        .btn-clean {
+            border: none;
+            border-radius: 25px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary-clean {
+            background: linear-gradient(135deg,
+                #667eea 0%,
+                #764ba2 50%,
+                #4facfe 100%);
+            color: white;
+            box-shadow: 0 2px 15px rgba(102, 126, 234, 0.4),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-primary-clean:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.5),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+        
+        /* Card styling */
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+            border-radius: 15px 15px 0 0 !important;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        /* Alert styling */
+        .alert {
+            border: none;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%);
+        }
+        
+        /* Modal styling */
+        .modal-content {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #4facfe 100%);
+            color: white;
+            border: none;
+            border-radius: 15px 15px 0 0;
+        }
+        
+        .modal-header .btn-close {
+            filter: invert(1);
+        }
+        
+        /* File Info Modal Styling - Similar to KPI Detail Modal */
+        #fileInfoModal .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #4facfe 100%);
+            color: white;
+            border: none;
+            border-radius: 15px 15px 0 0;
+            padding: 1rem 1.5rem;
+        }
+        
+        #fileInfoModal .modal-header .modal-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        #fileInfoModal .modal-header .btn-close {
+            filter: invert(1);
+            opacity: 0.8;
+        }
+        
+        #fileInfoModal .modal-header .btn-close:hover {
+            opacity: 1;
+        }
+        
+        #fileInfoModal .modal-content {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+        
+        #fileInfoModal .modal-body {
+            padding: 1.5rem;
+            background: white;
+        }
+        
+        #fileInfoModal .modal-footer {
+            border-top: 1px solid rgba(102, 126, 234, 0.1);
+            padding: 1rem 1.5rem;
+            background: white;
+            border-radius: 0 0 15px 15px;
+        }
+        
+        /* File Info Modal Body Styling */
+        #fileInfoModal .row {
+            border-bottom: 1px solid #f1f3f5;
+            padding: 0.75rem 0;
+            align-items: center;
+        }
+        
+        #fileInfoModal .row:last-child {
+            border-bottom: none;
+        }
+        
+        #fileInfoModal .col-4 {
+            color: #495057;
+            font-weight: 600;
+            font-size: 0.9rem;
+            word-break: break-word;
+        }
+        
+        #fileInfoModal .col-8 {
+            color: #212121;
+            font-size: 0.95rem;
+            word-break: break-word;
+            padding-left: 1rem;
+        }
+        
+        /* Modal Button Styling */
+        #fileInfoModal .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            border: none;
+            color: white;
+            border-radius: 8px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        #fileInfoModal .btn-secondary:hover {
+            background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+        }
+        
+        /* Responsive adjustments for File Info Modal */
+        @media (max-width: 767.98px) {
+            #fileInfoModal .modal-dialog {
+                max-width: 95%;
+                margin: auto;
+            }
+            
+            #fileInfoModal .modal-body {
+                padding: 1rem;
+            }
+            
+            #fileInfoModal .col-4 {
+                font-size: 0.85rem;
+            }
+            
+            #fileInfoModal .col-8 {
+                font-size: 0.9rem;
+                padding-left: 0.5rem;
+            }
+            
+            #fileInfoModal .row {
+                padding: 0.5rem 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% include '_top_header.html' %}
+    <div class="d-flex" id="content-wrapper">
+        {% include '_sidebar.html' %}
+        <div id="page-content-wrapper">
+            <div class="container-fluid pt-3">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div class="container-fluid">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 class="mb-1 text-white">RND Management Center</h2>
+                                <p class="mb-0 opacity-75">Network drive file explorer for R&D department</p>
+                            </div>
+                            <div class="text-end">
+                                <button type="button" class="btn btn-light me-2" id="refreshBtn">
+                                    <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+                                </button>
+                                <button type="button" class="btn btn-light me-2" id="accessibilityBtn">
+                                    <i class="bi bi-wifi me-1"></i> Check Connection
+                                </button>
+                                <button type="button" class="btn btn-warning me-2" data-bs-toggle="modal" data-bs-target="#pathConfigModal">
+                                    <i class="bi bi-gear me-1"></i> Configure Path
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Connection Status -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="alert alert-info d-none" id="connectionStatus" role="alert">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <span id="connectionMessage">Checking connection to network drive...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File Explorer -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <!-- Breadcrumb Navigation -->
+                                <nav aria-label="breadcrumb" class="mb-2">
+                                    <ol class="breadcrumb mb-0" id="breadcrumb">
+                                        <li class="breadcrumb-item active">Network Drive</li>
+                                    </ol>
+                                </nav>
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0"><i class="bi bi-folder2 me-2"></i>File Explorer</h5>
+                                    <div class="d-flex align-items-center">
+                                        <!-- Search Field -->
+                                        <div class="search-container input-group input-group-sm me-3" style="width: 250px;">
+                                            <input type="text" class="form-control" id="searchInput" placeholder="Search in current path...">
+                                            <button class="btn btn-outline-secondary" type="button" id="searchBtn" title="Search">
+                                                <i class="bi bi-search"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary" type="button" id="clearSearchBtn" title="Clear search">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        </div>
+                                        <!-- View Mode Toggle -->
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <input type="radio" class="btn-check" name="viewMode" id="gridView" autocomplete="off" checked>
+                                            <label class="btn btn-outline-secondary" for="gridView"><i class="bi bi-grid-3x3-gap"></i></label>
+                                            
+                                            <input type="radio" class="btn-check" name="viewMode" id="listView" autocomplete="off">
+                                            <label class="btn btn-outline-secondary" for="listView"><i class="bi bi-list-ul"></i></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <!-- Loading Spinner -->
+                                <div class="d-flex justify-content-center align-items-center p-5" id="loadingSpinner">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+
+                                <!-- File Grid/List Container -->
+                                <div class="file-container p-3 d-none" id="fileContainer">
+                                    <!-- Files will be dynamically loaded here -->
+                                </div>
+
+                                <!-- Empty State -->
+                                <div class="text-center p-5 d-none" id="emptyState">
+                                    <i class="bi bi-folder-x display-1 text-muted"></i>
+                                    <h4 class="mt-3 text-muted">No files found</h4>
+                                    <p class="text-muted">This folder is empty or no files match your search criteria.</p>
+                                </div>
+
+                                <!-- Error State -->
+                                <div class="text-center p-5 d-none" id="errorState">
+                                    <i class="bi bi-exclamation-triangle display-1 text-danger"></i>
+                                    <h4 class="mt-3 text-danger">Error Loading Files</h4>
+                                    <p class="text-muted" id="errorMessage">An error occurred while loading files.</p>
+                                    <button type="button" class="btn btn-primary" id="retryBtn">Retry</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Info Modal -->
+    <div class="modal fade" id="fileInfoModal" tabindex="-1" aria-labelledby="fileInfoModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="fileInfoModalLabel">File Information</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col-4 text-end fw-bold">Name:</div>
+                            <div class="col-8" id="fileName">-</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-4 text-end fw-bold">Type:</div>
+                            <div class="col-8" id="fileType">-</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-4 text-end fw-bold">Size:</div>
+                            <div class="col-8" id="fileSize">-</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-4 text-end fw-bold">Modified:</div>
+                            <div class="col-8" id="fileModified">-</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-4 text-end fw-bold">Path:</div>
+                            <div class="col-8" id="filePath">-</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Path Configuration Modal -->
+    <div class="modal fade" id="pathConfigModal" tabindex="-1" aria-labelledby="pathConfigModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="pathConfigModalLabel">
+                        <i class="bi bi-gear me-2"></i>Network Drive Configuration
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="networkPath" class="form-label">Network Drive Path</label>
+                        <input type="text" class="form-control form-control-clean" id="networkPath"
+                               value="\\172.27.168.10\PT. Epson\00.DATA BASE EPSON"
+                               placeholder="Enter network drive path (e.g., \\server\share\folder)">
+                        <div class="form-text">
+                            Enter the full UNC path to the network drive you want to access.
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="testResult" class="form-label">Test Result</label>
+                        <div id="testResult" class="alert alert-info d-none">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <span id="testResultText">Click "Test Path" to check accessibility</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="testPathBtn">
+                        <i class="bi bi-check-circle me-1"></i> Test Path
+                    </button>
+                    <button type="button" class="btn btn-success d-none" id="applyPathBtn">
+                        <i class="bi bi-check-circle me-1"></i> Apply & Reload
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        window.currentUserRole = "{{ current_user.role|e }}";
+    </script>
+    <script src="{{ url_for('static', filename='js/rnd_webcenter.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
+</body>
+</html>

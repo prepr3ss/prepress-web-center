@@ -36,6 +36,7 @@ import pymysql
 from config import DB_CONFIG
 from models import db, Division, User, CTPProductionLog, PlateAdjustmentRequest, PlateBonRequest, KartuStockPlateFuji, KartuStockPlateSaphira, KartuStockChemicalFuji, KartuStockChemicalSaphira, MonthlyWorkHours, ChemicalBonCTP, BonPlate, CTPMachine, CTPProblemLog, CTPProblemPhoto, CTPProblemDocument, TaskCategory, Task, CloudsphereJob, JobTask, JobProgress, JobProgressTask, EvidenceFile, UniversalNotification, NotificationRecipient
 from models_rnd import db, RNDProgressStep, RNDProgressTask, RNDJob, RNDJobProgressAssignment, RNDJobTaskAssignment, RNDLeadTimeTracking, RNDEvidenceFile, RNDTaskCompletion
+from models_rnd_external import RNDExternalTime
 from models_mounting import MountingWorkOrderIncoming
 from export_routes import export_bp
 from ctp_log_routes import ctp_log_bp
@@ -45,6 +46,8 @@ from rnd_cloudsphere import rnd_cloudsphere_bp
 from rnd_webcenter import rnd_webcenter_bp
 from mounting_work_order import mounting_work_order_bp
 from blueprints.notification_routes import notification_bp
+from blueprints.tools_5w1h import tools_5w1h_bp
+from blueprints.external_delay_routes import external_delay_bp
 from plate_details import PLATE_DETAILS
 
 # Timezone untuk Jakarta
@@ -123,9 +126,11 @@ app.register_blueprint(ctp_log_bp)
 app.register_blueprint(ctp_dashboard_bp)
 app.register_blueprint(cloudsphere_bp)
 app.register_blueprint(rnd_cloudsphere_bp)
+app.register_blueprint(external_delay_bp)
 app.register_blueprint(rnd_webcenter_bp)
 app.register_blueprint(mounting_work_order_bp)
 app.register_blueprint(notification_bp)  # NEW: Universal Notification System
+app.register_blueprint(tools_5w1h_bp)
 
 # Initialize the db instance from models.py with the app
 db.init_app(app)

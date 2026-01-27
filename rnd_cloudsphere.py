@@ -8,6 +8,7 @@ from models_rnd import (
     RNDJobTaskAssignment, RNDLeadTimeTracking, RNDEvidenceFile, RNDTaskCompletion,
     RNDJobNote, RNDFlowConfiguration, RNDFlowStep
 )
+from models_rnd_external import RNDExternalTime
 from services.notification_service import NotificationDispatcher
 from werkzeug.utils import secure_filename
 import os
@@ -205,8 +206,10 @@ def get_dashboard_stats_filtered():
             rohs_ribbon_jobs = jobs_query.filter_by(sample_type='RoHS Ribbon').count()
            
             # Overdue jobs: finished_at > deadline_at (completed jobs that missed deadline)
+            # FIXED: Add null check for deadline_at to be consistent with SLA calculation
             overdue_jobs = jobs_query.filter(
                 RNDJob.status == 'completed',
+                RNDJob.deadline_at.isnot(None),  # Only count jobs that have a deadline
                 RNDJob.finished_at > RNDJob.deadline_at
             ).count()
            
@@ -263,8 +266,10 @@ def get_dashboard_stats_filtered():
         print(f"DEBUG: Stats calculated - total: {total_jobs}, blank: {blank_jobs}, rohs_icb: {rohs_icb_jobs}, rohs_ribbon: {rohs_ribbon_jobs}, completed: {completed}")
         
         # Overdue jobs: finished_at > deadline_at (completed jobs that missed deadline)
+        # FIXED: Add null check for deadline_at to be consistent with SLA calculation
         overdue_jobs = jobs_query.filter(
             RNDJob.status == 'completed',
+            RNDJob.deadline_at.isnot(None),  # Only count jobs that have a deadline
             RNDJob.finished_at > RNDJob.deadline_at
         ).count()
         
@@ -478,12 +483,15 @@ def get_dashboard_sla():
         
         # If no year provided, return all data (like CTP dashboard)
         if not year:
-            # Get all completed jobs without date filtering (only full process jobs)
-            completed_jobs = RNDJob.query.filter_by(status='completed', is_full_process=True).all()
+            # Get all completed jobs without date filtering
+            # FIXED: Removed is_full_process filter to be consistent with statistics calculation
+            completed_jobs = RNDJob.query.filter_by(status='completed').all()
             
             total_count = len(completed_jobs)
-            on_time_count = sum(1 for job in completed_jobs if job.finished_at and job.finished_at <= job.deadline_at)
+            on_time_count = sum(1 for job in completed_jobs if job.finished_at and job.deadline_at and job.finished_at <= job.deadline_at)
             on_time_pct = round((on_time_count / total_count * 100), 2) if total_count > 0 else 0
+            
+            print(f"DEBUG SLA (no filter): Total={total_count}, OnTime={on_time_count}, Pct={on_time_pct}%")
             
             return jsonify({
                 'success': True,
@@ -508,10 +516,11 @@ def get_dashboard_sla():
         print(f"DEBUG: SLA filter - year: {year}, month: {month}")
         print(f"DEBUG: SLA date range: {start_date} to {end_date}")
         
-        # Get completed jobs only (only full process jobs for accurate SLA)
+        # Get completed jobs only
+        # FIXED: Use started_at instead of finished_at to be consistent with statistics
+        # This ensures we're measuring the same set of jobs (started in the period)
         completed_jobs = RNDJob.query.filter(
             RNDJob.status == 'completed',
-            RNDJob.is_full_process == True,  # Filter only full process jobs for accurate SLA
             RNDJob.started_at >= start_date,
             RNDJob.started_at < end_date
         ).all()
@@ -519,8 +528,10 @@ def get_dashboard_sla():
         print(f"DEBUG: SLA completed jobs found - {len(completed_jobs)} jobs")
         
         total_count = len(completed_jobs)
-        on_time_count = sum(1 for job in completed_jobs if job.finished_at and job.finished_at <= job.deadline_at)
+        on_time_count = sum(1 for job in completed_jobs if job.finished_at and job.deadline_at and job.finished_at <= job.deadline_at)
         on_time_pct = round((on_time_count / total_count * 100), 2) if total_count > 0 else 0
+        
+        print(f"DEBUG: SLA calculation - total: {total_count}, on_time: {on_time_count}, pct: {on_time_pct}%")
         
         return jsonify({
             'success': True,
@@ -728,19 +739,30 @@ def get_dashboard_individual_scores():
         year = request.args.get('year', type=int)
         month = request.args.get('month', type=int)
         
+        # DEBUG: Log request parameters
+        print(f"\n{'#'*80}")
+        print(f"# SCORES KPI CALCULATION DEBUG")
+        print(f"{'#'*80}")
+        print(f"Request Parameters: year={year}, month={month}")
+        
         # Get all RND users (division_id = 6)
         rnd_users = User.query.filter_by(division_id=6, is_active=True).order_by(User.name).all()
+        print(f"Total RND Users: {len(rnd_users)}")
         
-        # Define stage mapping: stage_name -> step_name to find
+        # Define stage mapping: stage_name -> sample_type to find
+        # CHANGED: Map to sample_type instead of step_name
+        # This will calculate ALL steps within that sample_type
         stage_mapping = {
-            'Design': 'Design & Artwork Approval',
-            'Mastercard': 'Mastercard Release',
-            'Blank': 'Initial Plotter',
-            'RoHS ICB': 'Proof Approval',
-            'RoHS Ribbon': 'Proof Approval',
-            'Polymer Ribbon': 'Polymer Order',
-            'Light-Standard-Dark': 'Determine Light-Standard-Dark Reference'
+            'Design': 'Design',
+            'Mastercard': 'Mastercard',
+            'Blank': 'Blank',
+            'RoHS ICB': 'RoHS ICB',  # Will calculate all 3 steps (Proof, Sample, Quality)
+            'RoHS Ribbon': 'RoHS Ribbon',  # Will calculate all 3 steps (Proof, Sample, Quality)
+            'Polymer Ribbon': 'Polymer Ribbon',
+            'Light-Standard-Dark': 'Light-Standard-Dark Reference'
         }
+        print(f"Stage Mapping (by sample_type): {len(stage_mapping)} stages")
+        print(f"{'#'*80}\n")
         
         users_scores = []
         
@@ -760,13 +782,15 @@ def get_dashboard_individual_scores():
                 }
             }
             
-            # For each stage, calculate total days
-            for stage_name, step_name in stage_mapping.items():
+            # For each stage, calculate total days for ALL steps within that sample_type
+            for stage_name, sample_type in stage_mapping.items():
                 try:
-                    # Get all progress assignments for this user (PIC)
+                    # Get all progress assignments for this user (PIC) for steps in this sample_type
+                    # Filter ONLY by RNDProgressStep.sample_type (not RNDJob.sample_type)
+                    # because a job can work on steps from different sample_types
                     assignments_query = db.session.query(RNDJobProgressAssignment).filter(
                         RNDJobProgressAssignment.pic_id == user.id,
-                        RNDProgressStep.name == step_name
+                        RNDProgressStep.sample_type == sample_type
                     ).join(RNDProgressStep).join(RNDJob)
                     
                     # Apply year/month filter if provided
@@ -781,35 +805,107 @@ def get_dashboard_individual_scores():
                         else:
                             end_date = jakarta_tz.localize(datetime(year + 1, 1, 1))
                         
+                        # FIXED: Filter by assignment's finished_at to attribute score to completion month
                         assignments_query = assignments_query.filter(
-                            RNDJob.started_at >= start_date,
-                            RNDJob.started_at < end_date
+                            RNDJobProgressAssignment.finished_at >= start_date,
+                            RNDJobProgressAssignment.finished_at < end_date
                         )
                     
                     assignments = assignments_query.all()
                     
-                    # Calculate total days for this stage
+                    # DEBUG: Log assignments found
+                    print(f"\n{'='*80}")
+                    print(f"DEBUG Scores KPI: Stage '{stage_name}' for user '{user.name}' (ID: {user.id})")
+                    print(f"{'='*80}")
+                    print(f"  Filter: Year={year}, Month={month}")
+                    if year:
+                        print(f"  Date Range: {start_date} to {end_date}")
+                    print(f"  Total assignments found: {len(assignments)}")
+                    print(f"  Stage Name (display): {stage_name}")
+                    print(f"  Sample Type (filter): {sample_type}")
+                    
+                    # List all steps that will be included
+                    steps_included = db.session.query(RNDProgressStep.name, RNDProgressStep.step_order).filter(
+                        RNDProgressStep.sample_type == sample_type
+                    ).order_by(RNDProgressStep.step_order).all()
+                    print(f"  Steps included in '{sample_type}':")
+                    for step_name, step_order in steps_included:
+                        print(f"    - #{step_order}: {step_name}")
+                    print(f"{'='*80}")
+                    
+                    # Calculate average duration for this stage (direct duration from started_at to finished_at)
                     total_days = 0.0
                     completed_count = 0
                     
-                    for assignment in assignments:
-                        # Only count completed assignments
-                        if assignment.status == 'completed' and assignment.finished_at:
+                    for idx, assignment in enumerate(assignments):
+                        # Only count completed assignments with both start and end times
+                        if assignment.status == 'completed' and assignment.started_at and assignment.finished_at:
                             job = assignment.job
-                            # Calculate days from job start to stage completion
-                            time_diff = assignment.finished_at - job.started_at
+                            
+                            # CORRECTED: Calculate duration directly from assignment's started_at to finished_at
+                            # This measures the actual time PIC spent on THIS step
+                            start_time = assignment.started_at
+                            end_time = assignment.finished_at
+                            
+                            # Calculate duration
+                            time_diff = end_time - start_time
                             days = time_diff.total_seconds() / (24 * 3600)  # Convert to days
-                            total_days += days
+                            hours = time_diff.total_seconds() / 3600  # For reference
+                            minutes = (time_diff.total_seconds() % 3600) / 60  # Minutes part
+                            
+                            # DEBUG: Log this assignment's calculation
                             completed_count += 1
+                            print(f"  [Job {completed_count}]:")
+                            print(f"    Job ID: {job.job_id}")
+                            print(f"    Assignment ID: {assignment.id}")
+                            print(f"    Started: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+                            print(f"    Finished: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
+                            print(f"    Duration: {days:.4f} days ({int(hours)}h {int(minutes)}m)")
+                            print(f"    Status: {assignment.status}")
+                            
+                            total_days += days
+                        else:
+                            # Log skipped assignments
+                            if assignment.status != 'completed':
+                                print(f"  [SKIPPED] Assignment {assignment.id}: status={assignment.status} (not completed)")
+                            elif not assignment.started_at:
+                                print(f"  [SKIPPED] Assignment {assignment.id}: no started_at")
+                            elif not assignment.finished_at:
+                                print(f"  [SKIPPED] Assignment {assignment.id}: no finished_at")
                     
-                    # Store total days (not average, just total)
-                    user_scores['scores'][stage_name] = round(total_days, 2)
+                    # Calculate AVERAGE duration (in days)
+                    print(f"{'-'*80}")
+                    print(f"  SUMMARY:")
+                    print(f"  Total completed with duration: {completed_count}")
+                    print(f"  Total days: {total_days:.4f} days")
+                    if completed_count > 0:
+                        average_days = total_days / completed_count
+                        print(f"  Average: {total_days:.4f} ÷ {completed_count} = {average_days:.4f} days/job")
+                        print(f"  Final Score: {round(average_days, 2)} days/job")
+                        user_scores['scores'][stage_name] = round(average_days, 2)
+                    else:
+                        print(f"  No completed assignments found!")
+                        print(f"  Final Score: 0.00 days/job")
+                        user_scores['scores'][stage_name] = 0.0
+                    print(f"{'='*80}\n")
                     
                 except Exception as e:
                     print(f"Error calculating score for {user.name} in stage {stage_name}: {e}")
                     user_scores['scores'][stage_name] = 0.0
             
             users_scores.append(user_scores)
+        
+        # DEBUG: Print final results summary
+        print(f"\n{'#'*80}")
+        print(f"# FINAL RESULTS SUMMARY")
+        print(f"{'#'*80}")
+        for user_data in users_scores:
+            print(f"\nUser: {user_data['user_name']} (@{user_data['username']})")
+            print(f"  Scores:")
+            for stage, score in user_data['scores'].items():
+                if score > 0:
+                    print(f"    - {stage}: {score} days/job")
+        print(f"\n{'#'*80}\n")
         
         return jsonify({
             'success': True,
@@ -862,15 +958,16 @@ def get_rnd_jobs():
                 )
             )
         
-        # Apply other filters
+        # Apply filters directly on RNDJob table (not on RNDJobProgressAssignment)
+        # This ensures filters work for all users including operators
         if status_filter:
-            query = query.filter_by(status=status_filter)
+            query = query.filter(RNDJob.status == status_filter)
         
         if priority_filter:
-            query = query.filter_by(priority_level=priority_filter)
+            query = query.filter(RNDJob.priority_level == priority_filter)
         
         if sample_type_filter:
-            query = query.filter_by(sample_type=sample_type_filter)
+            query = query.filter(RNDJob.sample_type == sample_type_filter)
         
         # Order by created date descending
         query = query.order_by(RNDJob.created_at.desc())
@@ -1121,6 +1218,7 @@ def get_rnd_job(job_id):
                     'id': assignment.id,
                     'progress_step_id': assignment.progress_step_id,
                     'progress_step_name': assignment.progress_step.name if assignment.progress_step else None,
+                    'progress_step_order': assignment.progress_step.step_order if assignment.progress_step else None,
                     'pic_id': assignment.pic_id,
                     'pic_name': assignment.pic.name if assignment.pic else None,
                     'started_at': assignment.started_at.strftime('%Y-%m-%d %H:%M') if assignment.started_at else None,
@@ -1148,6 +1246,7 @@ def get_rnd_job(job_id):
                 'file_type': file.file_type,
                 'file_size': file.file_size,
                 'evidence_type': file.evidence_type,
+                'uploaded_by': file.uploaded_by,
                 'uploaded_at': file.uploaded_at.strftime('%Y-%m-%d %H:%M') if file.uploaded_at else None,
                 'uploader_name': file.uploader.name if file.uploader else None,
                 'is_verified': file.is_verified,
@@ -1339,21 +1438,24 @@ def delete_rnd_job(job_id):
         
         # Delete related records in proper order to avoid foreign key constraints
         
-        # 1. Delete job notes first (they reference the job directly)
+        # 1. Delete external delays first (they reference job_id)
+        RNDExternalTime.query.filter_by(job_id=job_id).delete()
+        
+        # 2. Delete job notes (they reference the job directly)
         from models_rnd import RNDJobNote
         RNDJobNote.query.filter_by(job_id=job_id).delete()
         
-        # 2. Delete evidence files
+        # 3. Delete evidence files
         for evidence in job.evidence_files:
             db.session.delete(evidence)
         
-        # 3. Delete task assignments and task completions
+        # 4. Delete task assignments and task completions
         for assignment in job.progress_assignments:
             for task_assignment in assignment.task_assignments:
                 db.session.delete(task_assignment)
             db.session.delete(assignment)
         
-        # 4. Delete the job itself
+        # 5. Delete the job itself
         db.session.delete(job)
         db.session.commit()
         
@@ -2122,6 +2224,17 @@ def toggle_rnd_task(task_assignment_id):
         # Note: all_tasks_completed is the flag for step completion, check this instead of ORM status
         if all_tasks_completed and progress_assignment.status != 'completed':
             # This is the block where we just marked the step as completed, so send notification
+            
+            # AUTO-COMPLETE EXTERNAL DELAY if applicable
+            try:
+                from blueprints.external_delay_routes import auto_complete_external_delay_for_task
+                completed_delay = auto_complete_external_delay_for_task(task_assignment)
+                if completed_delay:
+                    print(f"DEBUG: External delay auto-completed: ID={completed_delay.id}, Hours={completed_delay.external_wait_hours}")
+            except Exception as e:
+                logger.error(f"Error auto-completing external delay: {str(e)}")
+                print(f"DEBUG: Error auto-completing external delay: {str(e)}")
+            
             try:
                 print(f"DEBUG (toggle notification): Preparing to send step completion notification from toggle route")
                 print(f"DEBUG (toggle notification): Job ID: {progress_assignment.job.id}")
@@ -2439,12 +2552,13 @@ def generate_pdf_thumbnail(pdf_path, thumbnail_path):
 @login_required
 @require_rnd_access
 def delete_rnd_evidence(evidence_id):
-    """Delete evidence file (admin only)"""
+    """Delete evidence file (admin or uploader)"""
     try:
-        if not current_user.is_admin():
-            return jsonify({'success': False, 'error': 'Admin access required'}), 403
-        
         evidence = RNDEvidenceFile.query.get_or_404(evidence_id)
+        
+        # Check if user is admin or the uploader
+        if not current_user.is_admin() and current_user.id != evidence.uploaded_by:
+            return jsonify({'success': False, 'error': 'You do not have permission to delete this evidence'}), 403
         
         # Delete physical file
         try:

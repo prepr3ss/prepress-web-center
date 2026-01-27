@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ 'Edit' if edit else 'Input' }} 5W1H - Impact 360</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-mobile-framework.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <style>
+        /* Page Header with RND gradient */
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #667eea 100%);
+            color: white;
+            padding: 2rem 0;
+            margin: -1rem -15px 2rem -15px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3), 0 0 40px rgba(118, 75, 162, 0.1), inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+        
+        /* Form Container */
+        .form-container {
+            background: white;
+            border-radius: 12px;
+            padding: 2.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border: 1px solid rgba(102, 126, 234, 0.08);
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        
+        /* Form Group Styling */
+        .form-group-compact {
+            margin-bottom: 1.25rem;
+        }
+        
+        .form-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #374151;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        
+        /* Input Fields */
+        .form-control,
+        .form-select {
+            border: 1.5px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 0.75rem 0.875rem;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+        
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        /* Textarea */
+        textarea.form-control {
+            resize: vertical;
+            min-height: 80px;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        /* Form Row Spacing */
+        .form-row-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row-group {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .form-row-group.full {
+            grid-template-columns: 1fr;
+        }
+        
+        /* File Input */
+        .file-input-wrapper {
+            position: relative;
+        }
+        
+        .form-control[type="file"] {
+            padding: 0.6rem 0.875rem;
+        }
+        
+        .existing-attachment {
+            margin-top: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .existing-attachment a {
+            color: #10b981;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .existing-attachment a:hover {
+            color: #059669;
+            text-decoration: underline;
+        }
+
+        .btn-delete-attachment {
+            background: #fee2e2;
+            color: #dc2626;
+            border: none;
+            border-radius: 4px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .btn-delete-attachment:hover {
+            background: #fecaca;
+            color: #991b1b;
+        }
+        
+        /* Form Actions */
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #f3f4f6;
+        }
+        
+        .btn-submit {
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-submit:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            color: white;
+        }
+        
+        .btn-cancel {
+            background: #f3f4f6;
+            color: #6b7280;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-cancel:hover {
+            background: #e5e7eb;
+            color: #4b5563;
+            text-decoration: none;
+        }
+
+        /* Multiple Attachments */
+        .attachment-list {
+            margin-top: 0.75rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .attachment-item {
+            position: relative;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-radius: 8px;
+            padding: 0.5rem;
+            background: #f8fafc;
+            text-align: center;
+        }
+
+        .attachment-item img {
+            width: 100%;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+
+        .attachment-item-name {
+            font-size: 0.75rem;
+            color: #374151;
+            word-break: break-word;
+            margin-bottom: 0.25rem;
+        }
+
+        .attachment-item-actions {
+            display: flex;
+            gap: 0.25rem;
+            justify-content: center;
+        }
+
+        .btn-delete-single {
+            background: #fee2e2;
+            color: #dc2626;
+            border: none;
+            border-radius: 3px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-delete-single:hover {
+            background: #fecaca;
+        }
+
+        .file-count {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+        }
+
+        /* Preview Container Styles */
+        .preview-container {
+            position: relative;
+            margin-bottom: 0.5rem;
+            width: 100%;
+            height: 120px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .preview-container:hover {
+            background: #e9ecef;
+            transform: scale(1.02);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .preview-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+        }
+
+        .file-icon-preview {
+            font-size: 3rem;
+            color: #6b7280;
+        }
+
+        .file-icon-preview.pdf { color: #dc2626; }
+        .file-icon-preview.word { color: #2563eb; }
+        .file-icon-preview.excel { color: #16a34a; }
+        .file-icon-preview.generic { color: #6b7280; }
+
+        .file-type-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+<div id="wrapper">
+    {% include '_top_header.html' %}
+    <div class="d-flex" id="content-wrapper">
+        {% include '_sidebar.html' %}
+        <div id="page-content-wrapper">
+            <div class="container-fluid pt-3">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div class="container-fluid">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 class="mb-1 text-white">{{ 'Edit' if edit else 'Input' }} 5W1H</h2>
+                                <p class="mb-0 opacity-75">Formulir 5W1H untuk analisa dan dokumentasi</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Form Container -->
+                <div class="form-container">
+                    <form method="post" enctype="multipart/form-data">
+                        <!-- Title & When Row -->
+                        <div class="form-row-group">
+                            <div class="form-group-compact">
+                                <label class="form-label">Judul <span style="color: #ef4444;">*</span></label>
+                                <input type="text" name="title" class="form-control" required value="{{ entry.title if entry else '' }}" placeholder="Masukkan judul 5W1H">
+                            </div>
+                            <div class="form-group-compact">
+                                <label class="form-label">Kapan (When) <span style="color: #ef4444;">*</span></label>
+                                <input type="datetime-local" name="when" class="form-control" required value="{{ entry.when_.strftime('%Y-%m-%dT%H:%M') if entry and entry.when_ else '' }}">
+                            </div>
+                        </div>
+                        
+                        <!-- Who, What, Where, Why Row -->
+                        <div class="form-row-group">
+                            <div class="form-group-compact">
+                                <label class="form-label">Siapa (Who) <span style="color: #ef4444;">*</span></label>
+                                <textarea name="who" class="form-control" required placeholder="Siapa yang terlibat?">{{ entry.who if entry else '' }}</textarea>
+                            </div>
+                            <div class="form-group-compact">
+                                <label class="form-label">Apa (What) <span style="color: #ef4444;">*</span></label>
+                                <textarea name="what" class="form-control" required placeholder="Apa yang terjadi?">{{ entry.what if entry else '' }}</textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row-group">
+                            <div class="form-group-compact">
+                                <label class="form-label">Dimana (Where) <span style="color: #ef4444;">*</span></label>
+                                <textarea name="where" class="form-control" required placeholder="Dimana terjadinya?">{{ entry.where if entry else '' }}</textarea>
+                            </div>
+                            <div class="form-group-compact">
+                                <label class="form-label">Mengapa (Why) <span style="color: #ef4444;">*</span></label>
+                                <textarea name="why" class="form-control" required placeholder="Mengapa terjadi?">{{ entry.why if entry else '' }}</textarea>
+                            </div>
+                        </div>
+                        
+                        <!-- How -->
+                        <div class="form-row-group full">
+                            <div class="form-group-compact">
+                                <label class="form-label">Bagaimana (How) <span style="color: #ef4444;">*</span></label>
+                                <textarea name="how" class="form-control" required placeholder="Bagaimana cara mengatasinya?">{{ entry.how if entry else '' }}</textarea>
+                            </div>
+                        </div>
+                        
+                        <!-- Status & Attachment Row -->
+                        <div class="form-row-group">
+                            <div class="form-group-compact">
+                                <label class="form-label">Status <span style="color: #ef4444;">*</span></label>
+                                <select name="status" class="form-select">
+                                    <option value="draft" {% if entry and entry.status.name=='draft' %}selected{% endif %}>Draft</option>
+                                    <option value="open" {% if entry and entry.status.name=='open' %}selected{% endif %}>Open</option>
+                                    <option value="closed" {% if entry and entry.status.name=='closed' %}selected{% endif %}>Closed</option>
+                                </select>
+                            </div>
+                            <div class="form-group-compact">
+                                <label class="form-label">Lampiran <span style="color: #999;">(Opsional - Max 5)</span></label>
+                                <div class="file-input-wrapper">
+                                    <input type="file" name="attachments" multiple class="form-control" accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.xls,.xlsx" onchange="handleFileSelect(event)">
+                                    
+                                    <!-- Existing attachments display in edit mode -->
+                                    {% if edit and entry and entry.attachments and entry.attachments|length > 0 %}
+                                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                                        <label class="form-label" style="margin-bottom: 0.75rem;">Lampiran Saat Ini</label>
+                                        <div class="attachment-list">
+                                            {% for attachment in entry.attachments %}
+                                            {% set filename = attachment.split('_')[-1] %}
+                                            {% set ext = filename.split('.')[-1].lower() %}
+                                            <div class="attachment-item">
+                                                <div class="preview-container">
+                                                    {% if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')) %}
+                                                        <img src="{{ url_for('tools_5w1h.download_attachment', filename=attachment) }}" alt="preview">
+                                                    {% elif ext == 'pdf' %}
+                                                        <div class="file-icon-preview pdf"><i class="fas fa-file-pdf"></i></div>
+                                                    {% elif ext in ['doc', 'docx'] %}
+                                                        <div class="file-icon-preview word"><i class="fas fa-file-word"></i></div>
+                                                    {% elif ext in ['xls', 'xlsx'] %}
+                                                        <div class="file-icon-preview excel"><i class="fas fa-file-excel"></i></div>
+                                                    {% else %}
+                                                        <div class="file-icon-preview generic"><i class="fas fa-file"></i></div>
+                                                    {% endif %}
+                                                    <span class="file-type-badge">{{ ext }}</span>
+                                                </div>
+                                                <div class="attachment-item-name">{{ filename[:15] }}{% if filename|length > 15 %}...{% endif %}</div>
+                                                <div class="attachment-item-actions">
+                                                    <button type="button" class="btn-delete-single" onclick="deleteExistingFile('{{ attachment }}')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        <input type="hidden" id="deleteFilesFlag" name="delete_files" value="[]">
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- New attachments preview -->
+                                    <div id="attachmentList" class="attachment-list"></div>
+                                    <div id="fileCount" class="file-count"></div>
+                                    <input type="hidden" id="attachmentMetadata" name="attachment_metadata" value="[]">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Form Actions -->
+                        <div class="form-actions">
+                            <button type="submit" class="btn-submit">
+                                <i class="fas fa-save"></i> Simpan
+                            </button>
+                            <a href="{{ url_for('tools_5w1h.dashboard_5w1h') }}" class="btn-cancel">
+                                <i class="fas fa-arrow-left"></i> Kembali
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+  <div id="liveToast" class="toast border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast-body bg-success text-white rounded">
+      <span class="message-text"></span>
+      <button type="button" class="btn-close btn-close-white float-end" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden element for flash messages -->
+<script type="application/json" id="flashMessagesData">
+{{ get_flashed_messages(with_categories=true) | tojson }}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  // Set PDF.js worker
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+</script>
+<script>
+  let selectedFiles = [];
+  let deleteFiles = [];
+
+  function handleFileSelect(event) {
+    const files = Array.from(event.target.files);
+    const existingCount = document.querySelectorAll('.attachment-item').length;
+    
+    if (files.length + existingCount - deleteFiles.length > 5) {
+      alert('Total lampiran tidak boleh melebihi 5 file!');
+      event.target.value = '';
+      selectedFiles = [];
+      updateAttachmentList();
+      return;
+    }
+    
+    selectedFiles = files;
+    updateAttachmentList();
+  }
+
+  function updateAttachmentList() {
+    const listContainer = document.getElementById('attachmentList');
+    const countContainer = document.getElementById('fileCount');
+    
+    listContainer.innerHTML = '';
+    
+    if (selectedFiles.length === 0) {
+      countContainer.innerHTML = '';
+      return;
+    }
+    
+    selectedFiles.forEach((file, index) => {
+      const div = document.createElement('div');
+      div.className = 'attachment-item';
+      
+      const ext = file.name.split('.').pop().toLowerCase();
+      const isImage = file.type.startsWith('image/');
+      const isPdf = ext === 'pdf';
+      
+      if (isImage) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          div.innerHTML = `
+            <div class="preview-container">
+              <img src="${e.target.result}" alt="preview">
+              <span class="file-type-badge">${ext}</span>
+            </div>
+            <div class="attachment-item-name">${file.name.substring(0, 15)}${file.name.length > 15 ? '...' : ''}</div>
+            <div class="attachment-item-actions">
+              <button type="button" class="btn-delete-single" onclick="deleteFile(${index})">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          `;
+        };
+        reader.readAsDataURL(file);
+      } else if (isPdf) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const pdfData = new Uint8Array(e.target.result);
+          pdfjsLib.getDocument(pdfData).promise.then(pdf => {
+            pdf.getPage(1).then(page => {
+              const scale = 2;
+              const viewport = page.getViewport({ scale: scale });
+              const canvas = document.createElement('canvas');
+              const context = canvas.getContext('2d');
+              canvas.height = viewport.height;
+              canvas.width = viewport.width;
+              
+              page.render({
+                canvasContext: context,
+                viewport: viewport
+              }).promise.then(() => {
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                div.innerHTML = `
+                  <div class="preview-container">
+                    <img src="${dataUrl}" alt="pdf preview" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    <span class="file-type-badge">${ext.toUpperCase()}</span>
+                  </div>
+                  <div class="attachment-item-name">${file.name.substring(0, 15)}${file.name.length > 15 ? '...' : ''}</div>
+                  <div class="attachment-item-actions">
+                    <button type="button" class="btn-delete-single" onclick="deleteFile(${index})">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                `;
+              });
+            });
+          }).catch(err => {
+            console.error('PDF rendering error:', err);
+            div.innerHTML = `
+              <div class="preview-container">
+                <div class="file-icon-preview pdf"><i class="fas fa-file-pdf"></i></div>
+                <span class="file-type-badge">${ext}</span>
+              </div>
+              <div class="attachment-item-name">${file.name.substring(0, 15)}${file.name.length > 15 ? '...' : ''}</div>
+              <div class="attachment-item-actions">
+                <button type="button" class="btn-delete-single" onclick="deleteFile(${index})">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            `;
+          });
+        };
+        reader.readAsArrayBuffer(file);
+      } else {
+        let iconClass = 'generic';
+        let iconElement = '<i class="fas fa-file"></i>';
+        
+        if (ext === 'doc' || ext === 'docx') {
+          iconClass = 'word';
+          iconElement = '<i class="fas fa-file-word"></i>';
+        } else if (ext === 'xls' || ext === 'xlsx') {
+          iconClass = 'excel';
+          iconElement = '<i class="fas fa-file-excel"></i>';
+        }
+        
+        div.innerHTML = `
+          <div class="preview-container">
+            <div class="file-icon-preview ${iconClass}">${iconElement}</div>
+            <span class="file-type-badge">${ext}</span>
+          </div>
+          <div class="attachment-item-name">${file.name.substring(0, 15)}${file.name.length > 15 ? '...' : ''}</div>
+          <div class="attachment-item-actions">
+            <button type="button" class="btn-delete-single" onclick="deleteFile(${index})">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        `;
+      }
+      
+      listContainer.appendChild(div);
+    });
+    
+    countContainer.innerHTML = `<small>${selectedFiles.length} file baru akan ditambahkan</small>`;
+  }
+
+  function deleteFile(index) {
+    selectedFiles.splice(index, 1);
+    document.querySelector('input[name="attachments"]').value = '';
+    updateAttachmentList();
+  }
+
+  function deleteExistingFile(filename) {
+    deleteFiles.push(filename);
+    document.getElementById('deleteFilesFlag').value = JSON.stringify(deleteFiles);
+    
+    // Hide the item
+    event.target.closest('.attachment-item').style.opacity = '0.5';
+    event.target.closest('.btn-delete-single').disabled = true;
+  }
+
+  function getFileIcon(filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    const icons = {
+      'pdf': '📄',
+      'doc': '📝',
+      'docx': '📝',
+      'xls': '📊',
+      'xlsx': '📊',
+      'jpg': '🖼️',
+      'jpeg': '🖼️',
+      'png': '🖼️',
+      'gif': '🖼️'
+    };
+    return icons[ext] || '📎';
+  }
+
+  function deleteAttachment() {
+    if (confirm('Apakah Anda yakin ingin menghapus lampiran ini?')) {
+      document.getElementById('deleteAttachmentFlag').value = '1';
+      document.querySelector('input[name="attachment"]').value = '';
+    }
+  }
+
+  // Toast notification function
+  function showMessage(type, message) {
+    const toastEl = document.getElementById('liveToast');
+    const toastBody = toastEl.querySelector('.message-text');
+    
+    toastBody.textContent = message;
+    
+    // Update toast styling based on type
+    const toastBodyElement = toastEl.querySelector('.toast-body');
+    toastBodyElement.className = `toast-body rounded text-white bg-${type === 'error' ? 'danger' : type === 'info' ? 'info' : 'success'}`;
+    
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
+  }
+
+  // Backwards compatibility alias
+  function showToast(message, type = 'success') {
+    showMessage(type, message);
+  }
+
+  // Trigger toast on page load if there's a flash message
+  document.addEventListener('DOMContentLoaded', function() {
+    // Get flash messages from hidden script tag
+    const flashMessagesEl = document.getElementById('flashMessagesData');
+    
+    if (flashMessagesEl) {
+      try {
+        const dataMessages = flashMessagesEl.textContent || flashMessagesEl.innerHTML;
+        const flashMessages = JSON.parse(dataMessages);
+        
+        if (flashMessages && flashMessages.length > 0) {
+          const [category, message] = flashMessages[0];
+          const type = category === 'error' ? 'danger' : category;
+          showMessage(type, message);
+        }
+      } catch (e) {
+        console.error('Error parsing flash messages:', e);
+      }
+    }
+  });
+</script>
+<script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
+</body>
+</html>
