@@ -10,283 +10,173 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-mobile-framework.css') }}">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <style>
-        /* Page Header with RND gradient */
+        /* Page Header with subtle gradient */
         .page-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #667eea 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%);
             color: white;
-            padding: 2rem 0;
-            margin: -1rem -15px 2rem -15px;
-            border-radius: 0 0 20px 20px;
-            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3), 0 0 40px rgba(118, 75, 162, 0.1), inset 0 1px 0 rgba(255,255,255,0.2);
+            padding: 1.25rem 0.75rem;
+            margin: -1rem -15px 1rem -15px;
+            border-radius: 0 0 12px 12px;
         }
 
-        /* 5W1H Cards Grid */
-        .five-w1h-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
+        /* Search and Filter Section - Selaras dengan filter-section tabelkpictp.html */
+        .search-filter-section {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+            border: none;
         }
-        
-        @media (max-width: 1200px) {
-            .five-w1h-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
+
+        .search-input {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
         }
-        
-        @media (max-width: 768px) {
-            .five-w1h-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 16px;
-            }
+
+        .search-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
-        
-        @media (max-width: 480px) {
-            .five-w1h-grid {
-                grid-template-columns: 1fr;
-            }
+
+        .filter-select {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
         }
-        
-        /* 5W1H Entry Card */
-        .five-w1h-card {
-            background: #FFFFFF;
-            border-radius: 8px;
-            padding: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            border-left: 4px solid;
-            border-left-color: #667eea;
-            transition: all 0.2s ease;
-            cursor: pointer;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            min-height: 230px;
-            border: 1px solid rgba(102, 126, 234, 0.1);
+
+        .filter-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
-        
-        .five-w1h-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            border-color: rgba(102, 126, 234, 0.2);
-        }
-        
-        /* Status Badge */
-        .status-badge-5w1h {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            padding: 4px 10px;
-            border-radius: 16px;
-            font-size: 10px;
+
+        .filter-label {
+            font-size: 0.75rem;
             font-weight: 600;
+            color: #6c757d;
             text-transform: uppercase;
-            letter-spacing: 0.4px;
-            display: flex;
-            align-items: center;
-            gap: 3px;
-            z-index: 2;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+            display: block;
         }
-        
-        .status-badge-5w1h.draft {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-        
-        .status-badge-5w1h.open {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-        
-        .status-badge-5w1h.closed {
-            background: #dcfce7;
-            color: #166534;
-        }
-        
-        /* Card Content */
-        .card-content-5w1h {
-            margin-top: 40px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .entry-id-label {
-            font-size: 10px;
-            font-weight: 700;
-            color: #b0b9c6;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-            margin-bottom: 3px;
-        }
-        
-        .entry-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: #212121;
-            margin-bottom: 8px;
-            line-height: 1.3;
-            word-break: break-word;
-        }
-        
-        .entry-who {
-            font-size: 12px;
-            color: #616161;
-            margin-bottom: 6px;
-            font-weight: 500;
-            line-height: 1.4;
-        }
-        
-        .entry-meta {
-            font-size: 11px;
-            color: #757575;
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .entry-meta i {
-            color: #667eea;
-            width: 12px;
-            text-align: center;
-            font-size: 10px;
-        }
-        
-        .entry-creator {
-            font-size: 11px;
-            color: #667eea;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-        
-        /* Attachment Badge */
-        .attachment-badge {
-            display: inline-block;
-            padding: 3px 6px;
-            background: rgba(16, 185, 129, 0.1);
-            color: #10b981;
-            border-radius: 3px;
-            font-size: 10px;
-            font-weight: 600;
-            text-decoration: none;
+
+        /* Clean form controls (CTP style) */
+        .form-control-clean {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.6rem 0.75rem;
             transition: all 0.2s ease;
-            margin-bottom: 8px;
+            background: #fff;
         }
-        
-        .attachment-badge:hover {
-            background: rgba(16, 185, 129, 0.2);
-            color: #059669;
+        .form-control-clean:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.15rem rgba(102,126,234,0.12);
+            outline: none;
         }
-        
-        /* Card Actions */
-        .card-actions-5w1h {
-            margin-top: auto;
-            display: flex;
-            gap: 6px;
-            align-items: center;
-            padding-top: 8px;
+
+        /* Minimal clean table, tuned to CTP table look */
+        .table-5w1h {
+            border-collapse: collapse;
+            background: #fff;
+            font-size: 0.95rem;
+        }
+
+        /* Container like tabelkpictp: white card, rounded, shadow */
+        .table-5w1h-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+
+        .table-5w1h thead th {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: none;
+            font-weight: 600;
+            color: #495057;
+            padding: 0.85rem 0.75rem;
+            vertical-align: middle;
+        }
+
+        .table-5w1h tbody td {
+            vertical-align: middle;
+            padding-top: 0.65rem;
+            padding-bottom: 0.65rem;
             border-top: 1px solid #f3f4f6;
+            color: #4b5563;
         }
-        
-        /* View Button */
-        .view-button-5w1h {
-            flex: 1;
-            padding: 7px 12px;
-            background: rgba(102, 126, 234, 0.1);
-            border: 1px solid rgba(102, 126, 234, 0.2);
-            border-radius: 5px;
+
+        .status-pill {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .status-pill.draft { background: #fff1f2; color: #b91c1c; }
+        .status-pill.open { background: #e8f0ff; color: #1e3a8a; }
+        .status-pill.closed { background: #ecfdf5; color: #166534; }
+
+        /* Pagination styling (CTP style) */
+        .pagination-5w1h {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .pagination-5w1h .page-item .page-link {
+            border: 2px solid #e9ecef;
+            color: #6c757d;
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            transition: all 0.2s ease;
+            background: white;
+            font-weight: 500;
+        }
+
+        .pagination-5w1h .page-item .page-link:hover {
+            border-color: #667eea;
             color: #667eea;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.25s ease;
+            background-color: rgba(102,126,234,0.08);
+        }
+
+        .pagination-5w1h .page-item.active .page-link {
+            background: #667eea;
+            border-color: #667eea;
+            color: white;
+        }
+
+        .pagination-5w1h .page-item.disabled .page-link {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Pagination info text */
+        .pagination-info {
             text-align: center;
-            white-space: nowrap;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-bottom: 1rem;
         }
-        
-        .view-button-5w1h:hover {
-            background: rgba(102, 126, 234, 0.2);
-            border-color: rgba(102, 126, 234, 0.5);
-            box-shadow: 0 2px 6px rgba(102, 126, 234, 0.15);
-            transform: translateY(-1px);
-            color: #667eea;
-        }
-        
-        /* Edit Button */
-        .edit-button-5w1h {
-            padding: 7px 9px;
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            border-radius: 5px;
-            color: #10b981;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 36px;
-            height: 34px;
-            text-decoration: none;
-            font-size: 12px;
-        }
-        
-        .edit-button-5w1h:hover {
-            background: rgba(16, 185, 129, 0.15);
-            border-color: rgba(16, 185, 129, 0.4);
-            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.15);
-            transform: translateY(-1px);
-        }
-        
-        /* Delete Button */
-        .delete-button-5w1h {
-            padding: 7px 9px;
-            background: rgba(220, 38, 38, 0.1);
-            border: 1px solid rgba(220, 38, 38, 0.2);
-            border-radius: 5px;
-            color: #dc2626;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 36px;
-            height: 34px;
-            text-decoration: none;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        
-        .delete-button-5w1h:hover {
-            background: rgba(220, 38, 38, 0.15);
-            border-color: rgba(220, 38, 38, 0.4);
-            box-shadow: 0 2px 6px rgba(220, 38, 38, 0.15);
-            transform: translateY(-1px);
-            color: #dc2626;
-        }
-        
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #64748b;
-        }
-        
-        .empty-state h3 {
-            color: #374151;
-            font-weight: 600;
-            margin-bottom: 12px;
-            font-size: 1.5rem;
-        }
-        
-        .empty-state p {
-            color: #6b7280;
-            margin-bottom: 24px;
-            font-size: 1rem;
+
+        /* Responsive tweaks */
+        @media (max-width: 768px) {
+            .table-5w1h thead { display: none; }
+            .table-5w1h tbody td { display: block; width: 100%; }
+            .table-5w1h tbody tr { display: block; margin-bottom: 0.75rem; border: 1px solid #eef2ff; border-radius: 8px; padding: 0.5rem; }
+            .table-5w1h tbody td .cell-label { display: inline-block; width: 30%; font-weight: 700; color: #111827; }
+            .table-5w1h tbody td .cell-value { display: inline-block; width: 70%; }
         }
     </style>
 </head>
@@ -314,50 +204,84 @@
                     </div>
                 </div>
 
-                <!-- 5W1H Cards Grid -->
-                {% if entries %}
-                <div class="five-w1h-grid">
-                    {% for entry in entries %}
-                    <div class="five-w1h-card">
-                        <!-- Status Badge -->
-                        <div class="status-badge-5w1h {{ entry.status.name }}">
-                            <i class="fas fa-{{ 'file-alt' if entry.status.name == 'draft' else 'envelope-open' if entry.status.name == 'open' else 'check-circle' }}"></i>
-                            {{ entry.status.value }}
-                        </div>
-
-                        <!-- Card Content -->
-                        <div class="card-content-5w1h">
-                            <div class="entry-id-label">5W1H #{{ entry.id }}</div>
-                            <div class="entry-title">{{ entry.title }}</div>
-                            <div class="entry-who">
-                                <strong>Who:</strong> {{ entry.who|truncate(50) }}
-                            </div>
-                            <div class="entry-meta">
-                                <i class="fas fa-calendar"></i>
-                                <span>{{ entry.when_.strftime('%d %b %Y') }}</span>
-                            </div>
-                            <div class="entry-creator">
-                                <i class="fas fa-user-circle"></i> Dibuat oleh: {{ entry.owner.name if entry.owner else '-' }}
+                <!-- Search and Filter Section -->
+                <div class="search-filter-section">
+                    <div class="row g-3">
+                        <div class="col-lg-6 col-md-12">
+                            <label class="filter-label"><i class="fas fa-search me-1"></i>Cari</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white" style="border: 2px solid #e9ecef; border-right: none; border-radius: 10px 0 0 10px;">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <input id="searchInput" type="text" class="form-control search-input" placeholder="Search title, who..." style="border: 2px solid #e9ecef; border-left: none;">
+                                <button class="btn btn-outline-secondary" type="button" id="clearSearch" style="border: 2px solid #e9ecef; border-left: none; border-radius: 0 10px 10px 0;">
+                                    <i class="fas fa-times"></i> Clear
+                                </button>
                             </div>
                         </div>
-
-                        <!-- Card Actions -->
-                        <div class="card-actions-5w1h">
-                            <a href="{{ url_for('tools_5w1h.detail_5w1h', entry_id=entry.id) }}" class="view-button-5w1h">
-                                <i class="fas fa-eye"></i> Detail
-                            </a>
-                            {% if entry.owner_id == current_user.id or current_user.role == 'admin' %}
-                            <a href="{{ url_for('tools_5w1h.edit_5w1h', entry_id=entry.id) }}" class="edit-button-5w1h" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <button type="button" class="delete-button-5w1h" title="Delete" data-entry-id="{{ entry.id }}" data-entry-title="{{ entry.title }}" data-entry-owner="{{ entry.owner.name if entry.owner else '-' }}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                            {% endif %}
+                        <div class="col-lg-3 col-md-6">
+                            <label for="statusFilter" class="filter-label"><i class="fas fa-flag me-1"></i>Status</label>
+                            <select id="statusFilter" class="form-select filter-select">
+                                <option value="all">Semua Status</option>
+                                <option value="draft">Draft</option>
+                                <option value="open">Open</option>
+                                <option value="closed">Closed</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label for="ownerFilter" class="filter-label"><i class="fas fa-user me-1"></i>Owner</label>
+                            <select id="ownerFilter" class="form-select filter-select">
+                                <option value="all">Semua Owner</option>
+                            </select>
                         </div>
                     </div>
-                    {% endfor %}
                 </div>
+
+                {% if entries %}
+                <div class="table-responsive table-5w1h-container">
+                    <table id="entriesTable" class="table table-5w1h table-hover adjustment-table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th style="width:6%">ID</th>
+                                <th>Title</th>
+                                <th style="width:18%">Who</th>
+                                <th style="width:12%">When</th>
+                                <th style="width:12%">Owner</th>
+                                <th style="width:10%">Status</th>
+                                <th style="width:12%">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            {% for entry in entries %}
+                            <tr class="table-row" data-status="{{ entry.status.name }}">
+                                <td class="text-muted">#{{ entry.id }}</td>
+                                <td>{{ entry.title }}</td>
+                                <td>{{ entry.who|truncate(80) }}</td>
+                                <td>{{ entry.when_.strftime('%d %b %Y') }}</td>
+                                <td>{{ entry.owner.name if entry.owner else '-' }}</td>
+                                <td><span class="status-pill {{ entry.status.name }}">{{ entry.status.value }}</span></td>
+                                <td>
+                                    <a href="{{ url_for('tools_5w1h.detail_5w1h', entry_id=entry.id) }}" class="btn btn-sm btn-outline-primary me-1" title="Detail"><i class="fas fa-eye"></i></a>
+                                    {% if entry.owner_id == current_user.id or current_user.role == 'admin' %}
+                                    <a href="{{ url_for('tools_5w1h.edit_5w1h', entry_id=entry.id) }}" class="btn btn-sm btn-outline-success me-1" title="Edit"><i class="fas fa-edit"></i></a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger delete-button-5w1h" title="Delete" data-entry-id="{{ entry.id }}" data-entry-title="{{ entry.title }}" data-entry-owner="{{ entry.owner.name if entry.owner else '-' }}"><i class="fas fa-trash"></i></button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination Info & Controls -->
+                <div class="pagination-info">
+                    Menampilkan <span id="pageInfo">1-15</span> dari <span id="totalInfo">{{ entries|length }}</span> entri
+                </div>
+                <nav aria-label="Pagination">
+                    <ul class="pagination pagination-5w1h" id="paginationNav">
+                        <!-- Pagination buttons akan di-generate oleh JavaScript -->
+                    </ul>
+                </nav>
                 {% else %}
                 <div class="empty-state">
                     <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 24px; opacity: 0.5;">
@@ -408,71 +332,232 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
 <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
 <script>
-    // Event delegation for delete button
+const ROWS_PER_PAGE = 10;
+let currentPage = 1;
+let allRows = [];
+let filteredRows = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    const ownerFilter = document.getElementById('ownerFilter');
+    const clearSearchBtn = document.getElementById('clearSearch');
+    const table = document.getElementById('entriesTable');
+    const tableBody = document.getElementById('tableBody');
+    
+    if (tableBody) {
+        allRows = Array.from(tableBody.querySelectorAll('.table-row'));
+    }
+    
+    // Populate unique owners from table data
+    function populateOwnerFilter() {
+        const owners = new Set();
+        allRows.forEach(row => {
+            const ownerCell = row.querySelector('td:nth-child(5)')?.textContent.trim();
+            if (ownerCell && ownerCell !== '-') {
+                owners.add(ownerCell);
+            }
+        });
+        
+        // Sort owners alphabetically
+        const sortedOwners = Array.from(owners).sort();
+        
+        // Add options to dropdown (keep existing "Semua Owner" option)
+        sortedOwners.forEach(owner => {
+            const option = document.createElement('option');
+            option.value = owner;
+            option.textContent = owner;
+            ownerFilter.appendChild(option);
+        });
+    }
+    
+    // Populate on load
+    populateOwnerFilter();
+
+    function applyFilters() {
+        const term = (searchInput?.value || '').trim().toLowerCase();
+        const status = statusFilter?.value || 'all';
+        const owner = ownerFilter?.value || 'all';
+        
+        // Filter rows
+        filteredRows = allRows.filter(row => {
+            const text = (row.textContent || '').toLowerCase();
+            const rowStatus = (row.getAttribute('data-status') || '').toLowerCase();
+            const ownerCell = row.querySelector('td:nth-child(5)')?.textContent.trim() || '';
+            const matchesSearch = term === '' || text.indexOf(term) !== -1;
+            const matchesStatus = status === 'all' || rowStatus === status;
+            const matchesOwner = owner === 'all' || ownerCell === owner;
+            return matchesSearch && matchesStatus && matchesOwner;
+        });
+        
+        // Reset to page 1 and display
+        currentPage = 1;
+        displayPage(currentPage);
+        updatePagination();
+    }
+
+    if (searchInput) searchInput.addEventListener('input', applyFilters);
+    if (statusFilter) statusFilter.addEventListener('change', applyFilters);
+    if (ownerFilter) ownerFilter.addEventListener('change', applyFilters);
+    
+    // Clear search button
+    if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            searchInput.focus();
+            applyFilters();
+        });
+    }
+    
+    applyFilters();
+    
+    function displayPage(page) {
+        const tableBody = document.getElementById('tableBody');
+        if (!tableBody) return;
+        
+        // Hide all rows
+        allRows.forEach(row => row.style.display = 'none');
+        
+        // Show filtered rows for current page
+        const start = (page - 1) * ROWS_PER_PAGE;
+        const end = Math.min(start + ROWS_PER_PAGE, filteredRows.length);
+        
+        for (let i = start; i < end; i++) {
+            filteredRows[i].style.display = '';
+        }
+        
+        // Update info text
+        const pageInfoEl = document.getElementById('pageInfo');
+        const startNum = start + 1;
+        const endNum = end;
+        if (pageInfoEl) {
+            pageInfoEl.textContent = filteredRows.length === 0 ? '0' : `${startNum}-${endNum}`;
+        }
+    }
+    
+    function updatePagination() {
+        const totalPages = Math.ceil(filteredRows.length / ROWS_PER_PAGE);
+        const paginationNav = document.getElementById('paginationNav');
+        if (!paginationNav) return;
+        
+        paginationNav.innerHTML = '';
+        
+        if (totalPages <= 1) return;
+        
+        // Previous button
+        const prevItem = document.createElement('li');
+        prevItem.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+        prevItem.innerHTML = `<a class="page-link" href="#" onclick="goToPage(${currentPage - 1}); return false;"><i class="fas fa-chevron-left"></i></a>`;
+        paginationNav.appendChild(prevItem);
+        
+        // Page numbers
+        const maxVisible = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+        if (endPage - startPage < maxVisible - 1) {
+            startPage = Math.max(1, endPage - maxVisible + 1);
+        }
+        
+        if (startPage > 1) {
+            const firstItem = document.createElement('li');
+            firstItem.className = 'page-item';
+            firstItem.innerHTML = `<a class="page-link" href="#" onclick="goToPage(1); return false;">1</a>`;
+            paginationNav.appendChild(firstItem);
+            
+            if (startPage > 2) {
+                const dots = document.createElement('li');
+                dots.className = 'page-item disabled';
+                dots.innerHTML = `<span class="page-link">...</span>`;
+                paginationNav.appendChild(dots);
+            }
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+            const pageItem = document.createElement('li');
+            pageItem.className = `page-item ${i === currentPage ? 'active' : ''}`;
+            pageItem.innerHTML = `<a class="page-link" href="#" onclick="goToPage(${i}); return false;">${i}</a>`;
+            paginationNav.appendChild(pageItem);
+        }
+        
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                const dots = document.createElement('li');
+                dots.className = 'page-item disabled';
+                dots.innerHTML = `<span class="page-link">...</span>`;
+                paginationNav.appendChild(dots);
+            }
+            
+            const lastItem = document.createElement('li');
+            lastItem.className = 'page-item';
+            lastItem.innerHTML = `<a class="page-link" href="#" onclick="goToPage(${totalPages}); return false;">${totalPages}</a>`;
+            paginationNav.appendChild(lastItem);
+        }
+        
+        // Next button
+        const nextItem = document.createElement('li');
+        nextItem.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+        nextItem.innerHTML = `<a class="page-link" href="#" onclick="goToPage(${currentPage + 1}); return false;"><i class="fas fa-chevron-right"></i></a>`;
+        paginationNav.appendChild(nextItem);
+    }
+
+    function goToPage(page) {
+        const totalPages = Math.ceil(filteredRows.length / ROWS_PER_PAGE);
+        if (page < 1 || page > totalPages) return;
+        currentPage = page;
+        displayPage(currentPage);
+        updatePagination();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
+    window.goToPage = goToPage;
+
+    // Keep delete delegation
     document.addEventListener('click', function(e) {
         const deleteBtn = e.target.closest('.delete-button-5w1h');
         if (deleteBtn) {
             e.preventDefault();
             e.stopPropagation();
-            
             const entryId = deleteBtn.getAttribute('data-entry-id');
             const entryTitle = deleteBtn.getAttribute('data-entry-title');
             const entryOwner = deleteBtn.getAttribute('data-entry-owner');
-            
             showDelete5W1HModal(entryId, entryTitle, entryOwner);
         }
     });
-    
-    function showDelete5W1HModal(entryId, title, owner) {
-        // Set the entry ID in hidden input
-        document.getElementById('delete5W1HId').value = entryId;
-        
-        // Build preview HTML
-        const previewHTML = `
-            <div class="p-3 border rounded bg-light">
-                <div class="row mb-2">
-                    <div class="col-4 fw-bold">Title:</div>
-                    <div class="col-8">${title}</div>
-                </div>
-                <div class="row">
-                    <div class="col-4 fw-bold">Owner:</div>
-                    <div class="col-8">${owner}</div>
-                </div>
-            </div>
-        `;
-        
-        document.getElementById('delete5W1HPreview').innerHTML = previewHTML;
-        
-        // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('delete5W1HModal'));
-        modal.show();
-    }
-    
-    function confirmDelete5W1H() {
-        const entryId = document.getElementById('delete5W1HId').value;
-        
-        // Send DELETE request to backend
-        fetch(`/impact/tools/5w1h/${entryId}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-            }
-        })
-        .then(response => {
-            if (response.ok) {
-                // Close modal and reload page
-                bootstrap.Modal.getInstance(document.getElementById('delete5W1HModal')).hide();
-                location.reload();
-            } else {
-                alert('Gagal menghapus entri. Silakan coba lagi.');
-            }
-        })
-        .catch(error => {
-            console.error('Delete error:', error);
-            alert('Terjadi kesalahan saat menghapus entri.');
-        });
-    }
+});
+
+function showDelete5W1HModal(entryId, title, owner) {
+    document.getElementById('delete5W1HId').value = entryId;
+    const previewHTML = `
+        <div class="p-3 border rounded bg-light">
+            <div class="row mb-2"><div class="col-4 fw-bold">Title:</div><div class="col-8">${title}</div></div>
+            <div class="row"><div class="col-4 fw-bold">Owner:</div><div class="col-8">${owner}</div></div>
+        </div>
+    `;
+    document.getElementById('delete5W1HPreview').innerHTML = previewHTML;
+    const modal = new bootstrap.Modal(document.getElementById('delete5W1HModal'));
+    modal.show();
+}
+
+function confirmDelete5W1H() {
+    const entryId = document.getElementById('delete5W1HId').value;
+    fetch(`/impact/tools/5w1h/${entryId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        }
+    }).then(response => {
+        if (response.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('delete5W1HModal')).hide();
+            location.reload();
+        } else {
+            alert('Gagal menghapus entri. Silakan coba lagi.');
+        }
+    }).catch(error => {
+        console.error('Delete error:', error);
+        alert('Terjadi kesalahan saat menghapus entri.');
+    });
+}
 </script>
 </body>
 </html>

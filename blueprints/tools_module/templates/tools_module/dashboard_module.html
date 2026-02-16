@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Module - Impact 360</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-mobile-framework.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <style>
+        /* Page Header with Module gradient */
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #667eea 100%);
+            color: white;
+            padding: 2rem 0;
+            margin: -1rem -15px 2rem -15px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3), 0 0 40px rgba(118, 75, 162, 0.1), inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+
+        /* Module Cards Grid */
+        .module-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .module-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+        }
+        
+        /* Module Entry Card */
+        .module-card {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid;
+            border-left-color: #667eea;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-height: 280px;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        
+        .module-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+
+        /* Background variants (clean, minimal, more visible) */
+        .module-card.bg-variant-0 { background: linear-gradient(135deg, #eef6ff 0%, #f7fbff 100%); border-left-color: #667eea; box-shadow: 0 6px 18px rgba(99,102,241,0.04); }
+        .module-card.bg-variant-1 { background: linear-gradient(135deg, #fff5e6 0%, #fffdf8 100%); border-left-color: #f59e0b; box-shadow: 0 6px 18px rgba(245,158,11,0.04); }
+        .module-card.bg-variant-2 { background: linear-gradient(135deg, #ecfdf5 0%, #f6fff9 100%); border-left-color: #10b981; box-shadow: 0 6px 18px rgba(16,185,129,0.04); }
+        .module-card.bg-variant-3 { background: linear-gradient(135deg, #f7f3ff 0%, #f2f0ff 100%); border-left-color: #7c3aed; box-shadow: 0 6px 18px rgba(124,58,237,0.04); }
+        .module-card.bg-variant-4 { background: linear-gradient(135deg, #fff0f6 0%, #fff7fb 100%); border-left-color: #ec4899; box-shadow: 0 6px 18px rgba(236,72,153,0.04); }
+        .module-card.bg-variant-5 { background: linear-gradient(135deg, #eef2ff 0%, #eef7ff 100%); border-left-color: #2563eb; box-shadow: 0 6px 18px rgba(37,99,235,0.04); }
+
+        /* Ensure readable title color across variants */
+        .module-card.bg-variant-0 .module-title,
+        .module-card.bg-variant-1 .module-title,
+        .module-card.bg-variant-2 .module-title,
+        .module-card.bg-variant-3 .module-title,
+        .module-card.bg-variant-4 .module-title,
+        .module-card.bg-variant-5 .module-title {
+            color: #0f172a;
+        }
+        
+        /* Status Badge */
+        .status-badge-module {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            z-index: 2;
+        }
+        
+        .status-badge-module.draft {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .status-badge-module.published {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .status-badge-module.archived {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        
+        /* Card Content */
+        .card-content-module {
+            margin-top: 50px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .module-id-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #b0b9c6;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        
+        .module-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #212121;
+            margin-bottom: 12px;
+            line-height: 1.3;
+            word-break: break-word;
+        }
+        
+        .module-description {
+            font-size: 14px;
+            color: #616161;
+            margin-bottom: 16px;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .module-meta {
+            font-size: 12px;
+            color: #757575;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .module-meta i {
+            color: #667eea;
+            width: 14px;
+            text-align: center;
+            font-size: 11px;
+        }
+        
+        .module-author {
+            font-size: 12px;
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        .module-category {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            border-radius: 16px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        /* Module Tags */
+        .module-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        
+        .module-tag {
+            display: inline-block;
+            padding: 3px 8px;
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        
+        /* Card Actions */
+        .card-actions-module {
+            margin-top: auto;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px solid #f3f4f6;
+        }
+        
+        /* View Button */
+        .view-button-module {
+            flex: 1;
+            padding: 8px 16px;
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-radius: 8px;
+            color: #667eea;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-align: center;
+            white-space: nowrap;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .view-button-module:hover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+            transform: translateY(-1px);
+            color: #667eea;
+        }
+        
+        /* Edit Button */
+        .edit-button-module {
+            padding: 8px 12px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            color: #10b981;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            height: 36px;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        
+        .edit-button-module:hover {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.4);
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+            transform: translateY(-1px);
+        }
+        
+        /* Delete Button */
+        .delete-button-module {
+            padding: 8px 12px;
+            background: rgba(220, 38, 38, 0.1);
+            border: 1px solid rgba(220, 38, 38, 0.2);
+            border-radius: 8px;
+            color: #dc2626;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            height: 36px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        .delete-button-module:hover {
+            background: rgba(220, 38, 38, 0.15);
+            border-color: rgba(220, 38, 38, 0.4);
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.15);
+            transform: translateY(-1px);
+            color: #dc2626;
+        }
+        
+        /* Search and Filter Section - Selaras dengan filter-section tabelkpictp.html */
+        .search-filter-section {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+            border: none;
+        }
+        
+        .search-input {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+        
+        .search-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .filter-select {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .filter-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+            display: block;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: #64748b;
+        }
+        
+        .empty-state h3 {
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 16px;
+            font-size: 1.8rem;
+        }
+        
+        .empty-state p {
+            color: #6b7280;
+            margin-bottom: 32px;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+<div id="wrapper">
+    {% include '_top_header.html' %}
+    <div class="d-flex" id="content-wrapper">
+        {% include '_sidebar.html' %}
+        <div id="page-content-wrapper">
+            <div class="container-fluid pt-3">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div class="container-fluid">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 class="mb-1 text-white">Dashboard Module</h2>
+                                <p class="mb-0 opacity-75">Kumpulan tutorial, modul, dan panduan</p>
+                            </div>
+                            <div class="text-end">
+                                <a href="{{ url_for('tools_module.create_module') }}" class="btn btn-light" style="border-radius:25px; font-weight:600;">
+                                    <i class="fas fa-plus-circle me-1"></i> Create Module
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search and Filter Section -->
+                <div class="search-filter-section">
+                    <form id="filterForm" method="GET" action="{{ url_for('tools_module.dashboard') }}">
+                        <div class="row g-3">
+                            <div class="col-lg-6 col-md-12">
+                                <label class="filter-label"><i class="fas fa-search me-1"></i>Cari</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white" style="border: 2px solid #e9ecef; border-right: none; border-radius: 10px 0 0 10px;">
+                                        <i class="fas fa-search text-muted"></i>
+                                    </span>
+                                    <input type="text" 
+                                           class="form-control search-input border-start-0" 
+                                           id="searchInput"
+                                           name="search" 
+                                           placeholder="Cari berdasarkan judul, deskripsi, konten, atau tags..." 
+                                           value="{{ search_query }}"
+                                           style="border: 2px solid #e9ecef; border-left: none;">
+                                    <button class="btn btn-outline-secondary" type="button" id="clearSearchBtn" style="border: 2px solid #e9ecef; border-left: none; border-radius: 0 10px 10px 0;">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6">
+                                <label for="categoryFilter" class="filter-label"><i class="fas fa-folder me-1"></i>Kategori</label>
+                                <select class="form-select filter-select" id="categoryFilter" name="category">
+                                    <option value="">Semua Kategori</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category }}" {% if category_filter == category %}selected{% endif %}>
+                                        {{ category }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-lg-3 col-md-6">
+                                <label for="statusFilter" class="filter-label"><i class="fas fa-flag me-1"></i>Status</label>
+                                <select class="form-select filter-select" id="statusFilter" name="status">
+                                    <option value="">Semua Status</option>
+                                    <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Draft</option>
+                                    <option value="published" {% if status_filter == 'published' %}selected{% endif %}>Published</option>
+                                    <option value="archived" {% if status_filter == 'archived' %}selected{% endif %}>Archived</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Module Cards Grid -->
+                {% if modules %}
+                <div class="module-grid">
+                    {% for module in modules %}
+                    <div class="module-card bg-variant-{{ loop.index0 % 6 }}">
+                        <!-- Status Badge -->
+                        <div class="status-badge-module {{ module.status.name.lower() }}">
+                            <i class="fas fa-{{ 'file-alt' if module.status.name == 'Draft' else 'check-circle' if module.status.name == 'Published' else 'archive' }}"></i>
+                            {{ module.status.value }}
+                        </div>
+
+                        <!-- Card Content -->
+                        <div class="card-content-module">
+                            <div class="module-title">{{ module.title }}</div>
+                            
+                            {% if module.description %}
+                            <div class="module-description">{{ module.description }}</div>
+                            {% endif %}
+                            
+                            <div class="module-category">
+                                <i class="fas fa-folder me-1"></i> {{ module.category }}
+                            </div>
+                            
+                            {% if module.tags %}
+                            <div class="module-tags">
+                                {% for tag in module.tag_list[:3] %}
+                                <span class="module-tag">{{ tag }}</span>
+                                {% endfor %}
+                                {% if module.tag_list|length > 3 %}
+                                <span class="module-tag">+{{ module.tag_list|length - 3 }}</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            
+                            <div class="module-meta">
+                                <i class="fas fa-calendar"></i>
+                                <span>{{ module.updated_at.strftime('%d %b %Y') }}</span>
+                            </div>
+                            <div class="module-author">
+                                <i class="fas fa-user-circle"></i> {{ module.author.name if module.author else '-' }}
+                            </div>
+                        </div>
+
+                        <!-- Card Actions -->
+                        <div class="card-actions-module">
+                            <a href="{{ url_for('tools_module.view_module', module_id=module.id) }}" class="view-button-module">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                            {% if module.author_id == current_user.id or current_user.role == 'admin' %}
+                            <a href="{{ url_for('tools_module.edit_module', module_id=module.id) }}" class="edit-button-module" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button type="button" class="delete-button-module" title="Delete" data-module-id="{{ module.id }}" data-module-title="{{ module.title }}" data-module-author="{{ module.author.name if module.author else '-' }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 24px; opacity: 0.5;">
+                        <circle cx="60" cy="60" r="50" stroke="#cbd5e1" stroke-width="2"/>
+                        <path d="M60 35v50M35 60h50" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <h3>Belum Ada Module</h3>
+                    <p>Mulai buat module baru dengan mengklik tombol "Create Module" di atas.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Module Modal -->
+<div class="modal fade" id="deleteModuleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Hapus Module</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="deleteModuleId">
+                <div class="alert alert-warning d-flex align-items-center" role="alert">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-2">
+                        <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <div>
+                        <strong>Warning:</strong> Tindakan ini tidak dapat dibatalkan. Module akan dihapus secara permanen.
+                    </div>
+                </div>
+                <p>Apakah anda yakin ingin menghapus module ini?</p>
+                <div class="module-details-preview" id="deleteModulePreview">
+                    <!-- Module details will be shown here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteModule()">Hapus</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+<script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
+<script>
+    // Debounce function (sama seperti di kpi_ctp_handler.js)
+    function debounce(func, delay) {
+        let timeout;
+        return function(...args) {
+            const context = this;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(context, args), delay);
+        };
+    }
+    
+    // AJAX form submission tanpa page refresh (pattern dari tabelkpictp.html)
+    const filterForm = document.getElementById('filterForm');
+    const searchInput = document.getElementById('searchInput');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    
+    async function loadModules() {
+        try {
+            // Build query parameters
+            const params = new URLSearchParams({
+                search: searchInput.value,
+                category: categoryFilter.value,
+                status: statusFilter.value
+            });
+            
+            // Show loading state
+            showLoadingState();
+            
+            // Fetch modules via AJAX (pattern dari tabelkpictp.html)
+            const response = await fetch(`{{ url_for('tools_module.get_modules') }}?${params.toString()}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+                if (data.success) {
+                    // Render modules dynamically
+                    renderModules(data.data);
+                    // Note: intentionally not updating window.history to avoid changing URL on searches
+                } else {
+                console.error('Error loading modules:', data.message);
+                showEmptyState('Error loading modules');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showEmptyState('Error loading modules');
+        } finally {
+            hideLoadingState();
+        }
+    }
+    
+    function renderModules(modules) {
+        const container = document.querySelector('.module-grid');
+        
+        if (!modules || modules.length === 0) {
+            showEmptyState('Belum Ada Module');
+            return;
+        }
+        
+        // Generate HTML untuk module cards
+        let html = '';
+        modules.forEach((module, index) => {
+            const variantClass = `bg-variant-${index % 6}`;
+            const statusClass = module.status_name;
+            const statusIcon = module.status_name === 'draft' ? 'file-alt' : 
+                             module.status_name === 'published' ? 'check-circle' : 'archive';
+            
+            html += `
+                <div class="module-card ${variantClass}">
+                    <!-- Status Badge -->
+                    <div class="status-badge-module ${statusClass}">
+                        <i class="fas fa-${statusIcon}"></i>
+                        ${module.status}
+                    </div>
+
+                    <!-- Card Content -->
+                    <div class="card-content-module">
+                        <div class="module-title">${escapeHtml(module.title)}</div>
+                        
+                        ${module.description ? `
+                            <div class="module-description">${escapeHtml(module.description)}</div>
+                        ` : ''}
+                        
+                        <div class="module-category">
+                            <i class="fas fa-folder me-1"></i> ${escapeHtml(module.category)}
+                        </div>
+                        
+                        ${module.tag_list && module.tag_list.length > 0 ? `
+                            <div class="module-tags">
+                                ${module.tag_list.slice(0, 3).map(tag => 
+                                    `<span class="module-tag">${escapeHtml(tag)}</span>`
+                                ).join('')}
+                                ${module.tag_list.length > 3 ? 
+                                    `<span class="module-tag">+${module.tag_list.length - 3}</span>` : 
+                                ''}
+                            </div>
+                        ` : ''}
+                        
+                        <div class="module-meta">
+                            <i class="fas fa-calendar"></i>
+                            <span>${module.updated_at}</span>
+                        </div>
+                        <div class="module-author">
+                            <i class="fas fa-user-circle"></i> ${escapeHtml(module.author_name)}
+                        </div>
+                    </div>
+
+                    <!-- Card Actions -->
+                    <div class="card-actions-module">
+                        <a href="${module.url_view}" class="view-button-module">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                        ${module.can_edit ? `
+                            <a href="${module.url_edit}" class="edit-button-module" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button type="button" class="delete-button-module" title="Delete" 
+                                    data-module-id="${module.id}" 
+                                    data-module-title="${escapeHtml(module.title)}" 
+                                    data-module-author="${escapeHtml(module.author_name)}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        });
+        
+        // Jika ada container module-grid, ganti isinya
+        if (container) {
+            container.innerHTML = html;
+        } else {
+            // Jika container tidak ada (page pertama load), replace wrapper
+            const wrapper = document.querySelector('.container-fluid.pt-3');
+            const moduleGridHtml = `<div class="module-grid">${html}</div>`;
+            
+            // Cari posisi untuk insert (setelah search-filter-section)
+            const filterSection = wrapper.querySelector('.search-filter-section');
+            if (filterSection) {
+                filterSection.insertAdjacentHTML('afterend', moduleGridHtml);
+            }
+        }
+    }
+    
+    function showEmptyState(message = 'Belum Ada Module') {
+        const container = document.querySelector('.module-grid');
+        const emptyStateHtml = `
+            <div style="grid-column: 1 / -1;">
+                <div class="empty-state">
+                    <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 24px; opacity: 0.5;">
+                        <circle cx="60" cy="60" r="50" stroke="#cbd5e1" stroke-width="2"/>
+                        <path d="M60 35v50M35 60h50" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <h3>${message}</h3>
+                    <p>Mulai buat module baru dengan mengklik tombol "Create Module" di atas.</p>
+                </div>
+            </div>
+        `;
+        
+        if (container) {
+            container.innerHTML = emptyStateHtml;
+        }
+    }
+    
+    function showLoadingState() {
+        const container = document.querySelector('.module-grid');
+        if (container) {
+            container.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+        }
+    }
+    
+    function hideLoadingState() {
+        // Loading state akan diganti dengan konten module
+    }
+    
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, m => map[m]);
+    }
+    
+    // Event listeners dengan debounce
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(function() {
+            loadModules();
+        }, 300)); // 300ms debounce seperti di kpi_ctp_handler.js
+    }
+
+    // Clear search button handler
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            searchInput.focus();
+            loadModules();
+        });
+    }
+    
+    if (categoryFilter) {
+        categoryFilter.addEventListener('change', function() {
+            loadModules();
+        });
+    }
+    
+    if (statusFilter) {
+        statusFilter.addEventListener('change', function() {
+            loadModules();
+        });
+    }
+
+    // Event delegation for delete button
+    document.addEventListener('click', function(e) {
+        const deleteBtn = e.target.closest('.delete-button-module');
+        if (deleteBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const moduleId = deleteBtn.getAttribute('data-module-id');
+            const moduleTitle = deleteBtn.getAttribute('data-module-title');
+            const moduleAuthor = deleteBtn.getAttribute('data-module-author');
+            
+            showDeleteModuleModal(moduleId, moduleTitle, moduleAuthor);
+        }
+    });
+    
+    function showDeleteModuleModal(moduleId, title, author) {
+        // Set module ID in hidden input
+        document.getElementById('deleteModuleId').value = moduleId;
+        
+        // Build preview HTML
+        const previewHTML = `
+            <div class="p-3 border rounded bg-light">
+                <div class="row mb-2">
+                    <div class="col-4 fw-bold">Title:</div>
+                    <div class="col-8">${title}</div>
+                </div>
+                <div class="row">
+                    <div class="col-4 fw-bold">Author:</div>
+                    <div class="col-8">${author}</div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('deleteModulePreview').innerHTML = previewHTML;
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('deleteModuleModal'));
+        modal.show();
+    }
+    
+    function confirmDeleteModule() {
+        const moduleId = document.getElementById('deleteModuleId').value;
+        
+        // Create form and submit
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/tools/module/${moduleId}/delete`;
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+</script>
+</body>
+</html>

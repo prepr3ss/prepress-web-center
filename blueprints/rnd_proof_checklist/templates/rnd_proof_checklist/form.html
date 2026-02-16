@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if proof_checklist %}Edit R&D Proof Checklist - {{ proof_checklist.customer_name }}{% else %}Create R&D Proof Checklist{% endif %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-mobile-framework.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <style>
+        /* R&D Proof Checklist Theme - Purple gradient untuk R&D */
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            margin: -1rem -15px 2rem -15px;
+            border-radius: 0 0 20px 20px;
+        }
+        
+        /* Form section styling seperti CTP data adjustment */
+        .form-section {
+            background: white;
+            border-radius: 15px;
+            padding: 2.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+        
+        .form-control-clean, .form-select-clean {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+        .form-control-clean:focus, .form-select-clean:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .info-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .btn-clean {
+            border: none;
+            border-radius: 25px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-rnd-clean {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-rnd-clean:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        
+        .btn-success-clean {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+        .btn-success-clean:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+            color: white;
+        }
+        
+        .btn-outline-clean {
+            border: 2px solid #667eea;
+            color: #667eea;
+            background: transparent;
+        }
+        .btn-outline-clean:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        /* Section dividers dengan R&D purple accent */
+        .section-divider {
+            border-left: 4px solid #667eea;
+            padding-left: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .section-title {
+            color: #2c3e50;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .checklist-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            padding: 0.65rem 0.75rem;
+            background-color: white;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            transition: all 0.25s ease;
+        }
+        
+        .checklist-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 6px rgba(102, 126, 234, 0.1);
+        }
+        
+        .checklist-item input[type="checkbox"] {
+            margin-right: 0.5rem;
+            width: 18px;
+            height: 18px;
+            accent-color: #667eea;
+            cursor: pointer;
+        }
+        
+        .checklist-item label {
+            margin-bottom: 0;
+            flex: 1;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .postpress-category-title {
+            font-weight: 600;
+            color: #667eea;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+        
+        .dynamic-section {
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            border: 1px dashed #667eea;
+        }
+        
+        .dynamic-section h6 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .dynamic-section-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            margin-bottom: 1rem;
+            min-height: 0.5rem;
+        }
+        
+        .dynamic-item {
+            display: flex;
+            gap: 0.6rem;
+            align-items: center;
+            padding: 0.6rem 0.75rem;
+            background-color: white;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            transition: all 0.25s ease;
+        }
+
+        .dynamic-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 6px rgba(102, 126, 234, 0.1);
+        }
+
+        .dynamic-item input {
+            flex: 1;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 6px;
+            background-color: #f8f9fa;
+            font-size: 0.9rem;
+            transition: all 0.25s ease;
+        }
+
+        .dynamic-item input:focus {
+            outline: none;
+            background-color: #fff;
+            border: 1px solid #667eea;
+            box-shadow: 0 0 0 0.15rem rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-remove {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 0.4rem 0.75rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.25s ease;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .btn-remove:hover {
+            background-color: #c82333;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(220, 53, 69, 0.2);
+        }
+
+        .btn-add {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.6rem 1rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.25s ease;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-add:hover {
+            background-color: #218838;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(40, 167, 69, 0.2);
+        }
+
+        .required-field::after {
+            content: " *";
+            color: #dc3545;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .page-header {
+                padding: 1.5rem 0;
+                margin-bottom: 1rem;
+            }
+            
+            .page-header h2 {
+                font-size: 1.3rem;
+            }
+            
+            .form-section {
+                padding: 1.25rem;
+            }
+            
+            .checklist-group {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 0.4rem;
+            }
+            
+            .checklist-item {
+                padding: 0.5rem 0.6rem;
+                font-size: 0.85rem;
+            }
+            
+            .btn-clean {
+                padding: 0.6rem 1.2rem;
+                font-size: 0.85rem;
+            }
+            
+            .dynamic-item {
+                flex-wrap: wrap;
+            }
+            
+            .dynamic-item input {
+                min-width: 150px;
+            }
+            
+            .btn-remove {
+                padding: 0.35rem 0.6rem;
+                font-size: 0.75rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .checklist-group {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .row > .col-md-6 {
+                margin-top: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="wrapper">
+        {% include '_top_header.html' %}
+        <div class="d-flex" id="content-wrapper">
+            {% include '_sidebar.html' %}
+            <div id="page-content-wrapper">
+                <div class="container-fluid pt-3">
+    <!-- Page Header dengan R&D theme -->
+    <div class="page-header">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    {% if proof_checklist %}
+                        <h2 class="mb-1 text-white">Edit R&D Proof Checklist</h2>
+                        <p class="mb-0 opacity-75">{{ proof_checklist.customer_name }} - {{ proof_checklist.item_name }}</p>
+                    {% else %}
+                        <h2 class="mb-1 text-white">Create R&D Proof Checklist</h2>
+                        <p class="mb-0 opacity-75">Digital form untuk menggantikan Checklist Proof kertas</p>
+                    {% endif %}
+                </div>
+                <div class="text-end">
+                    {% if proof_checklist %}
+                        <a href="{{ url_for('rnd_proof_checklist.view', id=proof_checklist.id) }}" class="btn btn-light">
+                            <i class="fas fa-arrow-left me-1"></i> Back to View
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('rnd_proof_checklist.dashboard') }}" class="btn btn-light">
+                            <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid py-4">
+        <div class="col-12 mx-auto" style="max-width: 1800px;">
+            <!-- Alert Section -->
+            <div id="alertContainer" class="mb-3" style="display: none;">
+                <div class="alert" role="alert">
+                    <span id="alertMessage"></span>
+                </div>
+            </div>
+         
+            <!-- Main Form Section -->
+            <div class="form-section">
+                <form method="POST" id="proofChecklistForm" autocomplete="off">
+                    <!-- Proof Information Section -->
+                    <div class="section-divider">
+                        <h5 class="section-title"><i class="fas fa-info-circle me-2"></i>Proof Information</h5>
+                    </div>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <label class="info-label required-field">Proof Date</label>
+                            <input type="date" 
+                                   class="form-control form-control-clean" 
+                                   id="proof_date" 
+                                   name="proof_date" 
+                                   required
+                                   {% if proof_checklist %}value="{{ proof_checklist.proof_date.strftime('%Y-%m-%d') if proof_checklist.proof_date else '' }}"{% endif %}>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="info-label required-field">Customer Name</label>
+                            <input type="text" 
+                                   class="form-control form-control-clean" 
+                                   id="customer_name" 
+                                   name="customer_name" 
+                                   required
+                                   placeholder="e.g. PT. EPSON"
+                                   {% if proof_checklist %}value="{{ proof_checklist.customer_name }}"{% endif %}>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="info-label required-field">Item Name</label>
+                            <input type="text" 
+                                   class="form-control form-control-clean" 
+                                   id="item_name" 
+                                   name="item_name" 
+                                   required
+                                   placeholder="e.g. 517299900 PLATINI 6 MG"
+                                   {% if proof_checklist %}value="{{ proof_checklist.item_name }}"{% endif %}>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="info-label required-field">Product Category</label>
+                            <select class="form-select form-select-clean" id="product_category" name="product_category" required>
+                                <option value="">Select Category</option>
+                                <option value="FOLDING_BOX" {% if proof_checklist and proof_checklist.product_category == 'FOLDING_BOX' %}selected{% endif %}>Folding Box</option>
+                                <option value="SINGLE_FACE" {% if proof_checklist and proof_checklist.product_category == 'SINGLE_FACE' %}selected{% endif %}>Single Face</option>
+                                <option value="SHEET" {% if proof_checklist and proof_checklist.product_category == 'SHEET' %}selected{% endif %}>Sheet</option>
+                                <option value="RIGID_BOX" {% if proof_checklist and proof_checklist.product_category == 'RIGID_BOX' %}selected{% endif %}>Rigid Box</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="info-label">Paper Supplier</label>
+                            <input type="text" 
+                                   class="form-control form-control-clean" 
+                                   id="paper_supplier" 
+                                   name="paper_supplier" 
+                                   placeholder="e.g. HANSOL/CMI/NINEDRAGON"
+                                   {% if proof_checklist %}value="{{ proof_checklist.paper_supplier or '' }}"{% endif %}>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="info-label">Paper Grammage</label>
+                            <input type="text" 
+                                   class="form-control form-control-clean" 
+                                   id="paper_grammage" 
+                                   name="paper_grammage" 
+                                   placeholder="e.g. DC250"
+                                   {% if proof_checklist %}value="{{ proof_checklist.paper_grammage or '' }}"{% endif %}>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="info-label">Paper Size</label>
+                            <input type="text" 
+                                   class="form-control form-control-clean" 
+                                   id="paper_size" 
+                                   name="paper_size" 
+                                   placeholder="e.g. SF: 828X1402mm, DC: 1408X803mm"
+                                   {% if proof_checklist %}value="{{ proof_checklist.paper_size or '' }}"{% endif %}>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="info-label">Paper Substance</label>
+                            <input type="text" 
+                                   class="form-control form-control-clean" 
+                                   id="paper_substance" 
+                                   name="paper_substance" 
+                                   placeholder="e.g. K200/M125/K200"
+                                   {% if proof_checklist %}value="{{ proof_checklist.paper_substance or '' }}"{% endif %}>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="info-label">Flute</label>
+                            <input type="text" 
+                                   class="form-control form-control-clean" 
+                                   id="flute" 
+                                   name="flute" 
+                                   placeholder="e.g. A/B/C"
+                                   {% if proof_checklist %}value="{{ proof_checklist.flute or '' }}"{% endif %}>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="info-label">UP Number</label>
+                            <input type="number" 
+                                   class="form-control form-control-clean" 
+                                   id="up_num" 
+                                   name="up_num" 
+                                   placeholder="e.g. 12"
+                                   {% if proof_checklist %}value="{{ proof_checklist.up_num or '' }}"{% endif %}>
+                        </div>
+                    </div>
+
+                    <!-- Printing Production Information Section -->
+                    <div class="section-divider">
+                        <h5 class="section-title"><i class="fas fa-print me-2"></i>Printing Production Information</h5>
+                    </div>
+                    
+                    <!-- Print Machines -->
+                    <div class="mb-4">
+                        <label class="info-label">Print Machines</label>
+                        <div class="checklist-group">
+                            {% for machine in print_machines %}
+                            <div class="checklist-item">
+                                <input type="checkbox" 
+                                       id="print_machine_{{ machine.id }}" 
+                                       name="print_machines" 
+                                       value="{{ machine.id }}"
+                                       {% if proof_checklist and machine.id in selected_print_machines %}checked{% endif %}>
+                                <label for="print_machine_{{ machine.id }}">{{ machine.machine_name }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Print Separations -->
+                    <div class="mb-4">
+                        <label class="info-label">Print Separations</label>
+                        <div class="checklist-group">
+                            {% for separation in print_separations %}
+                            <div class="checklist-item">
+                                <input type="checkbox" 
+                                       id="print_separation_{{ separation.id }}" 
+                                       name="print_separations" 
+                                       value="{{ separation.id }}"
+                                       {% if proof_checklist and separation.id in selected_print_separations %}checked{% endif %}>
+                                <label for="print_separation_{{ separation.id }}">{{ separation.separation_name }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Dynamic separation addition -->
+                        <div class="dynamic-section">
+                            <h6><i class="fas fa-plus-circle me-2"></i>Add Custom Separation</h6>
+                            <div class="dynamic-section-list" id="customSeparations">
+                                {% if proof_checklist %}
+                                    {% for ps in proof_checklist.print_separations %}
+                                        {% if not ps.print_separation_id and ps.custom_separation_name %}
+                                            <div class="dynamic-item">
+                                                <input type="text" class="form-control-clean" name="custom_separations[]" value="{{ ps.custom_separation_name }}">
+                                                <button type="button" class="btn-remove" onclick="removeDynamicItem(this)">
+                                                    <i class="fas fa-trash-alt"></i> Remove
+                                                </button>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            <button type="button" class="btn-add" onclick="addCustomSeparation()">
+                                <i class="fas fa-plus me-1"></i>Add Separation
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Print Inks -->
+                    <div class="mb-4">
+                        <label class="info-label">Print Inks</label>
+                        <div class="checklist-group">
+                            {% for ink in print_inks %}
+                            <div class="checklist-item">
+                                <input type="checkbox" 
+                                       id="print_ink_{{ ink.id }}" 
+                                       name="print_inks" 
+                                       value="{{ ink.id }}"
+                                       {% if (not proof_checklist and ink.is_default) or (proof_checklist and ink.id in selected_print_inks) %}checked{% endif %}>
+                                <label for="print_ink_{{ ink.id }}">{{ ink.ink_name }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Dynamic ink addition -->
+                        <div class="dynamic-section">
+                            <h6><i class="fas fa-plus-circle me-2"></i>Add Custom Ink</h6>
+                            <div class="dynamic-section-list" id="customInks">
+                                {% if proof_checklist %}
+                                    {% for pi in proof_checklist.print_inks %}
+                                        {% if not pi.print_ink_id and pi.custom_ink_name %}
+                                            <div class="dynamic-item">
+                                                <input type="text" class="form-control-clean" name="custom_inks[]" value="{{ pi.custom_ink_name }}">
+                                                <button type="button" class="btn-remove" onclick="removeDynamicItem(this)">
+                                                    <i class="fas fa-trash-alt"></i> Remove
+                                                </button>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            <button type="button" class="btn-add" onclick="addCustomInk()">
+                                <i class="fas fa-plus me-1"></i>Add Ink
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="info-label">Print Coating</label>
+                            <input type="text" 
+                                   class="form-control form-control-clean" 
+                                   id="print_coating" 
+                                   name="print_coating" 
+                                   placeholder="e.g. UNILAC PREPRINT GLOSS"
+                                   {% if proof_checklist %}value="{{ proof_checklist.print_coating or '' }}"{% endif %}>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="info-label">Print Laminating</label>
+                            <input type="text" 
+                                   class="form-control form-control-clean" 
+                                   id="print_laminating" 
+                                   name="print_laminating" 
+                                   placeholder="e.g. BOPP 25 GLOSS / BOPP 30 MATTE"
+                                   {% if proof_checklist %}value="{{ proof_checklist.print_laminating or '' }}"{% endif %}>
+                        </div>
+                    </div>
+
+                    <!-- Post Press Production Information Section -->
+                    <div class="section-divider">
+                        <h5 class="section-title"><i class="fas fa-industry me-2"></i>Post Press Production Information</h5>
+                    </div>
+                    
+                    <!-- Postpress Machines by Category -->
+                    <div class="mb-4">
+                        <label class="info-label">Postpress Machines</label>
+                        {% for category, machines in postpress_by_category.items() %}
+                        <div class="postpress-category">
+                            <div class="postpress-category-title">{{ category }}</div>
+                            <div class="checklist-group">
+                                {% for machine in machines %}
+                                <div class="checklist-item">
+                                    <input type="checkbox" 
+                                           id="postpress_machine_{{ machine.id }}" 
+                                           name="postpress_machines" 
+                                           value="{{ machine.id }}"
+                                           {% if proof_checklist and machine.id in selected_postpress_machines %}checked{% endif %}>
+                                    <label for="postpress_machine_{{ machine.id }}">{{ machine.machine_name }}</label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-12">
+                            <label class="info-label">Postpress Packing Pallet</label>
+                            <textarea class="form-control form-control-clean" 
+                                      id="postpress_packing_pallet" 
+                                      name="postpress_packing_pallet" 
+                                      rows="3"
+                                      placeholder="e.g. PALET KAYU UK:84X98cm, QTY: 110 SET (03-014-000-0000041)">{% if proof_checklist %}{{ proof_checklist.postpress_packing_pallet or '' }}{% endif %}</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Additional Information Section -->
+                    <div class="section-divider">
+                        <h5 class="section-title"><i class="fas fa-sticky-note me-2"></i>Additional Information</h5>
+                    </div>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-12">
+                            <label class="info-label">Additional Information</label>
+                            <textarea class="form-control form-control-clean" 
+                                      id="additional_information" 
+                                      name="additional_information" 
+                                      rows="4"
+                                      placeholder="e.g. - PROSES PRODUKSI: CETAK > LAMINATOR > DIECUT > LEM > PACKING">{% if proof_checklist %}{{ proof_checklist.additional_information or '' }}{% endif %}</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    {% if proof_checklist %}
+                                        <button type="submit" class="btn btn-clean btn-rnd-clean">
+                                            <i class="fas fa-save me-1"></i>Update Checklist
+                                        </button>
+                                    {% else %}
+                                        <button type="submit" class="btn btn-clean btn-rnd-clean">
+                                            <i class="fas fa-save me-2"></i>Save as Draft
+                                        </button>
+                                        <button type="submit" class="btn btn-clean btn-success-clean ms-2" name="save_as_active" value="true">
+                                            <i class="fas fa-check me-2"></i>Save as Active
+                                        </button>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    {% if proof_checklist %}
+                                        <a href="{{ url_for('rnd_proof_checklist.view', id=proof_checklist.id) }}" class="btn btn-clean btn-outline-clean">
+                                            <i class="fas fa-times me-1"></i>Cancel
+                                        </a>
+                                    {% else %}
+                                        <a href="{{ url_for('rnd_proof_checklist.dashboard') }}" class="btn btn-clean btn-outline-clean">
+                                            <i class="fas fa-times me-2"></i>Cancel
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+    <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/proof_checklist_api.js') }}"></script>
+    {% if not proof_checklist %}
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set today's date as default for HTML5 date input (only for create mode)
+    var today = new Date();
+    var todayString = today.toISOString().split('T')[0];
+    var proof_date = document.getElementById('proof_date');
+    if (proof_date && !proof_date.value) {
+        proof_date.value = todayString;
+    }
+    
+    // Form validation
+    document.getElementById('proofChecklistForm').addEventListener('submit', function(e) {
+        var requiredFields = ['proof_date', 'customer_name', 'item_name', 'product_category'];
+        var isValid = true;
+
+        requiredFields.forEach(function(fieldId) {
+            var field = document.getElementById(fieldId);
+            if (!field.value.trim()) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+
+        if (!isValid) {
+            e.preventDefault();
+            alert('Please fill in all required fields marked with *');
+        }
+    });
+});
+</script>
+    {% else %}
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation (edit mode - no auto-populate date needed)
+    document.getElementById('proofChecklistForm').addEventListener('submit', function(e) {
+        var requiredFields = ['proof_date', 'customer_name', 'item_name', 'product_category'];
+        var isValid = true;
+
+        requiredFields.forEach(function(fieldId) {
+            var field = document.getElementById(fieldId);
+            if (!field.value.trim()) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+
+        if (!isValid) {
+            e.preventDefault();
+            alert('Please fill in all required fields marked with *');
+        }
+    });
+});
+</script>
+    {% endif %}
+
+    <script>
+// Dynamic functions for custom additions
+function addCustomSeparation() {
+    var container = document.getElementById('customSeparations');
+    var newItem = document.createElement('div');
+    newItem.className = 'dynamic-item';
+    newItem.innerHTML = `
+        <input type="text" class="form-control-clean" name="custom_separations[]" placeholder="Enter custom separation name">
+        <button type="button" class="btn-remove" onclick="removeDynamicItem(this)">
+            <i class="fas fa-trash-alt"></i> Remove
+        </button>
+    `;
+    container.appendChild(newItem);
+    // Focus on the new input
+    newItem.querySelector('input').focus();
+}
+
+function addCustomInk() {
+    var container = document.getElementById('customInks');
+    var newItem = document.createElement('div');
+    newItem.className = 'dynamic-item';
+    newItem.innerHTML = `
+        <input type="text" class="form-control-clean" name="custom_inks[]" placeholder="Enter custom ink name">
+        <button type="button" class="btn-remove" onclick="removeDynamicItem(this)">
+            <i class="fas fa-trash-alt"></i> Remove
+        </button>
+    `;
+    container.appendChild(newItem);
+    // Focus on the new input
+    newItem.querySelector('input').focus();
+}
+
+function removeDynamicItem(button) {
+    button.parentElement.remove();
+}
+
+// Breadcrumb navigation function
+function toggleSubmenu(submenuId) {
+    // Prevent default link behavior
+    event.preventDefault();
+    
+    // Find the submenu element
+    const submenu = document.getElementById(submenuId);
+    const submenuLink = document.querySelector(`[href="#${submenuId}"]`);
+    
+    if (submenu && submenuLink) {
+        // Check if submenu is currently collapsed
+        const isCollapsed = submenuLink.classList.contains('collapsed');
+        
+        if (isCollapsed) {
+            // Open the submenu
+            submenuLink.classList.remove('collapsed');
+            submenuLink.classList.add('active');
+            submenu.classList.add('show');
+            
+            // Rotate chevron if exists
+            const chevron = submenuLink.querySelector('.sidebar-chevron');
+            if (chevron) {
+                chevron.classList.add('rotated');
+            }
+        } else {
+            // Close the submenu
+            submenuLink.classList.add('collapsed');
+            submenuLink.classList.remove('active');
+            submenu.classList.remove('show');
+            
+            // Rotate chevron if exists
+            const chevron = submenuLink.querySelector('.sidebar-chevron');
+            if (chevron) {
+                chevron.classList.remove('rotated');
+            }
+        }
+    }
+    
+    // Navigate to the dashboard
+    if (submenuId === 'rndSubmenu') {
+        window.location.href = "{{ url_for('rnd_proof_checklist.dashboard') }}";
+    }
+}
+</script>
+</body>
+</html>

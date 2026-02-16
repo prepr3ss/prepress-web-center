@@ -42,8 +42,11 @@ document.addEventListener('DOMContentLoaded', function () {
         '/impact/rnd-cloudsphere/dashboard': {linkId: 'rndCloudsphereDashboardLink', parentSelector: '.rnd-submenu-parent', grandParentSelector: '.prepress-submenu-parent'},
         '/impact/rnd-cloudsphere/': {linkId: 'rndCloudsphereLink', parentSelector: '.rnd-submenu-parent', grandParentSelector: '.prepress-submenu-parent'},
         '/impact/rnd-cloudsphere/flow-configuration': {linkId: 'rndFlowConfigurationLink', parentSelector: '.rnd-submenu-parent', grandParentSelector: '.prepress-submenu-parent'},
+        '/impact/rnd-proof-checklist': {linkId: 'rndProofChecklistLink', parentSelector: '.proof-submenu-parent', grandParentSelector: '.rnd-submenu-parent', greatGrandParentSelector: '.prepress-submenu-parent'},
         '/impact/mounting-work-order-incoming': {linkId: 'mountingWorkOrderIncomingLink', parentSelector: '.mounting-submenu-parent', grandParentSelector: '.prepress-submenu-parent'},
-        '/impact/rnd-webcenter/': {linkId: 'rndWebcenterLink', parentSelector: '.rnd-submenu-parent', grandParentSelector: '.prepress-submenu-parent'}
+        '/impact/rnd-webcenter/': {linkId: 'rndWebcenterLink', parentSelector: '.mgmt-center-submenu-parent'},
+        '/impact/tools/module/': {linkId: 'toolsModuleLink', parentSelector: '.tools-submenu-parent'},
+        '/impact/tools/module/create': {linkId: 'toolsModuleLink', parentSelector: '.tools-submenu-parent'}
     };
     
     // Fungsi untuk mengaktifkan tautan dan parent submenu berdasarkan URL
@@ -164,6 +167,80 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log('❌ Step 4 - 5W1H Dashboard/New Form (/impact/tools/5w1h atau /impact/tools/5w1h/new):', 'NO MATCH', 'Path:', currentPath);
         console.log('  → Exact check /impact/tools/5w1h:', currentPath === '/impact/tools/5w1h');
         console.log('  → Exact check /impact/tools/5w1h/new:', currentPath === '/impact/tools/5w1h/new');
+    }
+    
+    // DEBUG: Check for Module dashboard, create, view, and edit patterns
+    if (!activeMapping && currentPath.match(/^\/impact\/tools\/module(\/)?$/)) {
+        activeMapping = {linkId: 'toolsModuleLink', parentSelector: '.tools-submenu-parent'};
+        console.log('✅ Step 5 - Module Dashboard Pattern (/impact/tools/module/):', 'MATCHED');
+    } else if (activeMapping) {
+        console.log('⚠️ Step 5 - Module Dashboard Pattern: SKIPPED (activeMapping sudah ada)');
+    } else {
+        console.log('❌ Step 5 - Module Dashboard Pattern (/impact/tools/module/):', 'NO MATCH');
+    }
+    
+    if (!activeMapping && currentPath.match(/^\/impact\/tools\/module\/create$/)) {
+        activeMapping = {linkId: 'toolsModuleLink', parentSelector: '.tools-submenu-parent'};
+        console.log('✅ Step 6 - Module Create Pattern (/impact/tools/module/create):', 'MATCHED');
+    } else if (activeMapping) {
+        console.log('⚠️ Step 6 - Module Create Pattern: SKIPPED (activeMapping sudah ada)');
+    } else {
+        console.log('❌ Step 6 - Module Create Pattern (/impact/tools/module/create):', 'NO MATCH');
+    }
+    
+    if (!activeMapping && currentPath.match(/^\/impact\/tools\/module\/\d+$/)) {
+        activeMapping = {linkId: 'toolsModuleLink', parentSelector: '.tools-submenu-parent'};
+        console.log('✅ Step 7 - Module View Pattern (/impact/tools/module/{id}):', 'MATCHED');
+    } else if (activeMapping) {
+        console.log('⚠️ Step 7 - Module View Pattern: SKIPPED (activeMapping sudah ada)');
+    } else {
+        console.log('❌ Step 7 - Module View Pattern (/impact/tools/module/{id}):', 'NO MATCH');
+    }
+    
+    if (!activeMapping && currentPath.match(/^\/impact\/tools\/module\/\d+\/edit$/)) {
+        activeMapping = {linkId: 'toolsModuleLink', parentSelector: '.tools-submenu-parent'};
+        console.log('✅ Step 8 - Module Edit Pattern (/impact/tools/module/{id}/edit):', 'MATCHED');
+    } else if (activeMapping) {
+        console.log('⚠️ Step 8 - Module Edit Pattern: SKIPPED (activeMapping sudah ada)');
+    } else {
+        console.log('❌ Step 8 - Module Edit Pattern (/impact/tools/module/{id}/edit):', 'NO MATCH');
+    }
+    
+    // DEBUG: Check for Proof Checklist patterns
+    if (!activeMapping && currentPath.match(/^\/impact\/rnd-proof-checklist(\/)?$/)) {
+        activeMapping = {linkId: 'rndProofChecklistLink', parentSelector: '.proof-submenu-parent', grandParentSelector: '.rnd-submenu-parent', greatGrandParentSelector: '.prepress-submenu-parent'};
+        console.log('✅ Step 9 - Proof Checklist Dashboard Pattern (/impact/rnd-proof-checklist/):', 'MATCHED');
+    } else if (activeMapping) {
+        console.log('⚠️ Step 9 - Proof Checklist Dashboard Pattern: SKIPPED (activeMapping sudah ada)');
+    } else {
+        console.log('❌ Step 9 - Proof Checklist Dashboard Pattern (/impact/rnd-proof-checklist/):', 'NO MATCH');
+    }
+    
+    if (!activeMapping && currentPath.match(/^\/impact\/rnd-proof-checklist\/create$/)) {
+        activeMapping = {linkId: 'rndProofChecklistLink', parentSelector: '.proof-submenu-parent', grandParentSelector: '.rnd-submenu-parent', greatGrandParentSelector: '.prepress-submenu-parent'};
+        console.log('✅ Step 10 - Proof Checklist Create Pattern (/impact/rnd-proof-checklist/create):', 'MATCHED');
+    } else if (activeMapping) {
+        console.log('⚠️ Step 10 - Proof Checklist Create Pattern: SKIPPED (activeMapping sudah ada)');
+    } else {
+        console.log('❌ Step 10 - Proof Checklist Create Pattern (/impact/rnd-proof-checklist/create):', 'NO MATCH');
+    }
+    
+    if (!activeMapping && currentPath.match(/^\/impact\/rnd-proof-checklist\/\d+$/)) {
+        activeMapping = {linkId: 'rndProofChecklistLink', parentSelector: '.proof-submenu-parent', grandParentSelector: '.rnd-submenu-parent', greatGrandParentSelector: '.prepress-submenu-parent'};
+        console.log('✅ Step 11 - Proof Checklist View Pattern (/impact/rnd-proof-checklist/{id}):', 'MATCHED');
+    } else if (activeMapping) {
+        console.log('⚠️ Step 11 - Proof Checklist View Pattern: SKIPPED (activeMapping sudah ada)');
+    } else {
+        console.log('❌ Step 11 - Proof Checklist View Pattern (/impact/rnd-proof-checklist/{id}):', 'NO MATCH');
+    }
+    
+    if (!activeMapping && currentPath.match(/^\/impact\/rnd-proof-checklist\/\d+\/edit$/)) {
+        activeMapping = {linkId: 'rndProofChecklistLink', parentSelector: '.proof-submenu-parent', grandParentSelector: '.rnd-submenu-parent', greatGrandParentSelector: '.prepress-submenu-parent'};
+        console.log('✅ Step 12 - Proof Checklist Edit Pattern (/impact/rnd-proof-checklist/{id}/edit):', 'MATCHED');
+    } else if (activeMapping) {
+        console.log('⚠️ Step 12 - Proof Checklist Edit Pattern: SKIPPED (activeMapping sudah ada)');
+    } else {
+        console.log('❌ Step 12 - Proof Checklist Edit Pattern (/impact/rnd-proof-checklist/{id}/edit):', 'NO MATCH');
     }
     
     // Final Result
@@ -342,14 +419,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 this.classList.contains('press-submenu-parent') ||
                 this.classList.contains('pdnd-submenu-parent') ||
                 this.classList.contains('admin-submenu-parent') ||
-                this.classList.contains('settings-submenu-parent');
+                this.classList.contains('settings-submenu-parent') ||
+                this.classList.contains('mgmt-center-submenu-parent');
 
             const isLevel2 = this.classList.contains('ctp-submenu-parent') ||
                 this.classList.contains('mounting-submenu-parent') ||
                 this.classList.contains('design-submenu-parent') ||
                 this.classList.contains('rnd-submenu-parent');
 
-            const isLevel3 = this.classList.contains('log-ctp-submenu-parent');
+            const isLevel3 = this.classList.contains('log-ctp-submenu-parent') ||
+                this.classList.contains('proof-submenu-parent');
             
             console.log('Parent level - L1:', isLevel1, 'L2:', isLevel2, 'L3:', isLevel3);
 
@@ -373,14 +452,16 @@ document.addEventListener('DOMContentLoaded', function () {
                     openParent.classList.contains('press-submenu-parent') ||
                     openParent.classList.contains('pdnd-submenu-parent') ||
                     openParent.classList.contains('admin-submenu-parent') ||
-                    openParent.classList.contains('settings-submenu-parent');
+                    openParent.classList.contains('settings-submenu-parent') ||
+                    openParent.classList.contains('mgmt-center-submenu-parent');
 
                 const openIsLevel2 = openParent.classList.contains('ctp-submenu-parent') ||
                     openParent.classList.contains('mounting-submenu-parent') ||
                     openParent.classList.contains('design-submenu-parent') ||
                     openParent.classList.contains('rnd-submenu-parent');
 
-                const openIsLevel3 = openParent.classList.contains('log-ctp-submenu-parent');
+                const openIsLevel3 = openParent.classList.contains('log-ctp-submenu-parent') ||
+                    openParent.classList.contains('proof-submenu-parent');
 
                 const sameLevel = (isLevel1 && openIsLevel1) || (isLevel2 && openIsLevel2) || (isLevel3 && openIsLevel3);
 
@@ -436,11 +517,16 @@ document.addEventListener('DOMContentLoaded', function () {
             // Check if this is a parent/grand-parent item (collapsible menu)
             const isSubmenuParent = this.classList.toString().includes('submenu-parent');
             
+            // Only close on mobile devices (when sidebar is in mobile mode)
+            const isMobileMode = window.innerWidth < mobileBreakpoint;
+            
             // Only close if:
-            // 1. NOT a collapse toggle button (data-bs-toggle attribute)
-            // 2. NOT already has collapsed class
-            // 3. NOT a parent/grand-parent item (submenu-parent class)
-            if (!this.hasAttribute('data-bs-toggle') && 
+            // 1. We're in mobile mode
+            // 2. NOT a collapse toggle button (data-bs-toggle attribute)
+            // 3. NOT already has collapsed class
+            // 4. NOT a parent/grand-parent item (submenu-parent class)
+            if (isMobileMode &&
+                !this.hasAttribute('data-bs-toggle') && 
                 !this.classList.contains('collapsed') && 
                 !isSubmenuParent) {
                 setTimeout(closeSidebar, 300); // Close after a brief delay

@@ -17,6 +17,7 @@ from flask import Flask, abort, flash, jsonify, make_response, redirect, render_
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
+from flask_ckeditor import CKEditor
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
@@ -34,10 +35,16 @@ import pymysql
 
 # Local imports
 from config import DB_CONFIG
-from models import db, Division, User, CTPProductionLog, PlateAdjustmentRequest, PlateBonRequest, KartuStockPlateFuji, KartuStockPlateSaphira, KartuStockChemicalFuji, KartuStockChemicalSaphira, MonthlyWorkHours, ChemicalBonCTP, BonPlate, CTPMachine, CTPProblemLog, CTPProblemPhoto, CTPProblemDocument, TaskCategory, Task, CloudsphereJob, JobTask, JobProgress, JobProgressTask, EvidenceFile, UniversalNotification, NotificationRecipient
+from models import db, Division, User, CTPProductionLog, PlateAdjustmentRequest, PlateBonRequest, KartuStockPlateFuji, KartuStockPlateSaphira, KartuStockChemicalFuji, KartuStockChemicalSaphira, MonthlyWorkHours, ChemicalBonCTP, BonPlate, CTPMachine, CTPProblemLog, CTPProblemPhoto, CTPProblemDocument, TaskCategory, Task, CloudsphereJob, JobTask, JobProgress, JobProgressTask, EvidenceFile, UniversalNotification, NotificationRecipient, CalibrationReference
 from models_rnd import db, RNDProgressStep, RNDProgressTask, RNDJob, RNDJobProgressAssignment, RNDJobTaskAssignment, RNDLeadTimeTracking, RNDEvidenceFile, RNDTaskCompletion
 from models_rnd_external import RNDExternalTime
 from models_mounting import MountingWorkOrderIncoming
+from models_proof_checklist import (
+    db, ProofChecklist, MasterPrintMachine, MasterPrintSeparation,
+    MasterPrintInk, MasterPostpressMachine,
+    ProofChecklistPrintMachine, ProofChecklistPrintSeparation,
+    ProofChecklistPrintInk, ProofChecklistPostpressMachine
+)
 from export_routes import export_bp
 from ctp_log_routes import ctp_log_bp
 from ctp_dashboard_routes import ctp_dashboard_bp
@@ -48,6 +55,8 @@ from mounting_work_order import mounting_work_order_bp
 from blueprints.notification_routes import notification_bp
 from blueprints.tools_5w1h import tools_5w1h_bp
 from blueprints.external_delay_routes import external_delay_bp
+from blueprints.tools_module import tools_module_bp
+from blueprints.rnd_proof_checklist import rnd_proof_checklist_bp
 from plate_details import PLATE_DETAILS
 
 # Timezone untuk Jakarta
@@ -94,6 +103,9 @@ def format_tanggal_indonesia(dt):
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here-change-in-production'  # Ganti dengan key yang aman
 
+# Initialize CKEditor
+ckeditor = CKEditor(app)
+
 # Konfigurasi Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -131,6 +143,8 @@ app.register_blueprint(rnd_webcenter_bp)
 app.register_blueprint(mounting_work_order_bp)
 app.register_blueprint(notification_bp)  # NEW: Universal Notification System
 app.register_blueprint(tools_5w1h_bp)
+app.register_blueprint(tools_module_bp)  # NEW: Module Management System
+app.register_blueprint(rnd_proof_checklist_bp)  # NEW: R&D Proof Checklist System
 
 # Initialize the db instance from models.py with the app
 db.init_app(app)
@@ -2079,6 +2093,198 @@ def cancel_adjustment_plate():
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
     
+# API untuk mendapatkan data calibration berdasarkan print_machine
+@app.route('/api/calibration-references', methods=['GET'])
+@login_required
+def get_calibration_references():
+    try:
+        print_machine = request.args.get('print_machine')
+        if not print_machine:
+            return jsonify({'success': False, 'error': 'print_machine parameter is required'}), 400
+        
+        # Use SQLAlchemy model instead of direct database connection
+        calibration_data = CalibrationReference.query.filter_by(
+            print_machine=print_machine
+        ).order_by(CalibrationReference.calib_name).all()
+        
+        # Convert to dictionary format
+        calibration_list = []
+        for calib in calibration_data:
+            calibration_list.append({
+                'id': calib.id,
+                'print_machine': calib.print_machine,
+                'calib_group': calib.calib_group,
+                'calib_code': calib.calib_code,
+                'calib_name': calib.calib_name
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': calibration_list
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# API untuk verifikasi nilai raster dengan calibration reference
+@app.route('/api/verify-calibration', methods=['POST'])
+@login_required
+def verify_calibration():
+    try:
+        data = request.json
+        print_machine = data.get('print_machine')
+        calib_code = data.get('calib_code')
+        raster_values = data.get('raster_values', {})
+        
+        if not print_machine or not calib_code:
+            return jsonify({
+                'success': False,
+                'error': 'print_machine and calib_code are required'
+            }), 400
+        
+        # Get calibration reference data
+        calibration = CalibrationReference.query.filter_by(
+            print_machine=print_machine,
+            calib_code=calib_code
+        ).first()
+        
+        if not calibration:
+            return jsonify({
+                'success': False,
+                'error': 'Calibration reference not found'
+            }), 404
+        
+        # Define tolerance
+        tolerance = 1.5
+        
+        # Verification results
+        verification_results = []
+        all_passed = True
+        
+        # Map field names to calibration reference columns
+        field_mapping = {
+            'cyan_20_percent': 'c20',
+            'cyan_25_percent': 'c25', 
+            'cyan_40_percent': 'c40',
+            'cyan_50_percent': 'c50',
+            'cyan_75_percent': 'c75',
+            'cyan_80_percent': 'c80',
+            'magenta_20_percent': 'm20',
+            'magenta_25_percent': 'm25',
+            'magenta_40_percent': 'm40',
+            'magenta_50_percent': 'm50',
+            'magenta_75_percent': 'm75',
+            'magenta_80_percent': 'm80',
+            'yellow_20_percent': 'y20',
+            'yellow_25_percent': 'y25',
+            'yellow_40_percent': 'y40',
+            'yellow_50_percent': 'y50',
+            'yellow_75_percent': 'y75',
+            'yellow_80_percent': 'y80',
+            'black_20_percent': 'k20',
+            'black_25_percent': 'k25',
+            'black_40_percent': 'k40',
+            'black_50_percent': 'k50',
+            'black_75_percent': 'k75',
+            'black_80_percent': 'k80',
+            'x_20_percent': 'k20',
+            'x_25_percent': 'k25',
+            'x_40_percent': 'k40',
+            'x_50_percent': 'k50',
+            'x_75_percent': 'k75',
+            'x_80_percent': 'k80',
+            'z_20_percent': 'k20',
+            'z_25_percent': 'k25',
+            'z_40_percent': 'k40',
+            'z_50_percent': 'k50',
+            'z_75_percent': 'k75',
+            'z_80_percent': 'k80',
+            'u_20_percent': 'k20',
+            'u_25_percent': 'k25',
+            'u_40_percent': 'k40',
+            'u_50_percent': 'k50',
+            'u_75_percent': 'k75',
+            'u_80_percent': 'k80',
+            'v_20_percent': 'k20',
+            'v_25_percent': 'k25',
+            'v_40_percent': 'k40',
+            'v_50_percent': 'k50',
+            'v_75_percent': 'k75',
+            'v_80_percent': 'k80',
+            'f_20_percent': 'k20',
+            'f_25_percent': 'k25',
+            'f_40_percent': 'k40',
+            'f_50_percent': 'k50',
+            'f_75_percent': 'k75',
+            'f_80_percent': 'k80',
+            'g_20_percent': 'k20',
+            'g_25_percent': 'k25',
+            'g_40_percent': 'k40',
+            'g_50_percent': 'k50',
+            'g_75_percent': 'k75',
+            'g_80_percent': 'k80',
+            'h_20_percent': 'k20',
+            'h_25_percent': 'k25',
+            'h_40_percent': 'k40',
+            'h_50_percent': 'k50',
+            'h_75_percent': 'k75',
+            'h_80_percent': 'k80',
+            'j_20_percent': 'k20',
+            'j_25_percent': 'k25',
+            'j_40_percent': 'k40',
+            'j_50_percent': 'k50',
+            'j_75_percent': 'k75',
+            'j_80_percent': 'k80'
+        }
+        
+        # Check each raster value
+        for field_name, value in raster_values.items():
+            if value is None or value == '':
+                continue
+                
+            calib_field = field_mapping.get(field_name)
+            if not calib_field:
+                continue
+                
+            # Get reference value from calibration
+            ref_value = getattr(calibration, calib_field)
+            if ref_value is None:
+                continue
+                
+            ref_value = float(ref_value)
+            input_value = float(value)
+            
+            # Check if within tolerance
+            min_allowed = ref_value - tolerance
+            max_allowed = ref_value + tolerance
+            is_within_tolerance = min_allowed <= input_value <= max_allowed
+            
+            if not is_within_tolerance:
+                all_passed = False
+            
+            # Add to results
+            verification_results.append({
+                'field': field_name,
+                'color': field_name.split('_')[0].upper(),
+                'percentage': field_name.split('_')[1] + '_' + field_name.split('_')[2],
+                'input_value': input_value,
+                'reference_value': ref_value,
+                'min_allowed': min_allowed,
+                'max_allowed': max_allowed,
+                'is_within_tolerance': is_within_tolerance
+            })
+        
+        return jsonify({
+            'success': True,
+            'all_passed': all_passed,
+            'results': verification_results,
+            'calibration_name': calibration.calib_name,
+            'tolerance': tolerance
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # API untuk Submit Data KPI (POST request dari form untuk data baru)
 @app.route('/submit-kpi', methods=['POST'])
 def submit_kpi():
@@ -2100,6 +2306,8 @@ def submit_kpi():
             dwell_time=data.get('dwell_time'),
             wo_number=data.get('wo_number'),
             mc_number=data.get('mc_number'),
+            is_g7=data.get('is_g7', False),
+            calibration=data.get('calibration'),
             run_length_sheet=data.get('run_length_sheet'),
             print_machine=data.get('print_machine'),
             remarks_job=data.get('remarks_job'),
@@ -2217,6 +2425,7 @@ def get_kpi_data():
     month_filter = request.args.get('month', '').strip()
     group_filter = request.args.get('group', '').strip()
     year_filter = request.args.get('year', '').strip()
+    g7_filter = request.args.get('is_g7', '').strip()
     sort_by = request.args.get('sort_by', 'log_date')
     sort_order = request.args.get('sort_order', 'desc')
     # Tambahan untuk paginasi
@@ -2258,6 +2467,12 @@ def get_kpi_data():
         if year_filter:
             query = query.filter(extract('year', CTPProductionLog.log_date) == int(year_filter))
 
+        if g7_filter:
+            if g7_filter.lower() == 'true':
+                query = query.filter(CTPProductionLog.is_g7 == True)
+            elif g7_filter.lower() == 'false':
+                query = query.filter(CTPProductionLog.is_g7 == False)
+
         if group_filter:
             query = query.filter_by(ctp_group=group_filter)
 
@@ -2292,7 +2507,23 @@ def get_single_kpi_ctp(data_id):
     try:
         kpi_entry = db.session.get(CTPProductionLog, data_id)
         if kpi_entry:
-            return jsonify(kpi_entry.to_dict()), 200
+            result = kpi_entry.to_dict()
+            
+            # Add calibration reference data if calibration is set
+            if kpi_entry.calibration and kpi_entry.print_machine:
+                calibration_ref = CalibrationReference.query.filter_by(
+                    calib_name=kpi_entry.calibration,
+                    print_machine=kpi_entry.print_machine
+                ).first()
+                
+                if calibration_ref:
+                    result['calibration_reference'] = calibration_ref.to_dict()
+                else:
+                    result['calibration_reference'] = None
+            else:
+                result['calibration_reference'] = None
+                
+            return jsonify(result), 200
         else:
             abort(404, description="Data KPI CTP tidak ditemukan")
     except Exception as e:
@@ -2322,6 +2553,8 @@ def update_kpi_ctp(data_id):
         kpi_entry.dwell_time = data.get('dwell_time')
         kpi_entry.wo_number = data.get('wo_number')
         kpi_entry.mc_number = data.get('mc_number', kpi_entry.mc_number)
+        kpi_entry.is_g7 = data.get('is_g7', kpi_entry.is_g7)
+        kpi_entry.calibration = data.get('calibration')
         kpi_entry.run_length_sheet = data.get('run_length_sheet')
         kpi_entry.print_machine = data.get('print_machine', kpi_entry.print_machine)
         kpi_entry.remarks_job = data.get('remarks_job', kpi_entry.remarks_job)

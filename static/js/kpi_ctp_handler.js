@@ -71,6 +71,7 @@ async function loadKpiData() {
     const filterMonth = document.getElementById('filterMonth');
     const filterGroup = document.getElementById('filterGroup');
     const filterYear = document.getElementById('filterYear');
+    const filterG7 = document.getElementById('filterG7');
     const dataMessage = document.getElementById('dataMessage'); // Untuk menampilkan pesan "Tidak ada data"
 
     // Only proceed if elements relevant to the table view exist
@@ -89,8 +90,9 @@ async function loadKpiData() {
     const monthValue = filterMonth.value;
     const groupValue = filterGroup.value;
     const yearValue = filterYear.value;
+    const g7Value = filterG7 ? filterG7.value : '';
 
-    let url = `/impact/get-kpi-data?search=${encodeURIComponent(searchValue)}&month=${encodeURIComponent(monthValue)}&group=${encodeURIComponent(groupValue)}&year=${encodeURIComponent(yearValue)}&sort_by=${encodeURIComponent(currentSortColumn)}&sort_order=${encodeURIComponent(currentSortOrder)}&page=${currentPage}&per_page=${perPage}`;
+    let url = `/impact/get-kpi-data?search=${encodeURIComponent(searchValue)}&month=${encodeURIComponent(monthValue)}&group=${encodeURIComponent(groupValue)}&year=${encodeURIComponent(yearValue)}&is_g7=${encodeURIComponent(g7Value)}&sort_by=${encodeURIComponent(currentSortColumn)}&sort_order=${encodeURIComponent(currentSortOrder)}&page=${currentPage}&per_page=${perPage}`;
 
     try {
         const response = await fetch(url);
@@ -635,7 +637,23 @@ function populateKpiDetailModal(data) {
     document.getElementById('detail-not_good_reason').textContent = data.not_good_reason || '-';
     document.getElementById('detail-detail_not_good').textContent = data.detail_not_good || '-';
     
-    // Populate Data Warna tab
+    // Populate calibration field in Data Warna tab
+    const calibrationElement = document.getElementById('detail-calibration');
+    if (calibrationElement) {
+        calibrationElement.textContent = data.calibration || '-';
+    }
+    
+    // Show/Hide G7 Logo based on is_g7 field
+    const g7LogoContainer = document.getElementById('g7-logo-container');
+    if (g7LogoContainer) {
+        if (data.is_g7) {
+            g7LogoContainer.classList.remove('d-none');
+        } else {
+            g7LogoContainer.classList.add('d-none');
+        }
+    }
+    
+    // Populate Data Warna tab with difference calculation
     const colorFields = [
         'cyan_20_percent', 'cyan_25_percent', 'cyan_40_percent', 'cyan_50_percent', 'cyan_80_percent', 'cyan_75_percent', 'cyan_linear',
         'magenta_20_percent', 'magenta_25_percent', 'magenta_40_percent', 'magenta_50_percent', 'magenta_80_percent', 'magenta_75_percent', 'magenta_linear',
@@ -651,23 +669,132 @@ function populateKpiDetailModal(data) {
         'j_20_percent', 'j_25_percent', 'j_40_percent', 'j_50_percent', 'j_80_percent', 'j_75_percent', 'j_linear'
     ];
     
+    // Get calibration reference data if available
+    const calibrationRef = data.calibration_reference;
+    
     colorFields.forEach(field => {
         const element = document.getElementById(`detail-${field}`);
         if (element) {
             let value = data[field];
+            let displayText = '';
+            
             // Handle different data types
             if (value !== null && value !== undefined && value !== '') {
                 // If it's a number, format it properly
                 if (typeof value === 'number') {
                     value = value.toFixed(2);
                 }
-                element.textContent = value;
+                
+                // Calculate difference if calibration reference is available
+                if (calibrationRef) {
+                    const calibField = mapFieldToCalibrationField(field);
+                    const calibValue = calibrationRef[calibField];
+                    
+                    if (calibValue !== null && calibValue !== undefined) {
+                        const difference = parseFloat(value) - parseFloat(calibValue);
+                        const absDifference = Math.abs(difference).toFixed(2);
+                        
+                        if (difference > 0) {
+                            displayText = `${value} <span class="text-success">(+${absDifference})</span>`;
+                        } else if (difference < 0) {
+                            displayText = `${value} <span class="text-danger">(-${absDifference})</span>`;
+                        } else {
+                            displayText = `${value} <span class="text-muted">(0.00)</span>`;
+                        }
+                    } else {
+                        displayText = value;
+                    }
+                } else {
+                    displayText = value;
+                }
             } else {
                 // Tampilkan nilai kosong tanpa tanda "-"
-                element.textContent = '';
+                displayText = '';
             }
+            
+            element.innerHTML = displayText;
         }
     });
+    
+    // Function to map CTP field to calibration reference field
+    function mapFieldToCalibrationField(field) {
+        const fieldMap = {
+            'cyan_20_percent': 'c20',
+            'cyan_25_percent': 'c25',
+            'cyan_40_percent': 'c40',
+            'cyan_50_percent': 'c50',
+            'cyan_75_percent': 'c75',
+            'cyan_80_percent': 'c80',
+            'magenta_20_percent': 'm20',
+            'magenta_25_percent': 'm25',
+            'magenta_40_percent': 'm40',
+            'magenta_50_percent': 'm50',
+            'magenta_75_percent': 'm75',
+            'magenta_80_percent': 'm80',
+            'yellow_20_percent': 'y20',
+            'yellow_25_percent': 'y25',
+            'yellow_40_percent': 'y40',
+            'yellow_50_percent': 'y50',
+            'yellow_75_percent': 'y75',
+            'yellow_80_percent': 'y80',
+            'black_20_percent': 'k20',
+            'black_25_percent': 'k25',
+            'black_40_percent': 'k40',
+            'black_50_percent': 'k50',
+            'black_75_percent': 'k75',
+            'black_80_percent': 'k80',
+            'x_20_percent': 'k20',
+            'x_25_percent': 'k25',
+            'x_40_percent': 'k40',
+            'x_50_percent': 'k50',
+            'x_75_percent': 'k75',
+            'x_80_percent': 'k80',
+            'z_20_percent': 'k20',
+            'z_25_percent': 'k25',
+            'z_40_percent': 'k40',
+            'z_50_percent': 'k50',
+            'z_75_percent': 'k75',
+            'z_80_percent': 'k80',
+            'u_20_percent': 'k20',
+            'u_25_percent': 'k25',
+            'u_40_percent': 'k40',
+            'u_50_percent': 'k50',
+            'u_75_percent': 'k75',
+            'u_80_percent': 'k80',
+            'v_20_percent': 'k20',
+            'v_25_percent': 'k25',
+            'v_40_percent': 'k40',
+            'v_50_percent': 'k50',
+            'v_75_percent': 'k75',
+            'v_80_percent': 'k80',
+            'f_20_percent': 'k20',
+            'f_25_percent': 'k25',
+            'f_40_percent': 'k40',
+            'f_50_percent': 'k50',
+            'f_75_percent': 'k75',
+            'f_80_percent': 'k80',
+            'g_20_percent': 'k20',
+            'g_25_percent': 'k25',
+            'g_40_percent': 'k40',
+            'g_50_percent': 'k50',
+            'g_75_percent': 'k75',
+            'g_80_percent': 'k80',
+            'h_20_percent': 'k20',
+            'h_25_percent': 'k25',
+            'h_40_percent': 'k40',
+            'h_50_percent': 'k50',
+            'h_75_percent': 'k75',
+            'h_80_percent': 'k80',
+            'j_20_percent': 'k20',
+            'j_25_percent': 'k25',
+            'j_40_percent': 'k40',
+            'j_50_percent': 'k50',
+            'j_75_percent': 'k75',
+            'j_80_percent': 'k80'
+        };
+        
+        return fieldMap[field] || null;
+    }
     
     // Populate Log Sistem tab
     document.getElementById('detail-created_at').textContent = formatDateTime(data.created_at);
@@ -769,6 +896,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('remarks_job').value = data.remarks_job || '';
             document.getElementById('wo_number').value = data.wo_number || '';
             document.getElementById('mc_number').value = data.mc_number || '';
+            document.getElementById('is_g7').value = data.is_g7 ? 'true' : 'false';
             document.getElementById('run_length_sheet').value = data.run_length_sheet || '';
             document.getElementById('item_name').value = data.item_name || '';
             document.getElementById('note').value = data.note || '';
@@ -911,6 +1039,16 @@ document.addEventListener('DOMContentLoaded', function() {
             data.num_plate_not_good = parseInt(data.num_plate_not_good);
             data.processor_temperature = parseFloat(data.processor_temperature) || null;
             data.dwell_time = parseFloat(data.dwell_time) || null;
+            
+            // Handle is_g7 boolean field
+            data.is_g7 = data.is_g7 === 'true';
+            
+            // Handle calibration field - only include if is_g7 is true
+            if (data.is_g7) {
+                data.calibration = data.calibration || null;
+            } else {
+                data.calibration = null;
+            }
 
             const floatFields = [
                 'cyan_20_percent', 'cyan_25_percent', 'cyan_40_percent', 'cyan_50_percent', 'cyan_80_percent', 'cyan_75_percent', 'cyan_linear',
@@ -1007,6 +1145,12 @@ document.addEventListener('DOMContentLoaded', function() {
             currentPage = 1;
             loadKpiData();
         });
+        if (filterG7) {
+            filterG7.addEventListener('change', function() {
+                currentPage = 1;
+                loadKpiData();
+            });
+        }
 
         clearSearchBtn.addEventListener('click', function() {
             searchInput.value = '';
@@ -1094,5 +1238,270 @@ document.addEventListener('DOMContentLoaded', function() {
         loadKpiData();
     }
 
+    // --- Initialize verification system ---
+    const verifyBtn = document.getElementById('verifyCalibrationBtn');
+    const isG7Select = document.getElementById('is_g7');
+    
+    if (verifyBtn) {
+        verifyBtn.addEventListener('click', verifyCalibration);
+    }
+    
+    if (isG7Select) {
+        isG7Select.addEventListener('change', toggleVerificationSection);
+        
+        // Initialize verification section state
+        toggleVerificationSection();
+    }
 
 });
+
+// --- Calibration Verification Logic ---
+let isVerificationPassed = false;
+
+// Function to show/hide verification section based on G7 selection
+function toggleVerificationSection() {
+    const isG7Select = document.getElementById('is_g7');
+    const verificationSection = document.getElementById('verificationSection');
+    const submitButton = document.getElementById('submitKpiBtn');
+    
+    if (isG7Select && verificationSection && submitButton) {
+        if (isG7Select.value === 'true') {
+            verificationSection.style.display = 'block';
+            // Disable submit button until verification is passed
+            submitButton.disabled = !isVerificationPassed;
+            updateSubmitButtonState();
+        } else {
+            verificationSection.style.display = 'none';
+            // Enable submit button for non-G7 items
+            submitButton.disabled = false;
+            updateSubmitButtonState();
+        }
+    }
+}
+
+// Function to update submit button state
+function updateSubmitButtonState() {
+    const submitButton = document.getElementById('submitKpiBtn');
+    const verificationStatus = document.getElementById('verificationStatus');
+    const isG7Select = document.getElementById('is_g7');
+    
+    if (submitButton && isG7Select) {
+        // If is_g7 is FALSE/TIDAK, enable submit button regardless of verification status
+        if (isG7Select.value === 'false') {
+            submitButton.disabled = false;
+            submitButton.classList.remove('btn-secondary');
+            submitButton.classList.add('btn-ctp');
+            if (verificationStatus) {
+                verificationStatus.style.display = 'none';
+            }
+        } else {
+            // is_g7 is TRUE/IYA, check verification status
+            if (isVerificationPassed) {
+                submitButton.disabled = false;
+                submitButton.classList.remove('btn-secondary');
+                submitButton.classList.add('btn-ctp');
+                if (verificationStatus) {
+                    verificationStatus.textContent = 'Verified';
+                    verificationStatus.className = 'badge fs-6 px-3 py-2';
+                    verificationStatus.style.backgroundColor = '#d4edda';
+                    verificationStatus.style.color = '#155724';
+                    verificationStatus.style.display = 'inline-block';
+                }
+            } else {
+                submitButton.disabled = true;
+                submitButton.classList.remove('btn-ctp');
+                submitButton.classList.add('btn-secondary');
+                if (verificationStatus) {
+                    verificationStatus.textContent = 'Not Verified';
+                    verificationStatus.className = 'badge fs-6 px-3 py-2';
+                    verificationStatus.style.backgroundColor = '#fff3cd';
+                    verificationStatus.style.color = '#856404';
+                    verificationStatus.style.display = 'inline-block';
+                }
+            }
+        }
+    }
+}
+
+// Function to handle calibration verification
+async function verifyCalibration() {
+    const isG7Select = document.getElementById('is_g7');
+    const printMachineSelect = document.getElementById('print_machine');
+    const calibrationSelect = document.getElementById('calibration');
+    
+    // Check if required fields are filled
+    if (!printMachineSelect || !printMachineSelect.value) {
+        showBootstrapToast('Silakan pilih mesin cetak terlebih dahulu', 'Error!', 'danger');
+        return;
+    }
+    
+    if (!calibrationSelect || !calibrationSelect.value) {
+        showBootstrapToast('Silakan pilih calibration terlebih dahulu', 'Error!', 'danger');
+        return;
+    }
+    
+    // Get all raster input values
+    const rasterValues = {};
+    const rasterFields = [
+        'cyan_20_percent', 'cyan_25_percent', 'cyan_40_percent', 'cyan_50_percent', 'cyan_75_percent', 'cyan_80_percent',
+        'magenta_20_percent', 'magenta_25_percent', 'magenta_40_percent', 'magenta_50_percent', 'magenta_75_percent', 'magenta_80_percent',
+        'yellow_20_percent', 'yellow_25_percent', 'yellow_40_percent', 'yellow_50_percent', 'yellow_75_percent', 'yellow_80_percent',
+        'black_20_percent', 'black_25_percent', 'black_40_percent', 'black_50_percent', 'black_75_percent', 'black_80_percent',
+        'x_20_percent', 'x_25_percent', 'x_40_percent', 'x_50_percent', 'x_75_percent', 'x_80_percent',
+        'z_20_percent', 'z_25_percent', 'z_40_percent', 'z_50_percent', 'z_75_percent', 'z_80_percent',
+        'u_20_percent', 'u_25_percent', 'u_40_percent', 'u_50_percent', 'u_75_percent', 'u_80_percent',
+        'v_20_percent', 'v_25_percent', 'v_40_percent', 'v_50_percent', 'v_75_percent', 'v_80_percent',
+        'f_20_percent', 'f_25_percent', 'f_40_percent', 'f_50_percent', 'f_75_percent', 'f_80_percent',
+        'g_20_percent', 'g_25_percent', 'g_40_percent', 'g_50_percent', 'g_75_percent', 'g_80_percent',
+        'h_20_percent', 'h_25_percent', 'h_40_percent', 'h_50_percent', 'h_75_percent', 'h_80_percent',
+        'j_20_percent', 'j_25_percent', 'j_40_percent', 'j_50_percent', 'j_75_percent', 'j_80_percent'
+    ];
+    
+    // Check if at least some raster values are filled
+    let hasRasterValues = false;
+    rasterFields.forEach(field => {
+        const element = document.getElementById(field);
+        if (element && element.value && element.value.trim() !== '') {
+            rasterValues[field] = parseFloat(element.value);
+            hasRasterValues = true;
+        }
+    });
+    
+    if (!hasRasterValues) {
+        showBootstrapToast('Silakan isi minimal satu nilai raster untuk verifikasi', 'Error!', 'danger');
+        return;
+    }
+    
+    // Show modal with loading
+    const modal = new bootstrap.Modal(document.getElementById('verificationModal'));
+    const loadingDiv = document.getElementById('verificationLoading');
+    const resultsDiv = document.getElementById('verificationResults');
+    const verificationStatusDiv = document.getElementById('verificationStatus');
+    const verificationDetailsDiv = document.getElementById('verificationDetails');
+    const calibrationNameSpan = document.getElementById('calibrationName');
+    
+    loadingDiv.style.display = 'block';
+    resultsDiv.style.display = 'none';
+    verificationStatusDiv.className = 'alert mb-3';
+    verificationStatusDiv.innerHTML = '';
+    calibrationNameSpan.textContent = '';
+    
+    modal.show();
+    
+    // Add artificial delay for loading animation (0.5 seconds)
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    try {
+        // Get calibration code from selected calibration name
+        const calibrationOptions = Array.from(calibrationSelect.options);
+        const selectedOption = calibrationOptions.find(option => option.textContent === calibrationSelect.value);
+        let calibCode = selectedOption ? selectedOption.getAttribute('data-calib-code') : null;
+        
+        if (!calibCode) {
+            // Try to get calib_code from the calibration data
+            const response = await fetch(`/impact/api/calibration-references?print_machine=${encodeURIComponent(printMachineSelect.value)}`);
+            const result = await response.json();
+            
+            if (result.success && result.data) {
+                const calibration = result.data.find(item => item.calib_name === calibrationSelect.value);
+                if (calibration) {
+                    calibCode = calibration.calib_code;
+                }
+            }
+        }
+        
+        if (!calibCode) {
+            throw new Error('Calibration code not found');
+        }
+        
+        // Call verification API
+        const verifyResponse = await fetch('/impact/api/verify-calibration', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                print_machine: printMachineSelect.value,
+                calib_code: calibCode,
+                raster_values: rasterValues
+            })
+        });
+        
+        const verifyResult = await verifyResponse.json();
+        
+        // Hide loading and show results
+        loadingDiv.style.display = 'none';
+        resultsDiv.style.display = 'block';
+        
+        if (verifyResult.success) {
+            const successState = document.getElementById('successState');
+            const errorState = document.getElementById('errorState');
+            const verificationDetailsDiv = document.getElementById('verificationDetails');
+            const calibrationNameError = document.getElementById('calibrationNameError');
+            
+            if (verifyResult.all_passed) {
+                isVerificationPassed = true;
+                successState.style.display = 'block';
+                errorState.style.display = 'none';
+                verificationDetailsDiv.style.display = 'none';
+                calibrationNameSpan.textContent = verifyResult.calibration_name;
+            } else {
+                isVerificationPassed = false;
+                successState.style.display = 'none';
+                errorState.style.display = 'block';
+                verificationDetailsDiv.style.display = 'block';
+                calibrationNameError.textContent = verifyResult.calibration_name;
+                
+                // Populate verification details table
+                const tableBody = document.getElementById('verificationTableBody');
+                tableBody.innerHTML = '';
+                
+                verifyResult.results.forEach(result => {
+                    if (!result.is_within_tolerance) {
+                        const row = tableBody.insertRow();
+                        
+                        // Format percentage display (40% instead of 40_percent)
+                        const formattedPercentage = result.percentage.replace('_percent', '%');
+                        
+                        // Format decimal values to 2 decimal places
+                        const formatDecimal = (value) => {
+                            return parseFloat(value).toFixed(2);
+                        };
+                        
+                        row.innerHTML = `
+                            <td>${result.color}</td>
+                            <td>${formattedPercentage}</td>
+                            <td>${formatDecimal(result.input_value)}</td>
+                            <td>${formatDecimal(result.reference_value)}</td>
+                            <td>${formatDecimal(result.min_allowed)} - ${formatDecimal(result.max_allowed)}</td>
+                            <td><span class="badge bg-danger">Out of Range</span></td>
+                        `;
+                    }
+                });
+            }
+        } else {
+            throw new Error(verifyResult.error || 'Verification failed');
+        }
+        
+        // Update submit button state
+        updateSubmitButtonState();
+        
+    } catch (error) {
+        loadingDiv.style.display = 'none';
+        resultsDiv.style.display = 'block';
+        
+        const successState = document.getElementById('successState');
+        const errorState = document.getElementById('errorState');
+        const verificationDetailsDiv = document.getElementById('verificationDetails');
+        
+        successState.style.display = 'none';
+        errorState.style.display = 'block';
+        verificationDetailsDiv.style.display = 'none';
+        
+        // Update error state with error message
+        errorState.querySelector('h5').textContent = 'Error';
+        errorState.querySelector('p').textContent = error.message;
+        
+        console.error('Verification error:', error);
+    }
+}

@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proof Checklist - Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-mobile-framework.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <style>
+        /* Page Header with gradient matching RND Cloudsphere */
+        .page-header {
+            background: linear-gradient(135deg,
+                #667eea 0%,
+                #764ba2 25%,
+                #f093fb 50%,
+                #4facfe 75%,
+                #667eea 100%);
+            color: white;
+            padding: 2rem 0;
+            margin: -1rem -15px 0.5rem -15px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3),
+                        0 0 40px rgba(118, 75, 162, 0.1),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Filter section styling matching RND Cloudsphere */
+        .filter-section {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        
+        /* Form controls clean styling */
+        .form-control-clean {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.95);
+        }
+        .form-control-clean:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25),
+                        0 2px 8px rgba(102, 126, 234, 0.1);
+            background: rgba(255, 255, 255, 0.98);
+        }
+        
+        .form-select, .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        .form-select:focus, .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25),
+                        0 2px 8px rgba(102, 126, 234, 0.1);
+            background: rgba(255, 255, 255, 0.98);
+        }
+        
+        .form-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+        
+        /* Input group styling */
+        .input-group-text {
+            border: 2px solid #e9ecef;
+            border-right: none;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px 0 0 10px;
+        }
+        
+        .border-start-0 {
+            border-left: none !important;
+            border-radius: 0 10px 10px 0;
+        }
+        
+        .border-end-0 {
+            border-right: none !important;
+        }
+        
+        /* Button styling */
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* Checklist Cards styling */
+        .proof-checklist-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        
+        .proof-checklist-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            border-color: rgba(102, 126, 234, 0.2);
+        }
+        
+        .proof-info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .proof-info-label {
+            font-weight: 600;
+            color: #6c757d;
+        }
+        
+        .proof-info-value {
+            color: #212529;
+            text-align: right;
+            max-width: 60%;
+            word-break: break-word;
+        }
+        
+        .status-badge {
+            padding: 0.5rem 1.25rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            display: inline-block;
+            white-space: nowrap;
+        }
+        
+        .status-draft { background: #fef3c7; color: #d97706; }
+        .status-active { background: #dcfce7; color: #15803d; }
+        .status-completed { background: #dbeafe; color: #0c4a6e; }
+        .status-cancelled { background: #fee2e2; color: #7f1d1d; }
+        
+        /* Action buttons pill shape */
+        .btn-action {
+            border-radius: 50px;
+            padding: 0.4rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-action-view {
+            background: #dbeafe;
+            color: #0c4a6e;
+        }
+        
+        .btn-action-view:hover {
+            background: #bfdbfe;
+            color: #082f49;
+        }
+        
+        /* Table styling matching CTP design */
+        .table-responsive {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .proof-checklist-table {
+            margin-bottom: 0;
+        }
+        
+        .proof-checklist-table thead th {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: none;
+            font-weight: 600;
+            color: #495057;
+            padding: 1rem 0.75rem;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+        
+        .proof-checklist-table tbody tr {
+            border-bottom: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        
+        .proof-checklist-table tbody tr:hover {
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+        
+        .proof-checklist-table tbody td {
+            padding: 0.9rem 0.75rem;
+            vertical-align: middle;
+            font-size: 0.9rem;
+        }
+        
+        /* Center align Actions column */
+        .proof-checklist-table thead th:nth-child(6),
+        .proof-checklist-table tbody td:nth-child(6) {
+            text-align: center;
+            vertical-align: middle;
+        }
+        
+        /* Pagination styling */
+        .pagination {
+            gap: 0.25rem;
+        }
+        
+        .pagination .page-link {
+            border: 2px solid #e9ecef;
+            color: #6c757d;
+            border-radius: 8px;
+            margin: 0 2px;
+            padding: 0.5rem 0.75rem;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .pagination .page-link:hover {
+            border-color: #667eea;
+            color: #667eea;
+            background-color: rgba(102, 126, 234, 0.1);
+        }
+        
+        .pagination .page-item.active .page-link {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: white;
+        }
+        
+        .pagination .page-item.disabled .page-link {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .filter-section {
+                padding: 1rem;
+            }
+            
+            .proof-info-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .proof-info-value {
+                text-align: left;
+                max-width: 100%;
+                margin-top: 0.25rem;
+            }
+        }
+        
+        /* Loading and Empty States - Matching RND Cloudsphere */
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+        
+        .empty-state svg {
+            margin-bottom: 24px;
+            opacity: 0.7;
+        }
+        
+        .empty-state h3 {
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-size: 1.5rem;
+        }
+        
+        .empty-state p {
+            color: #6b7280;
+            margin-bottom: 24px;
+            font-size: 1rem;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="wrapper">
+        {% include '_top_header.html' %}
+        <div class="d-flex" id="content-wrapper">
+            {% include '_sidebar.html' %}
+            <div id="page-content-wrapper">
+                <div class="container-fluid pt-3">
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1 class="mb-0">R&D Proof Checklist</h1>
+                <p class="mb-0 opacity-75">Digital form untuk menggantikan Checklist Proof kertas</p>
+            </div>
+            <div class="col-auto">
+                <a href="{{ url_for('rnd_proof_checklist.create') }}" class="btn btn-light">
+                    <i class="fas fa-plus me-2"></i>Create New Checklist
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container-fluid">
+    <!-- Filter Controls -->
+    <div class="filter-section">
+        <div class="row align-items-end g-3">
+            <div class="col-md-3">
+                <label for="statusFilter" class="form-label">Filter Status</label>
+                <select class="form-control form-control-clean" id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="DRAFT">Draft</option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="CANCELLED">Cancelled</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="dateFilter" class="form-label">Date Range</label>
+                <select class="form-control form-control-clean" id="dateFilter">
+                    <option value="">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                    <option value="quarter">This Quarter</option>
+                </select>
+            </div>
+            <div class="col-md-6" id="searchContainer">
+                <label for="searchInput" class="form-label">Search</label>
+                <div class="input-group">
+                    <input type="text" class="form-control form-control-clean" id="searchInput" placeholder="Search by customer name, item name, or paper supplier...">
+                    <button class="btn btn-outline-secondary" type="button" onclick="window.proofChecklistInstance.clearFilters()">Clear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="dataMessage" class="alert d-none" role="alert"></div>
+    
+    <div class="animate__animated animate__fadeIn">
+        <!-- Table for Checklists -->
+        <div class="table-responsive">
+            <table class="table table-hover proof-checklist-table" id="proofchecklistTable">
+                <thead>
+                    <tr>
+                        <th>Proof Date</th>
+                        <th>Customer Name</th>
+                        <th>Item Name</th>
+                        <th>Status</th>
+                        <th>Created Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="checklistsTableBody">
+                    <!-- Loading Spinner -->
+                    <tr id="loadingSpinner">
+                        <td colspan="6" class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-3">Loading checklists...</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Empty State -->
+                    <tr id="emptyState" style="display: none;">
+                        <td colspan="6" class="text-center py-5">
+                            <svg width="80" height="80" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity: 0.5; margin: 0 auto; display: block;">
+                                <circle cx="60" cy="60" r="50" fill="#F3F4F6" stroke="#E5E7EB" stroke-width="2"/>
+                                <path d="M45 40C45 37.7909 46.7909 36 49 36H71C73.2091 36 75 37.7909 75 40V50H45V40Z" fill="#E5E7EB"/>
+                                <path d="M40 50H80C82.2091 50 84 51.7909 84 54V68C84 70.2091 82.2091 72 80 72H40C37.7909 72 36 70.2091 36 68V54C36 51.7909 37.7909 50 40 50Z" fill="#E5E7EB"/>
+                                <circle cx="45" cy="61" r="3" fill="#9CA3AF"/>
+                                <circle cx="60" cy="61" r="3" fill="#9CA3AF"/>
+                                <circle cx="75" cy="61" r="3" fill="#9CA3AF"/>
+                                <path d="M50 78H70C72.2091 78 74 79.7909 74 82C74 84.2091 72.2091 86 70 86H50C47.7909 86 46 84.2091 46 82C46 79.7909 47.7909 78 50 78Z" fill="#E5E7EB"/>
+                                <path d="M55 40V36M65 40V36" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <h5 class="mt-3 text-muted">No Proof Checklists Found</h5>
+                            <p class="text-muted small">There are no proof checklists matching your current filters.</p>
+                            <button class="btn btn-sm btn-outline-primary" onclick="window.proofChecklistInstance.clearFilters()">
+                                Clear Filters
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center" id="paginationContainer">
+                <!-- Pagination will be generated by JavaScript -->
+            </ul>
+        </nav>
+    </div>
+</div>
+
+</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+    <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/proof_checklist_api.js') }}"></script>
+    <script>
+        // Add class for dashboard handler auto-initialization
+        document.body.classList.add('proof-checklist-dashboard');
+        
+        // Only initialize if not already initialized
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Proof Checklist Dashboard loaded');
+            if (!window.proofChecklistInstance) {
+                window.proofChecklistInstance = new ProofChecklistDashboardHandler();
+            }
+        });
+        
+        function clearFilters() {
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('dateFilter').value = '';
+            document.getElementById('searchInput').value = '';
+            if (window.proofChecklistInstance) {
+                window.proofChecklistInstance.loadChecklists();
+            }
+        }
+    </script>
+</body>
+</html>

@@ -737,8 +737,16 @@
                                 <option value="C">C</option>
                             </select>
                         </div>
+                        <div class="col-md-2">
+                            <label for="filterG7" class="form-label">FILTER G7</label>
+                            <select class="form-control form-control-clean" id="filterG7">
+                                <option value="">Semua</option>
+                                <option value="true">IYA</option>
+                                <option value="false">TIDAK</option>
+                            </select>
+                        </div>
                         
-                        <div class="col-md-6"> 
+                        <div class="col-md-4">
                             <label for="searchInput" class="form-label">Pencarian</label>
                             <div class="input-group">
                                 <input type="text" class="form-control form-control-clean" id="searchInput" placeholder="Cari apapun...">
@@ -1043,6 +1051,17 @@
                         <div class="tab-pane fade" id="color" role="tabpanel">
                             <div class="row">
                                 <div class="col-12">
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-start gap-3">
+                                            <div class="flex-grow-1">
+                                                <div class="fw-bold text-muted">Calibration</div>
+                                                <div id="detail-calibration">-</div>
+                                            </div>
+                                            <div id="g7-logo-container" class="d-none">
+                                                <img src="{{ url_for('static', filename='img/logo_g7expert.png') }}" alt="G7 Expert Logo" style="height: 60px; width: auto;">
+                                            </div>
+                                        </div>
+                                    </div>
                                     <h6 class="text-primary mb-2">CMYK Colors</h6>
                                     <div class="table-responsive color-table-container mb-md-0">
                                         <table class="table table-sm table-bordered color-table detail-kpi-table" id="cmykTableDetail">

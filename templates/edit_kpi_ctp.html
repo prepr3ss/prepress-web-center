@@ -556,14 +556,27 @@
                     </div>
                     
                     <div class="row g-3 mb-4">
-                        <div class="col-md-6">
+                        <div class="col-md-5">
                             <label class="info-label">Nama Item</label>
                             <input type="text" class="form-control form-control-clean" id="item_name" name="item_name" placeholder="e.g. 516586200 CONTOH JFL" required>
                         </div>
                         <div class="col-md-2">
+                            <label class="info-label">Item G7 ?</label>
+                            <select class="form-select form-select-clean" id="is_g7" name="is_g7">
+                                <option value="false">TIDAK</option>
+                                <option value="true">IYA</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-none" id="calibrationGroup">
+                            <label class="info-label">CALIBRATION</label>
+                            <select class="form-select form-select-clean" id="calibration" name="calibration">
+                                <option value="">Pilih Calibration</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
                             <label class="info-label">Run Length Sheet</label>
                             <input type="number" class="form-control form-control-clean" id="run_length_sheet" name="run_length_sheet" min="0" placeholder="">
-                        </div>                        
+                        </div>
                         <div class="col-md-4">
                             <label class="info-label">Note</label>
                             <textarea class="form-control form-control-clean" id="note" name="note" rows="3" placeholder="Tambahkan catatan jika ada"></textarea>
@@ -1040,6 +1053,18 @@
                         </div>
                     </div>
                     
+                    <!-- Verification Section for G7 Items -->
+                    <div class="row mt-4" id="verificationSection" style="display: none;">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-center align-items-center gap-3">
+                                <button type="button" class="btn btn-outline-primary" id="verifyCalibrationBtn" style="border-radius: 20px; padding: 8px 20px; font-weight: 500;">
+                                    Verifikasi Calibration
+                                </button>
+                                <div id="verificationStatus" class="badge fs-6 px-3 py-2" style="display: none; border-radius: 15px; font-weight: 500;"></div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Form Actions -->
                     <div class="row">
                         <div class="col-12 mt-4">
@@ -1047,7 +1072,7 @@
                                 <button type="button" onclick="window.history.back()" class="btn btn-outline-clean">
                                     <i class="fas fa-times me-2"></i>Batal
                                 </button>
-                                <button type="submit" class="btn btn-ctp">
+                                <button type="submit" class="btn btn-ctp" id="submitKpiBtn">
                                     <i class="fas fa-save me-2"></i>Simpan Perubahan
                                 </button>
                             </div>
@@ -1216,6 +1241,12 @@
                     document.getElementById('run_length_sheet').value = data.run_length_sheet || '';
                     document.getElementById('item_name').value = data.item_name || '';
                     document.getElementById('note').value = data.note || '';
+                    
+                    // Set is_g7 field first
+                    document.getElementById('is_g7').value = data.is_g7 ? 'true' : 'false';
+                    
+                    // Set calibration field
+                    document.getElementById('calibration').value = data.calibration || '';
                     
                     document.getElementById('cyan_20_percent').value = data.cyan_20_percent || '';
                     document.getElementById('cyan_25_percent').value = data.cyan_25_percent || '';
@@ -1387,6 +1418,19 @@
                     const num = parseInt(value, 10);
                     return isNaN(num) ? null : num;
                 }
+                function parseBooleanOrNull(value) {
+                    if (value === null || value === '' || value === undefined) {
+                        return null;
+                    }
+                    const strValue = String(value).trim().toLowerCase();
+                    if (strValue === 'true' || strValue === '1' || strValue === 'yes') {
+                        return true;
+                    }
+                    if (strValue === 'false' || strValue === '0' || strValue === 'no') {
+                        return false;
+                    }
+                    return null;
+                }
 
                 // Konversi nilai numerik
                 jsonData.processor_temperature = parseNumberOrNull(jsonData.processor_temperature);
@@ -1394,7 +1438,9 @@
                 jsonData.run_length_sheet = parseIntOrNull(jsonData.run_length_sheet);
                 jsonData.num_plate_good = parseIntOrNull(jsonData.num_plate_good);
                 jsonData.num_plate_not_good = parseIntOrNull(jsonData.num_plate_not_good);
-                
+                jsonData.is_g7 = parseBooleanOrNull(jsonData.is_g7);
+                jsonData.calibration = jsonData.calibration || '';
+                 
                 jsonData.cyan_20_percent = parseNumberOrNull(jsonData.cyan_20_percent);
                 jsonData.cyan_25_percent = parseNumberOrNull(jsonData.cyan_25_percent);
                 jsonData.cyan_40_percent = parseNumberOrNull(jsonData.cyan_40_percent);
@@ -1518,9 +1564,147 @@
                 }
             });
 
+            // --- Logika untuk menampilkan/menyembunyikan field CALIBRATION ---
+            const isG7Select = document.getElementById('is_g7');
+            const calibrationGroup = document.getElementById('calibrationGroup');
+            const calibrationSelect = document.getElementById('calibration');
+            const printMachineSelect = document.getElementById('print_machine');
+
+            function toggleCalibrationField() {
+                if (isG7Select.value === 'true') {
+                    calibrationGroup.classList.remove('d-none');
+                    calibrationSelect.setAttribute('required', 'true');
+                    // Load calibration data when field is shown
+                    loadCalibrationData();
+                } else {
+                    calibrationGroup.classList.add('d-none');
+                    calibrationSelect.removeAttribute('required');
+                    calibrationSelect.innerHTML = '<option value="">Pilih Calibration</option>';
+                }
+            }
+
+            // Function to load calibration data based on print_machine
+            async function loadCalibrationData() {
+                const printMachine = printMachineSelect.value;
+                if (!printMachine) {
+                    calibrationSelect.innerHTML = '<option value="">Pilih Print Machine terlebih dahulu</option>';
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/impact/api/calibration-references?print_machine=${encodeURIComponent(printMachine)}`);
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        calibrationSelect.innerHTML = '<option value="">Pilih Calibration</option>';
+                        result.data.forEach(item => {
+                            const option = document.createElement('option');
+                            option.value = item.calib_name;
+                            option.textContent = item.calib_name;
+                            calibrationSelect.appendChild(option);
+                        });
+                    } else {
+                        calibrationSelect.innerHTML = '<option value="">Tidak ada data calibration</option>';
+                    }
+                } catch (error) {
+                    console.error('Error loading calibration data:', error);
+                    calibrationSelect.innerHTML = '<option value="">Error loading data</option>';
+                }
+            }
+
+            // Event listeners
+            isG7Select.addEventListener('change', toggleCalibrationField);
+            printMachineSelect.addEventListener('change', function() {
+                if (isG7Select.value === 'true') {
+                    loadCalibrationData();
+                }
+            });
+
             // Panggil fungsi untuk mengisi form saat DOM selesai dimuat
-            fetchAndPopulateForm();
+            fetchAndPopulateForm().then(() => {
+                // Initialize calibration field after form is populated
+                toggleCalibrationField();
+            });
         });
     </script>
+
+    <!-- Verification Modal -->
+    <div class="modal fade" id="verificationModal" tabindex="-1" aria-labelledby="verificationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-0 bg-white">
+                    <h5 class="modal-title text-center w-100" id="verificationModalLabel">
+                        Verifikasi Calibration
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Loading State -->
+                    <div id="verificationLoading" class="text-center py-5" style="display: none;">
+                        <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="text-muted mb-0">Sedang memverifikasi data calibration...</p>
+                    </div>
+                    
+                    <!-- Results State -->
+                    <div id="verificationResults" style="display: none;">
+                        <!-- Success State -->
+                        <div id="successState" class="text-center py-4" style="display: none;">
+                            <div class="mb-3">
+                                <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                            </div>
+                            <h5 class="text-success mb-2">Verified</h5>
+                            <p class="text-muted mb-3">Semua nilai raster berada dalam range toleransi yang ditentukan (±1.5)</p>
+                            <div class="alert alert-light border-0">
+                                <small class="text-muted">
+                                    <strong>Calibration Reference:</strong> <span id="calibrationName"></span>
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <!-- Error State -->
+                        <div id="errorState" class="text-center py-4" style="display: none;">
+                            <div class="mb-3">
+                                <i class="fas fa-times-circle text-danger" style="font-size: 4rem;"></i>
+                            </div>
+                            <h5 class="text-danger mb-2">Not Verified</h5>
+                            <p class="text-muted mb-3">Beberapa nilai raster berada di luar range toleransi</p>
+                            <div class="alert alert-light border-0">
+                                <small class="text-muted">
+                                    <strong>Calibration Reference:</strong> <span id="calibrationNameError"></span>
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <!-- Details Table -->
+                        <div id="verificationDetails" style="display: none;">
+                            <h6 class="mb-3">Detail Verifikasi:</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover" id="verifikasiRasterTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Warna</th>
+                                            <th>Persentase</th>
+                                            <th>Nilai Input</th>
+                                            <th>Nilai Reference</th>
+                                            <th>Range Toleransi</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="verificationTableBody">
+                                        <!-- Verification results will be inserted here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-white">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

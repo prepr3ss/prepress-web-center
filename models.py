@@ -142,6 +142,8 @@ class CTPProductionLog(db.Model):
     dwell_time = db.Column(db.Float)
     wo_number = db.Column(db.String(100))
     mc_number = db.Column(db.String(100), nullable=False)
+    is_g7 = db.Column(db.Boolean, default=False)
+    calibration = db.Column(db.String(255))
     run_length_sheet = db.Column(db.Integer)
     print_machine = db.Column(db.String(50), nullable=False)
     remarks_job = db.Column(db.String(50), nullable=False)
@@ -255,6 +257,8 @@ class CTPProductionLog(db.Model):
             'dwell_time': self.dwell_time,
             'wo_number': self.wo_number,
             'mc_number': self.mc_number,
+            'is_g7': self.is_g7,
+            'calibration': self.calibration,
             'run_length_sheet': self.run_length_sheet,
             'print_machine': self.print_machine,
             'remarks_job': self.remarks_job,
@@ -495,13 +499,84 @@ class MonthlyWorkHours(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(jakarta_tz))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(jakarta_tz), onupdate=lambda: datetime.now(jakarta_tz))
 
+class CalibrationReference(db.Model):
+    __tablename__ = 'calibration_references'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Filter & Identitas
+    print_machine = db.Column(db.Enum('SM2', 'SM3', 'SM4', 'SM5', 'SM6', 'VLF', name='print_machine_enum'), nullable=False)
+    calib_group = db.Column(db.String(100), nullable=False)
+    calib_code = db.Column(db.String(100), nullable=False, unique=True)
+    calib_name = db.Column(db.String(255), nullable=False)
+    
+    # Nilai Patch C, M, Y, K (20, 25, 40, 50, 75, 80)
+    c20 = db.Column(db.DECIMAL(5, 2))
+    c25 = db.Column(db.DECIMAL(5, 2))
+    c40 = db.Column(db.DECIMAL(5, 2))
+    c50 = db.Column(db.DECIMAL(5, 2))
+    c75 = db.Column(db.DECIMAL(5, 2))
+    c80 = db.Column(db.DECIMAL(5, 2))
+    m20 = db.Column(db.DECIMAL(5, 2))
+    m25 = db.Column(db.DECIMAL(5, 2))
+    m40 = db.Column(db.DECIMAL(5, 2))
+    m50 = db.Column(db.DECIMAL(5, 2))
+    m75 = db.Column(db.DECIMAL(5, 2))
+    m80 = db.Column(db.DECIMAL(5, 2))
+    y20 = db.Column(db.DECIMAL(5, 2))
+    y25 = db.Column(db.DECIMAL(5, 2))
+    y40 = db.Column(db.DECIMAL(5, 2))
+    y50 = db.Column(db.DECIMAL(5, 2))
+    y75 = db.Column(db.DECIMAL(5, 2))
+    y80 = db.Column(db.DECIMAL(5, 2))
+    k20 = db.Column(db.DECIMAL(5, 2))
+    k25 = db.Column(db.DECIMAL(5, 2))
+    k40 = db.Column(db.DECIMAL(5, 2))
+    k50 = db.Column(db.DECIMAL(5, 2))
+    k75 = db.Column(db.DECIMAL(5, 2))
+    k80 = db.Column(db.DECIMAL(5, 2))
+    
+    # Audit Trail
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(jakarta_tz))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(jakarta_tz), onupdate=lambda: datetime.now(jakarta_tz))
+    
+    # Index for better performance
+    __table_args__ = (
+        db.Index('idx_print_machine', 'print_machine'),
+        db.UniqueConstraint('calib_code', name='uq_calib_code'),
+    )
+    
     def to_dict(self):
         return {
             'id': self.id,
-            'year': self.year,
-            'month': self.month,
-            'total_work_hours_produksi': self.total_work_hours_produksi,
-            'total_work_hours_proof': self.total_work_hours_proof,
+            'print_machine': self.print_machine,
+            'calib_group': self.calib_group,
+            'calib_code': self.calib_code,
+            'calib_name': self.calib_name,
+            'c20': float(self.c20) if self.c20 else None,
+            'c25': float(self.c25) if self.c25 else None,
+            'c40': float(self.c40) if self.c40 else None,
+            'c50': float(self.c50) if self.c50 else None,
+            'c75': float(self.c75) if self.c75 else None,
+            'c80': float(self.c80) if self.c80 else None,
+            'm20': float(self.m20) if self.m20 else None,
+            'm25': float(self.m25) if self.m25 else None,
+            'm40': float(self.m40) if self.m40 else None,
+            'm50': float(self.m50) if self.m50 else None,
+            'm75': float(self.m75) if self.m75 else None,
+            'm80': float(self.m80) if self.m80 else None,
+            'y20': float(self.y20) if self.y20 else None,
+            'y25': float(self.y25) if self.y25 else None,
+            'y40': float(self.y40) if self.y40 else None,
+            'y50': float(self.y50) if self.y50 else None,
+            'y75': float(self.y75) if self.y75 else None,
+            'y80': float(self.y80) if self.y80 else None,
+            'k20': float(self.k20) if self.k20 else None,
+            'k25': float(self.k25) if self.k25 else None,
+            'k40': float(self.k40) if self.k40 else None,
+            'k50': float(self.k50) if self.k50 else None,
+            'k75': float(self.k75) if self.k75 else None,
+            'k80': float(self.k80) if self.k80 else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

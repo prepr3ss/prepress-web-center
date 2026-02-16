@@ -145,7 +145,9 @@ class RNDPDFExportService:
                 leftMargin=0.75*inch,
                 rightMargin=0.75*inch,
                 topMargin=0.75*inch,
-                bottomMargin=0.75*inch
+                bottomMargin=0.75*inch,
+                title=f"Cloudsphere Job Detail - {job.job_id}",
+                author="Impact 360 | Prepress Offset System"
             )
             
             # Build PDF content
@@ -203,11 +205,12 @@ class RNDPDFExportService:
             ['Job ID', job.job_id],
             ['Item Name', job.item_name or ''],
             ['Sample Type', job.sample_type or ''],
-            ['Priority Level', job.priority_level or ''],
+            ['Priority Level', (job.priority_level or '').title()],
             ['Status', job.status.replace('_', ' ').title() if job.status else ''],
             ['Started At', self._format_datetime(job.started_at)],
             ['Deadline', self._format_datetime(job.deadline_at)],
             ['Finished At', self._format_datetime(job.finished_at)],
+            ['Lead Time', self._calculate_lead_time(job)],
             ['Completion', f"{job.completion_percentage or 0:.1f}%"],
             ['Notes', job.notes or '']
         ]
@@ -460,3 +463,63 @@ class RNDPDFExportService:
             # Convert to MB
             size_mb = size_kb / 1024
             return f"{size_mb:.1f} MB"
+    
+    def _calculate_lead_time(self, job):
+        """Calculate lead time from job started to finished (or now if still in progress)"""
+        try:
+            started_at = job.started_at
+            finished_at = job.finished_at
+            
+            if not started_at:
+                return 'Not started'
+            
+            # Use current time if job is not finished
+            end_time = finished_at if finished_at else datetime.now(jakarta_tz)
+            
+            # Convert to datetime objects if they're strings
+            if isinstance(started_at, str):
+                started_at = datetime.fromisoformat(started_at)
+                if started_at.tzinfo is None:
+                    started_at = jakarta_tz.localize(started_at)
+            
+            if isinstance(end_time, str):
+                end_time = datetime.fromisoformat(end_time)
+                if end_time.tzinfo is None:
+                    end_time = jakarta_tz.localize(end_time)
+            
+            # Calculate the difference
+            diff = end_time - started_at
+            
+            # Extract days, hours, minutes
+            days = diff.days
+            hours, remainder = divmod(diff.seconds, 3600)
+            minutes, _ = divmod(remainder, 60)
+            
+            # Format the output
+            result = ''
+            if days > 0:
+                result += f"{days} day{'s' if days > 1 else ''}"
+            
+            if hours > 0:
+                if result:
+                    result += ' '
+                result += f"{hours} hour{'s' if hours > 1 else ''}"
+            
+            if minutes > 0:
+                if result:
+                    result += ' '
+                result += f"{minutes} minute{'s' if minutes > 1 else ''}"
+            
+            # If all components are 0, return "Less than 1 minute"
+            if not result:
+                result = 'Less than 1 minute'
+            
+            # Add "(ongoing)" if job is not finished
+            if not finished_at:
+                result += ' (ongoing)'
+            
+            return result
+            
+        except Exception as e:
+            current_app.logger.error(f"Error calculating lead time: {str(e)}")
+            return 'Error calculating'
