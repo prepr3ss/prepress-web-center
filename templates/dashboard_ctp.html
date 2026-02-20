@@ -7,307 +7,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-mobile-framework.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_ctp.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    <style>
-        /* Clean and Professional Styling for CTP */
-        .page-header {
-            background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
-            color: white;
-            padding: 2rem 0;
-            margin: -1rem -15px 2rem -15px;
-            border-radius: 0 0 20px 20px;
-            box-shadow: 0 4px 20px rgba(255, 149, 0, 0.2);
-        }
-        
-        .summary-card {
-            border: none;
-            border-radius: 15px;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-            background: white;
-        }
-        
-        .summary-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
-        
-        .summary-card .card-body {
-            padding: 1.5rem;
-        }
-        
-        .summary-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            color: white;
-        }
-
-        .header-icon {
-            width: 24px !important;
-            height: 24px !important;
-            margin: 0 !important;
-        }
-        
-        /* CTP Color Scheme */
-        .icon-warning { background: linear-gradient(135deg, #ff9a56 0%, #ff6b35 100%); }
-        .icon-success { background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%); }
-        .icon-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .icon-info { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-        
-        .data-card {
-            border: none;
-            border-radius: 15px;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-            background: white;
-            overflow: hidden;
-        }
-        
-        .data-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
-        
-        .card-header-clean {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border: none;
-            padding: 1rem 1.25rem;
-            border-radius: 15px 15px 0 0;
-            text-align: left;
-        }
-        
-        .filter-section {
-            background: white;
-            border-radius: 15px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-            margin-bottom: 2rem;
-        }
-        
-        .form-control-clean {
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            padding: 0.75rem 1rem;
-            transition: all 0.3s ease;
-        }
-        
-        .form-control-clean:focus {
-            border-color: #ff9500;
-            box-shadow: 0 0 0 0.2rem rgba(255, 149, 0, 0.25);
-        }
-        
-        .form-select, .form-control {
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            padding: 0.75rem 1rem;
-            transition: all 0.3s ease;
-            font-size: 0.95rem;
-        }
-        
-        .form-label {
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #6c757d;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 0.25rem;
-        }
-        
-        .btn-clean {
-            border: none;
-            border-radius: 25px;
-            padding: 0.5rem 1.5rem;
-            font-weight: 600;
-            font-size: 0.8rem;
-            transition: all 0.3s ease;
-            letter-spacing: 0.5px;
-        }
-        
-        .btn-ctp-clean {
-            background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
-            color: white;
-        }
-        
-        .btn-ctp-clean:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 149, 0, 0.4);
-            color: white;
-        }
-        
-        /* Loading Spinner */
-        .spinner-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-
-        .spinner-content {
-            background: white;
-            padding: 2rem;
-            border-radius: 0.5rem;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        }
-
-        .spinner-border {
-            width: 3rem;
-            height: 3rem;
-        }
-
-        .spinner-text {
-            margin-top: 1rem;
-            font-size: 1.2rem;
-            color: #6c757d;
-        }
-
-        /* Toast styling */
-        .toast {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
-        
-        .toast-success {
-            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
-            color: white;
-        }
-        
-        .toast-error {
-            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
-            color: white;
-        }
-        
-        /* Modal styling fixes */
-        .modal-backdrop {
-            background-color: rgba(0, 0, 0, 0.5) !important;
-        }
-        
-        .modal-content {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-        
-        .modal-header {
-            border-radius: 15px 15px 0 0;
-            border: none;
-        }
-        
-        .modal-body {
-            max-height: 70vh;
-            overflow-y: auto;
-        }
-
-            .summary-5col-container {
-                width: 100%;
-                display: flex;
-                justify-content: center;
-                margin-bottom: 36px;
-                margin-top: 8px;
-            }
-            .summary-5col {
-                display: flex;
-                flex-direction: row;
-                justify-content: center;
-                align-items: stretch;
-                gap: 20px;
-                width: 100%;
-                max-width: 1600px;
-                background: none;
-                box-shadow: none;
-                border: none;
-                padding: 0 16px;
-            }
-            .summary-item {
-                background: #fff;
-                border-radius: 18px;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-                flex: 1 1 0;
-                min-width: 0;
-                padding: 28px 10px 20px 10px;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                transition: box-shadow 0.2s, transform 0.2s;
-                cursor: pointer;
-            }
-            .summary-item:hover {
-                box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-                transform: translateY(-4px) scale(1.03);
-                z-index: 2;
-            }
-            .summary-icon {
-                margin-bottom: 10px;
-            }
-            @media (max-width: 1200px) {
-                .summary-5col { gap: 10px; padding: 0 4px; }
-                .summary-item { padding: 18px 2px; }
-            }
-            @media (max-width: 900px) {
-                .summary-5col { flex-direction: column; gap: 16px; padding: 0 2px; }
-                .summary-item { width: 100%; min-width: 0; max-width: 99vw; }
-            }
-        
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .page-header {
-                margin: -1rem -15px 1rem -15px;
-                padding: 1.5rem 0;
-            }
-            
-            .summary-card .card-body {
-                padding: 1rem;
-            }
-            
-            .filter-section {
-                padding: 1rem;
-                margin-bottom: 1rem;
-            }
-            
-            .summary-icon {
-                width: 45px;
-                height: 45px;
-                font-size: 1.2rem;
-            }
-            
-            .data-card .card-body {
-                padding: 1rem;
-            }
-            
-            /* Chart container responsive */
-            .chart-container {
-                height: 200px !important;
-            }
-        }
-        
-        @media (max-width: 576px) {
-            .page-header h2 {
-                font-size: 1.5rem;
-            }
-            
-            .filter-section .row {
-                gap: 0.5rem;
-            }
-            
-            .chart-container {
-                height: 150px !important;
-            }
-        }
-    </style>
 </head>
 <body>
     <div id="wrapper">
@@ -370,8 +72,34 @@
                 <option value="12">Desember</option>
             </select>
         </div>
+        <div class="col-md-2">
+            <label class="form-label">
+                 Filter Jenis Plate
+            </label>
+            <select class="form-select form-control-clean" id="plateTypeFilter">
+                <option value="">Semua Jenis Plate</option>
+                <option value="FUJI">FUJI</option>
+                <option value="SAPHIRA">SAPHIRA</option>
+            </select>
+        </div>
     </div>
 </div>
+
+<!-- Navigation Tabs -->
+<ul class="nav nav-tabs mb-3" id="ctpTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tab-overview" data-bs-toggle="tab" data-bs-target="#overviewSection" type="button" role="tab">Overview</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-analysis" data-bs-toggle="tab" data-bs-target="#analysisSection" type="button" role="tab">Plate Analysis</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-usage" data-bs-toggle="tab" data-bs-target="#usageSection" type="button" role="tab">Usage</button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="overviewSection" role="tabpanel">
 
 <!-- Overall KPI Card -->
 <div class="summary-5col-container mb-4" id="overallKpiContainer">
@@ -434,6 +162,24 @@
 </div>
 
 <!-- Group KPI Cards -->
+<div class="row" id="kpiCards">
+    <!-- Cards will be inserted here -->
+</div>
+
+<!-- No data message -->
+<div class="no-data-clean d-none" id="noDataMessage" style="text-align: center; padding: 3rem 1rem;">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="text-muted mb-3" style="opacity: 0.5;">
+        <line x1="3" y1="21" x2="21" y2="21" />
+        <rect x="4" y="10" width="3" height="8" rx="1" />
+        <rect x="10.5" y="6" width="3" height="12" rx="1" />
+        <rect x="17" y="3" width="3" height="15" rx="1" />
+    </svg>
+    <h4 class="text-muted mb-2">Tidak ada data KPI CTP</h4>
+    <p class="text-muted mb-0">Belum ada data KPI untuk periode yang dipilih</p>
+</div>
+
+</div> <!-- end overviewSection -->
+<div class="tab-pane fade" id="analysisSection" role="tabpanel">
 <div class="row" id="kpiCards">
     <!-- Cards will be inserted here -->
 </div>
@@ -505,6 +251,9 @@
         </div>
     </div>
 </div>
+
+</div> <!-- end analysisSection -->
+<div class="tab-pane fade" id="usageSection" role="tabpanel">
 
 <!-- Analitik Pemakaian Plate -->
 <div class="row mt-4" id="plateUsageSection">
@@ -608,23 +357,18 @@
         </div>
     </div>
 
-</div>
-<!-- No data message -->
-<div class="no-data-clean d-none" id="noDataMessage" style="text-align: center; padding: 3rem 1rem;">
-    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="text-muted mb-3" style="opacity: 0.5;">
-        <line x1="3" y1="21" x2="21" y2="21" />
-        <rect x="4" y="10" width="3" height="8" rx="1" />
-        <rect x="10.5" y="6" width="3" height="12" rx="1" />
-        <rect x="17" y="3" width="3" height="15" rx="1" />
-    </svg>
-    <h4 class="text-muted mb-2">Tidak ada data KPI CTP</h4>
-    <p class="text-muted mb-0">Belum ada data KPI untuk periode yang dipilih</p>
-</div>
+</div> <!-- end usageSection -->
+</div> <!-- end tab-content -->
 
 <script>
 document.addEventListener('DOMContentLoaded', async function() {
     const yearFilter = document.getElementById('yearFilter');
     const monthFilter = document.getElementById('monthFilter');
+    const plateTypeFilter = document.getElementById('plateTypeFilter');
+    
+    // Define plate type mappings
+    const fujiPlates = ['FUJI 1030', 'FUJI 1030 LHPJA', 'FUJI 1030 UV', 'FUJI 1055', 'FUJI 1055 UV', 'FUJI 1055 LHPL', 'FUJI 1630'];
+    const saphiraPlates = ['SAPHIRA 1030', 'SAPHIRA 1030 PN', 'SAPHIRA 1055', 'SAPHIRA 1055 PN', 'SAPHIRA 1630'];
     
     // Initialize dynamic filter population
     try {
@@ -850,6 +594,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     function loadKpiData() {
         const year = yearFilter.value;
         const month = monthFilter.value;
+        const plateType = plateTypeFilter.value;
         
         // Hide no data message and overall KPI container initially
         document.getElementById('noDataMessage').classList.add('d-none');
@@ -879,11 +624,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         const plateAnalysisSection = document.getElementById('plateAnalysisSection');
         if (plateAnalysisSection) plateAnalysisSection.classList.add('d-none');
 
+        // Build query string with optional plate type filter
+        const plateTypeParam = plateType ? `&plate_type=${encodeURIComponent(plateType)}` : '';
+
         Promise.all([
-            fetch(`/impact/get-ctp-kpi-data?year=${year}&month=${month}`),
-            fetch(`/impact/get-ctp-plate-usage?year=${year}&month=${month}`),
-            fetch(`/impact/get-ctp-plate-usage-by-type?year=${year}&month=${month}`),
-            fetch(`/impact/get-ctp-plate-usage-by-print-machine?year=${year}&month=${month}`)
+            fetch(`/impact/get-ctp-kpi-data?year=${year}&month=${month}${plateTypeParam}`),
+            fetch(`/impact/get-ctp-plate-usage?year=${year}&month=${month}${plateTypeParam}`),
+            fetch(`/impact/get-ctp-plate-usage-by-type?year=${year}&month=${month}${plateTypeParam}`),
+            fetch(`/impact/get-ctp-plate-usage-by-print-machine?year=${year}&month=${month}${plateTypeParam}`)
         ])
             .then(async ([resKpi, resUsage, resTypeTrend, resPrintMachine]) => {
                 if (!resKpi.ok) throw new Error(`HTTP error KPI! status: ${resKpi.status}`);
@@ -891,17 +639,43 @@ document.addEventListener('DOMContentLoaded', async function() {
                 if (!resTypeTrend.ok) throw new Error(`HTTP error Plate Type Trend! status: ${resTypeTrend.status}`);
                 if (!resPrintMachine.ok) throw new Error(`HTTP error Plate Print Machine! status: ${resPrintMachine.status}`);
     
-                const kpi = await resKpi.json();
-                const usage = await resUsage.json();
-                const typeTrend = await resTypeTrend.json();
-                const printMachine = await resPrintMachine.json();
+                let kpi = await resKpi.json();
+                let usage = await resUsage.json();
+                let typeTrend = await resTypeTrend.json();
+                let printMachine = await resPrintMachine.json();
     
                 if (!kpi.success) throw new Error(kpi.error || 'Unknown error from KPI server');
                 if (!usage.success) throw new Error(usage.error || 'Unknown error from Plate Usage server');
                 if (!printMachine.success) throw new Error(printMachine.error || 'Unknown error from Plate Print Machine server');
+                
+                // Normalize data structure - check if data is wrapped in .data property
+                let usageData = usage.data || { by_type: [], by_group: [], trend: {} };
+                let typeTrendData = typeTrend.data || typeTrend;
+                let printMachineData = printMachine.data || printMachine;
+                let kpiData = Array.isArray(kpi.data) ? [...kpi.data] : [];
+                
+                // Log for debugging
+                console.log('Plate Type Filter:', plateType);
+                console.log('KPI Data Before Filter:', kpiData);
+                console.log('Usage Data Before Filter:', usageData);
+                console.log('Type Trend Data Before Filter:', typeTrendData);
+                
+                // Data is already filtered by backend based on plate_type parameter
+                // No need for additional client-side filtering
+                console.log('Data received from backend (already filtered by plate_type)');
+                console.log('Plate Type Filter:', plateType);
+                console.log('KPI Data:', kpiData);
+                console.log('Usage Data:', usageData);
+                console.log('Type Trend Data:', typeTrendData);
+                
+                // Use normalized data for rendering
+                usage = { ...usage, success: usage.success, data: usageData };
+                typeTrend = { ...typeTrend, success: typeTrend.success, data: typeTrendData };
+                printMachine = { ...printMachine, success: printMachine.success, data: printMachineData };
+
     
                 // KPI data handling
-                if (!kpi.data || kpi.data.length === 0) {
+                if (!kpiData || kpiData.length === 0) {
                     cardsContainer.innerHTML = ''; // Clear loading state
                     document.getElementById('noDataMessage').classList.remove('d-none');
                     document.getElementById('overallKpiContainer').classList.add('d-none');
@@ -909,24 +683,24 @@ document.addEventListener('DOMContentLoaded', async function() {
                     // Show KPI data when we have data
                     document.getElementById('noDataMessage').classList.add('d-none');
                     document.getElementById('overallKpiContainer').classList.remove('d-none');
-                    updateKpiDisplay(kpi.data, kpi.overall);
+                    updateKpiDisplay(kpiData, kpi.overall, plateType);
                 }
     
                 // Plate usage handling
                 const hasTrend =
-                    (Array.isArray(usage?.trend?.total) && usage.trend.total.some(v => (v || 0) > 0)) ||
-                    (Array.isArray(usage?.trend?.good) && usage.trend.good.some(v => (v || 0) > 0)) ||
-                    (Array.isArray(usage?.trend?.not_good) && usage.trend.not_good.some(v => (v || 0) > 0));
-                const hasType = Array.isArray(usage?.by_type) && usage.by_type.length > 0;
-                const hasGroup = Array.isArray(usage?.by_group) && usage.by_group.length > 0;
+                    (Array.isArray(usage?.data?.trend?.total) && usage.data.trend.total.some(v => (v || 0) > 0)) ||
+                    (Array.isArray(usage?.data?.trend?.good) && usage.data.trend.good.some(v => (v || 0) > 0)) ||
+                    (Array.isArray(usage?.data?.trend?.not_good) && usage.data.trend.not_good.some(v => (v || 0) > 0));
+                const hasType = Array.isArray(usage?.data?.by_type) && usage.data.by_type.length > 0;
+                const hasGroup = Array.isArray(usage?.data?.by_group) && usage.data.by_group.length > 0;
     
                 // Determine if type trend has any non-zero total values
-                const hasTypeTrend = Array.isArray(typeTrend?.series) && typeTrend.series.some(s => Array.isArray(s.total) && s.total.some(v => (v || 0) > 0));
+                const hasTypeTrend = Array.isArray(typeTrend?.data?.series) && typeTrend.data.series.some(s => Array.isArray(s.total) && s.total.some(v => (v || 0) > 0));
     
                 if ((hasTrend || hasType || hasGroup || hasTypeTrend) && plateSection) {
                     plateSection.classList.remove('d-none');
-                    renderPlateUsageCharts(usage);
-                    renderPlateUsageTypeTrend(typeTrend);
+                    renderPlateUsageCharts(usage.data, plateType);
+                    renderPlateUsageTypeTrend(typeTrend.data, plateType);
                 } else if (plateSection) {
                     // Hide section and destroy charts if no data
                     plateSection.classList.add('d-none');
@@ -937,11 +711,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
 
                 // Show plate analysis section and render Plate Consumption by Print Machine chart
-                const plateAnalysisSection = document.getElementById('plateAnalysisSection');
                 if (plateAnalysisSection) {
                     plateAnalysisSection.classList.remove('d-none');
                 }
-                renderPlateConsumptionByMachine(printMachine);
+                renderPlateConsumptionByMachine(printMachine.data, plateType);
             })
             .catch(error => {
                 cardsContainer.innerHTML = ''; // Clear loading state
@@ -973,33 +746,64 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
     }
     
-    function updateKpiDisplay(data, overall) {
+    function updateKpiDisplay(data, overall, plateType) {
         const cardsContainer = document.getElementById('kpiCards');
         
+        // If plate type is filtered, recalculate overall stats from filtered KPI data
+        let displayOverall = overall;
+        if (plateType && plateType !== '') {
+            // Calculate aggregated stats from filtered KPI data
+            const aggregated = {
+                total_output: 0,
+                good_plate: 0,
+                not_good_plate: 0,
+                overall_output_percentage: 0,
+                overall_not_good_percentage: 0,
+                overall_downtime_proof_percentage: overall.overall_downtime_proof_percentage || 0,
+                overall_downtime_proof_hours: overall.overall_downtime_proof_hours || 0,
+                overall_downtime_produksi_percentage: overall.overall_downtime_produksi_percentage || 0,
+                overall_downtime_produksi_hours: overall.overall_downtime_produksi_hours || 0
+            };
+            
+            // Sum up from all filtered KPI items - convert to number to avoid string concatenation
+            data.forEach(item => {
+                aggregated.total_output += Number(item.total_output) || 0;
+                aggregated.good_plate += Number(item.good_plate) || 0;
+                aggregated.not_good_plate += Number(item.not_good_plate) || 0;
+            });
+            
+            // Calculate percentages with full precision (no rounding)
+            const total = aggregated.total_output || 1;
+            aggregated.overall_output_percentage = total > 0 ? (aggregated.good_plate / total) * 100 : 0;
+            aggregated.overall_not_good_percentage = total > 0 ? (aggregated.not_good_plate / total) * 100 : 0;
+            
+            displayOverall = aggregated;
+            console.log('Recalculated Overall Stats for filter:', plateType, displayOverall);
+        }
+        
         // Update overall KPI
-        // Update semua nilai overall
-        document.getElementById('overallTotal').textContent = overall.total_output?.toLocaleString() || 0;
-        document.getElementById('overallOutputPercentage').textContent = `${overall.overall_output_percentage ?? 0}%`;
-        document.getElementById('overallNotGoodPercentage').textContent = `${overall.overall_not_good_percentage ?? 0}%`;
+        document.getElementById('overallTotal').textContent = Math.round(displayOverall.total_output || 0).toLocaleString();
+        document.getElementById('overallOutputPercentage').textContent = `${Number(displayOverall.overall_output_percentage ?? 0).toFixed(2)}%`;
+        document.getElementById('overallNotGoodPercentage').textContent = `${Number(displayOverall.overall_not_good_percentage ?? 0).toFixed(2)}%`;
         
         // Update downtime percentages dan hours
-        document.getElementById('overallDowntimeProofPercentage').textContent = `${overall.overall_downtime_proof_percentage ?? 0}%`;
-        document.getElementById('overallDowntimeProofHours').textContent = overall.overall_downtime_proof_hours?.toFixed(1) || 0;
+        document.getElementById('overallDowntimeProofPercentage').textContent = `${displayOverall.overall_downtime_proof_percentage ?? 0}%`;
+        document.getElementById('overallDowntimeProofHours').textContent = displayOverall.overall_downtime_proof_hours?.toFixed(1) || 0;
         
-        document.getElementById('overallDowntimeProduksiPercentage').textContent = `${overall.overall_downtime_produksi_percentage ?? 0}%`;
-        document.getElementById('overallDowntimeProduksiHours').textContent = overall.overall_downtime_produksi_hours?.toFixed(1) || 0;
+        document.getElementById('overallDowntimeProduksiPercentage').textContent = `${displayOverall.overall_downtime_produksi_percentage ?? 0}%`;
+        document.getElementById('overallDowntimeProduksiHours').textContent = displayOverall.overall_downtime_produksi_hours?.toFixed(1) || 0;
 
         // Output Good Plate
-        let goodPlate = overall.good_plate;
-        if (goodPlate === undefined && overall.total_output !== undefined && overall.overall_output_percentage !== undefined) {
-            goodPlate = Math.round(overall.total_output * (overall.overall_output_percentage/100));
+        let goodPlate = displayOverall.good_plate;
+        if (goodPlate === undefined && displayOverall.total_output !== undefined && displayOverall.overall_output_percentage !== undefined) {
+            goodPlate = Math.round(displayOverall.total_output * (displayOverall.overall_output_percentage/100));
         }
         document.getElementById('overallOutputGoodPlate').textContent = goodPlate?.toLocaleString() || 0;
 
         // Not Good Plate
-        let notGoodPlate = overall.not_good_plate;
-        if (notGoodPlate === undefined && overall.total_output !== undefined && overall.overall_not_good_percentage !== undefined) {
-            notGoodPlate = Math.round(overall.total_output * (overall.overall_not_good_percentage/100));
+        let notGoodPlate = displayOverall.not_good_plate;
+        if (notGoodPlate === undefined && displayOverall.total_output !== undefined && displayOverall.overall_not_good_percentage !== undefined) {
+            notGoodPlate = Math.round(displayOverall.total_output * (displayOverall.overall_not_good_percentage/100));
         }
         document.getElementById('overallOutputNotGoodPlate').textContent = notGoodPlate?.toLocaleString() || 0;
         
@@ -1035,7 +839,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                                             <polyline points="4 12 9 17 20 6" />
                                         </svg>
                                     </div>
-                                    <div class="text-success h5 mb-1 fw-bold">${item.output_percentage}%</div>
+                                    <div class="text-success h5 mb-1 fw-bold">${Number(item.output_percentage).toFixed(2)}%</div>
                                     <div class="text-muted small mb-2">Output Rate</div>
                                     <div class="rounded p-2" style="background-color: rgba(255,255,255,0.7);">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="text-success me-1" aria-hidden="true">
@@ -1054,7 +858,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                                             <circle cx="12" cy="17" r="1" />
                                         </svg>
                                     </div>
-                                    <div class="text-danger h5 mb-1 fw-bold">${item.not_good_percentage}%</div>
+                                    <div class="text-danger h5 mb-1 fw-bold">${Number(item.not_good_percentage).toFixed(2)}%</div>
                                     <div class="text-muted small mb-2">Not Good Rate</div>
                                     <div class="rounded p-2" style="background-color: rgba(255,255,255,0.7);">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="text-danger me-1" aria-hidden="true">
@@ -1359,7 +1163,7 @@ document.addEventListener('DOMContentLoaded', async function() {
    window.plateGroupChart = window.plateGroupChart || null;
    window.plateTypeTrendChart = window.plateTypeTrendChart || null;
 
-   function renderPlateUsageCharts(usage) {
+   function renderPlateUsageCharts(usage, plateType) {
        try {
            const trendCanvas = document.getElementById('plateUsageTrend');
            const typeCanvas = document.getElementById('plateUsageByType');
@@ -1529,7 +1333,7 @@ document.addEventListener('DOMContentLoaded', async function() {
    // Plate Consumption by Print Machine Chart
    window.plateConsumptionMachineChart = window.plateConsumptionMachineChart || null;
 
-   function renderPlateConsumptionByMachine(printMachine) {
+   function renderPlateConsumptionByMachine(printMachine, plateType) {
        try {
            const canvas = document.getElementById('plateConsumptionByMachineChart');
            const noDataDiv = document.getElementById('plateConsumptionMachineNoData');
@@ -1545,7 +1349,10 @@ document.addEventListener('DOMContentLoaded', async function() {
            }
 
            const labels = Array.isArray(printMachine?.labels) ? printMachine.labels : [];
-           const series = Array.isArray(printMachine?.series) ? printMachine.series : [];
+           let series = Array.isArray(printMachine?.series) ? printMachine.series : [];
+           
+           // Note: Machine consumption data is not filtered by plate type on client-side
+           // (would require backend support or detailed plate info in data)
            
            // Check if there's any data
            const hasData = series.some(s => Array.isArray(s.total) && s.total.some(v => (v || 0) > 0));
@@ -1664,7 +1471,7 @@ document.addEventListener('DOMContentLoaded', async function() {
    }
 
    // Additional: Multi-series trend per plate type
-   function renderPlateUsageTypeTrend(typeTrend) {
+   function renderPlateUsageTypeTrend(typeTrend, plateType) {
        try {
            const canvas = document.getElementById('plateUsageTypeTrend');
            const card = document.getElementById('plateTypeTrendCard');
@@ -1875,6 +1682,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Event listeners
     yearFilter.addEventListener('change', loadKpiData);
     monthFilter.addEventListener('change', loadKpiData);
+    if (plateTypeFilter) {
+        plateTypeFilter.addEventListener('change', loadKpiData);
+    }
     
     // Initial load
     loadKpiData();

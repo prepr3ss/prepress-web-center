@@ -64,6 +64,10 @@
     margin-bottom: 0.5rem;
 }
 
+.detail-item.full-width {
+    grid-column: 1 / -1;
+}
+
 .detail-item {
     display: flex;
     flex-direction: column;
@@ -96,6 +100,7 @@
     word-wrap: break-word;
     word-break: break-word;
     margin-right: 20px;
+    white-space: pre-wrap;
 }
 
 .machine-grid {
@@ -676,7 +681,7 @@
                 </div>
                 {% endif %}
                 
-                <div class="detail-item">
+                <div class="detail-item full-width">
                     <span class="detail-label">Postpress Packing Pallet</span>
                     <span class="detail-value">{{ proof_checklist.postpress_packing_pallet or '-' }}</span>
                 </div>
@@ -688,9 +693,9 @@
                     <i class="fas fa-sticky-note me-2"></i>Additional Information
                 </h3>
                 
-                <div class="detail-item">
+                <div class="detail-item full-width">
                     <span class="detail-label">Additional Information</span>
-                    <span class="detail-value">{{ proof_checklist.additional_information or '-' }}</span>
+                    <span class="detail-value">{{ proof_checklist.additional_information.replace('\n', '<br>') | safe if proof_checklist.additional_information else '-' }}</span>
                 </div>
             </div>
         </div>

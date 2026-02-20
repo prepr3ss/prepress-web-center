@@ -104,6 +104,7 @@ def get_ctp_plate_usage():
         # Read and validate inputs
         year = request.args.get('year', type=int)
         month = request.args.get('month', type=int)
+        plate_type = request.args.get('plate_type', type=str)
 
         # Base filters - only add year filter if year is provided
         filters = []
@@ -111,6 +112,9 @@ def get_ctp_plate_usage():
             filters.append(extract('year', CTPProductionLog.log_date) == year)
         if month:
             filters.append(extract('month', CTPProductionLog.log_date) == month)
+        if plate_type:
+            # Filter berdasarkan plate type (FUJI atau SAPHIRA)
+            filters.append(CTPProductionLog.plate_type_material.ilike(f'{plate_type}%'))
 
         # Build trend
         if month:
@@ -246,6 +250,7 @@ def get_ctp_plate_usage_by_type():
         # Inputs
         year = request.args.get('year', type=int)
         month = request.args.get('month', type=int)
+        plate_type = request.args.get('plate_type', type=str)
 
         # Build filters and labels based on granularity
         filters = []
@@ -266,6 +271,10 @@ def get_ctp_plate_usage_by_type():
             index_key = 'm'
             dim = extract('month', CTPProductionLog.log_date).label(index_key)
             granularity = 'monthly'
+
+        # Add plate_type filter if provided
+        if plate_type:
+            filters.append(CTPProductionLog.plate_type_material.ilike(f'{plate_type}%'))
 
         # Query grouped by plate type and time bucket
         rows = db.session.query(
@@ -359,6 +368,7 @@ def get_ctp_plate_usage_by_print_machine():
         # Inputs
         year = request.args.get('year', type=int)
         month = request.args.get('month', type=int)
+        plate_type = request.args.get('plate_type', type=str)
 
         # Build filters and labels based on granularity
         filters = []
@@ -379,6 +389,10 @@ def get_ctp_plate_usage_by_print_machine():
             index_key = 'm'
             dim = extract('month', CTPProductionLog.log_date).label(index_key)
             granularity = 'monthly'
+
+        # Add plate_type filter if provided
+        if plate_type:
+            filters.append(CTPProductionLog.plate_type_material.ilike(f'{plate_type}%'))
 
         # Query grouped by print machine and time bucket
         rows = db.session.query(

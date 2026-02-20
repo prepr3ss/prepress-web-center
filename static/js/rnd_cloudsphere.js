@@ -143,16 +143,87 @@ class RNDCloudsphere {
         
         if (!container) return;
 
+        // clear container before rendering
+        container.innerHTML = '';
+
         if (jobs.length === 0) {
-            container.innerHTML = '';
             emptyState.style.display = 'block';
             return;
         }
 
         emptyState.style.display = 'none';
 
-        const jobsHTML = jobs.map(job => this.createJobCard(job)).join('');
-        container.innerHTML = `<div class="rnd-jobs-grid">${jobsHTML}</div>`;
+        // prepare groups object with fixed periods; extra months added dynamically
+        const groups = {
+            today: { title: 'Hari Ini', html: '' },
+            week: { title: 'Minggu Ini', html: '' },
+            month: { title: 'Bulan Ini', html: '' },
+            lastMonth: { title: 'Bulan Lalu', html: '' }
+            // other month-year groups will be added as needed below
+        };
+
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        // week start = Monday
+        const startOfWeek = new Date(startOfToday);
+        startOfWeek.setDate(startOfWeek.getDate() - ((startOfWeek.getDay() + 6) % 7));
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+        // helper to format month-year headings
+        const monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+        const makeMonthYearKey = d => `${d.getFullYear()}-${d.getMonth()+1}`;
+        const makeMonthYearTitle = d => `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+
+        jobs.forEach(job => {
+            let jobDate = new Date(job.created_at || job.started_at || job.deadline_at || now);
+            let category;
+            if (jobDate >= startOfToday) {
+                category = 'today';
+            } else if (jobDate >= startOfWeek) {
+                category = 'week';
+            } else if (jobDate >= startOfMonth) {
+                category = 'month';
+            } else if (jobDate >= startOfLastMonth) {
+                category = 'lastMonth';
+            } else {
+                // older than last month: bucket by month-year
+                const key = makeMonthYearKey(jobDate);
+                if (!groups[key]) {
+                    groups[key] = { title: makeMonthYearTitle(jobDate), html: '' };
+                }
+                category = key;
+            }
+            groups[category].html += this.createJobCard(job);
+        });
+
+        // determine order of keys for rendering
+        const orderedKeys = ['today','week','month','lastMonth'];
+        // append any other keys sorted descending by date (newest first)
+        const extraKeys = Object.keys(groups).filter(k => !orderedKeys.includes(k));
+        extraKeys.sort((a,b)=>{
+            // keys have form YYYY-M
+            const [ay,am] = a.split('-').map(Number);
+            const [by,bm] = b.split('-').map(Number);
+            if (ay !== by) return by - ay;
+            return bm - am;
+        });
+        orderedKeys.push(...extraKeys);
+
+        // append groups to container in computed order
+        orderedKeys.forEach(key => {
+            if (groups[key] && groups[key].html) {
+                const heading = document.createElement('h4');
+                heading.className = 'mt-4';
+                heading.textContent = groups[key].title;
+                container.appendChild(heading);
+
+                const gridWrapper = document.createElement('div');
+                gridWrapper.className = 'rnd-jobs-grid';
+                gridWrapper.innerHTML = groups[key].html;
+                container.appendChild(gridWrapper);
+            }
+        });
     }
 
     getSampleIcon(sampleType) {

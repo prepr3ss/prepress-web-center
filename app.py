@@ -4040,14 +4040,15 @@ def initialize_ctp_machines():
 @require_ctp_access
 def get_ctp_kpi_data():
     try:
-        # Ambil parameter year dan month
-        # Jika year="" atau month="" dari frontend, biarkan sebagai string kosong
+        # Ambil parameter year, month, dan plate_type
         year_param = request.args.get('year', '')
         month_param = request.args.get('month', '')
+        plate_type_param = request.args.get('plate_type', '')
         
-        # Konversi ke integer jika tidak kosong, jika kosong biarkan None
+        # Konversi ke integer jika tidak kosong
         year = int(year_param) if year_param else None
         month = int(month_param) if month_param else None
+        plate_type = plate_type_param if plate_type_param else None
         
         # Logika untuk MonthlyWorkHours
         # Ambil data total waktu dari tabel monthly_work_hours
@@ -4099,6 +4100,9 @@ def get_ctp_kpi_data():
             query_ctp_log = query_ctp_log.filter(extract('year', CTPProductionLog.log_date) == year)
         if month:
             query_ctp_log = query_ctp_log.filter(extract('month', CTPProductionLog.log_date) == month)
+        if plate_type:
+            # Filter berdasarkan plate type (FUJI atau SAPHIRA)
+            query_ctp_log = query_ctp_log.filter(CTPProductionLog.plate_type_material.ilike(f'{plate_type}%'))
             
         results = query_ctp_log.all()
         
@@ -4116,11 +4120,13 @@ def get_ctp_kpi_data():
                 CTPProductionLog.num_plate_not_good > 0
             )
             
-            # Apply same year/month filter secara kondisional
+            # Apply same year/month/plate_type filter secara kondisional
             if year:
                 reasons_query = reasons_query.filter(extract('year', CTPProductionLog.log_date) == year)
             if month:
                 reasons_query = reasons_query.filter(extract('month', CTPProductionLog.log_date) == month)
+            if plate_type:
+                reasons_query = reasons_query.filter(CTPProductionLog.plate_type_material.ilike(f'{plate_type}%'))
             
             # Initialize reason counters
             reason_counts = {
