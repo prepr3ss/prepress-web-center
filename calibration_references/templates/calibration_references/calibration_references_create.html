@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ action }} Calibration Reference - Impact 360</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-mobile-framework.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Modern Page Header - Solid Colors */
+        .page-header {
+            background: #2c3e50;
+            color: white;
+            padding: 2rem 0;
+            margin: -1rem -15px 2rem -15px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 20px rgba(44, 62, 80, 0.3);
+        }
+        
+        /* Form section styling */
+        .form-section {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+            border: 1px solid #e9ecef;
+        }
+        
+        /* Modern form controls */
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            background: #ffffff;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+            background: #ffffff;
+            outline: none;
+        }
+        
+        .form-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+        
+        /* Modern button styling */
+        .btn-clean {
+            border: none;
+            border-radius: 25px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-primary-clean {
+            background: #3498db;
+            color: white;
+            box-shadow: 0 2px 15px rgba(52, 152, 219, 0.4);
+        }
+        
+        .btn-primary-clean:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(52, 152, 219, 0.5);
+            color: white;
+        }
+        
+        .btn-secondary-clean {
+            background: #6c757d;
+            color: white;
+            box-shadow: 0 2px 15px rgba(108, 117, 125, 0.4);
+        }
+        
+        .btn-secondary-clean:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(108, 117, 125, 0.5);
+            color: white;
+        }
+        
+        .btn-light:focus {
+            outline: none;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+        
+        /* Modern section headers */
+        .section-header {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+        
+        /* Calibration Curve Layout - 2 Row Grid */
+        .cmyk-grid-container {
+            display: grid;
+            grid-template-rows: auto auto;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .cmyk-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        .calibration-curve-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 1.5rem;
+        }
+        
+        .color-inputs-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .color-input-group {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .color-label {
+            min-width: 60px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #495057;
+            margin: 0;
+        }
+        
+        .color-input {
+            flex: 1;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+            height: 350px;
+            position: relative;
+        }
+        
+        .chart-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .chart-canvas {
+            width: 100% !important;
+            height: 270px !important;
+        }
+        
+        /* Color-specific borders */
+        .cyan-section .color-input-group .form-control:focus {
+            border-color: #00CED1;
+            box-shadow: 0 0 0 0.2rem rgba(0, 206, 209, 0.25);
+        }
+        
+        .magenta-section .color-input-group .form-control:focus {
+            border-color: #FF1493;
+            box-shadow: 0 0 0 0.2rem rgba(255, 20, 147, 0.25);
+        }
+        
+        .yellow-section .color-input-group .form-control:focus {
+            border-color: #FFA000;
+            box-shadow: 0 0 0 0.2rem rgba(255, 160, 0, 0.25);
+        }
+        
+        .black-section .color-input-group .form-control:focus {
+            border-color: #696969;
+            box-shadow: 0 0 0 0.2rem rgba(105, 105, 105, 0.25);
+        }
+        
+        /* Error styling */
+        .invalid-feedback {
+            display: block;
+            font-size: 0.8rem;
+            color: #dc3545;
+            margin-top: 0.25rem;
+        }
+        
+        .is-invalid {
+            border-color: #dc3545;
+        }
+        
+        /* Alert styling */
+        .alert {
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        
+        /* Color section headers */
+        .color-section-header {
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+        
+        .cyan-section .color-section-header {
+            background: #E0FFFF;
+            color: #008B8B;
+            border: 1px solid #00CED1;
+        }
+        
+        .magenta-section .color-section-header {
+            background: #FFDFF0;
+            color: #C71585;
+            border: 1px solid #FF1493;
+        }
+        
+        .yellow-section .color-section-header {
+            background: #FFF9C4;
+            color: #cf962a;
+            border: 1px solid #FFD700;
+        }
+        
+        .black-section .color-section-header {
+            background: #F5F5F5;
+            color: #2F4F4F;
+            border: 1px solid #696969;
+        }
+        
+        /* Import Section Styling */
+        .import-section {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+        }
+        
+        .file-upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+            position: relative;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .file-upload-area:hover {
+            border-color: #3498db;
+            background: #f0f8ff;
+        }
+        
+        .file-upload-area.dragover {
+            border-color: #3498db;
+            background: #e3f2fd;
+            transform: scale(1.02);
+        }
+        
+        .upload-content {
+            transition: all 0.3s ease;
+        }
+        
+        .upload-progress .progress-text {
+            font-weight: 600;
+            color: #3498db;
+        }
+        
+        .upload-success .success-text {
+            font-weight: 600;
+        }
+        
+        .upload-error .error-text {
+            font-weight: 600;
+        }
+        
+        .upload-progress,
+        .upload-success,
+        .upload-error {
+            padding: 1rem;
+            border-radius: 10px;
+            background: white;
+            border: 1px solid #e9ecef;
+        }
+        
+        .upload-progress {
+            border-color: #3498db;
+            background: #f0f8ff;
+        }
+        
+        .upload-success {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+        
+        .upload-error {
+            border-color: #dc3545;
+            background: #fff5f5;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 1200px) {
+            .cmyk-row {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .calibration-curve-container {
+                grid-template-columns: 1fr 2fr;
+                gap: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .cmyk-grid-container {
+                gap: 1.5rem;
+            }
+            
+            .cmyk-row {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .calibration-curve-container {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .color-input-group {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .color-label {
+                min-width: auto;
+            }
+            
+            .color-input {
+                width: 100%;
+            }
+           
+            .form-section {
+                padding: 1rem;
+            }
+            
+            .chart-container {
+                height: 300px;
+            }
+            
+            .chart-canvas {
+                height: 220px !important;
+            }
+        }
+
+        /* Logo Styling */
+        .header-logo {
+            max-height: 80px; /* Atur ukuran logo */
+            width: auto;
+            filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2));
+            margin-right: 1.5rem;
+        }
+
+        @media (max-width: 576px) {
+            .header-logo {
+                max-height: 50px;
+                margin-bottom: 1rem;
+            }
+        }         
+    </style>
+</head>
+<body>
+    {% include '_top_header.html' %}
+    <div class="d-flex" id="content-wrapper">
+        {% include '_sidebar.html' %}
+        <div id="page-content-wrapper">
+            <div class="container-fluid pt-3">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div class="container-fluid">
+                        <div class="row align-items-center">
+                            <div class="col d-flex align-items-center">
+                                {% if standard|upper == 'G7' %}
+                                    <img src="{{ url_for('static', filename='img/logo_g7expert.png') }}" alt="G7 Expert Logo" class="header-logo">
+                                {% elif standard|upper == 'ISO' %}
+                                    <img src="{{ url_for('static', filename='img/logo_iso.png') }}" alt="ISO Certified Logo" class="header-logo">
+                                {% endif %}
+
+                                <div>
+                                    <h2 class="mb-1 text-white">{{ action }} Calibration Reference - {{ standard or 'G7' }}</h2>
+                                    <p class="mb-0 opacity-75">
+                                        {% if action == 'Create' %}
+                                            <i class="fas fa-plus-circle me-1"></i> Add a new calibration reference for print machines
+                                        {% else %}
+                                            <i class="fas fa-edit me-1"></i> Edit existing calibration reference data for <strong>{{ standard or 'G7' }}</strong>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div class="col-auto">
+                                <a href="{{ url_for('calibration_references.standard_list', standard=(standard or 'G7').lower()) }}" class="btn btn-light shadow-sm">
+                                    <i class="fas fa-arrow-left me-2"></i>Back to List
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <!-- Form Section -->
+                <div class="form-section">
+                    <form method="POST" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Basic Information Section -->
+                        <div class="section-header">
+                            <h3 class="section-title">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Basic Information
+                            </h3>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-4 mb-2">
+                                {{ form.print_machine.label(class="form-label") }}
+                                {{ form.print_machine(class="form-select" + (" is-invalid" if form.print_machine.errors else "")) }}
+                                {% if form.print_machine.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.print_machine.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                {{ form.paper_type.label(class="form-label") }}
+                                {{ form.paper_type(class="form-control" + (" is-invalid" if form.paper_type.errors else ""), placeholder="e.g., DCH, DCC, DCSP, IVCI") }}
+                                {% if form.paper_type.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.paper_type.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                {{ form.ink_type.label(class="form-label") }}
+                                {{ form.ink_type(class="form-control" + (" is-invalid" if form.ink_type.errors else ""), placeholder="e.g., SAKATA, DIC") }}
+                                {% if form.ink_type.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.ink_type.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-3 mb-2">
+                                {{ form.calib_group.label(class="form-label") }}
+                                {{ form.calib_group(class="form-control" + (" is-invalid" if form.calib_group.errors else ""), placeholder="e.g., G7 VLF SAKATA") }}
+                                {% if form.calib_group.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.calib_group.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                {{ form.calib_code.label(class="form-label") }}
+                                {{ form.calib_code(class="form-control" + (" is-invalid" if form.calib_code.errors else ""), placeholder="e.g., G7 VLF DCSP SAKATA") }}
+                                {% if form.calib_code.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.calib_code.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                {{ form.calib_name.label(class="form-label") }}
+                                {{ form.calib_name(class="form-control" + (" is-invalid" if form.calib_name.errors else ""), placeholder="e.g., 20251219_AM_175_DCSP_G2_SAKATA_G7") }}
+                                {% if form.calib_name.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.calib_name.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                {{ form.calib_standard.label(class="form-label") }}
+                                {{ form.calib_standard(class="form-control" + (" is-invalid" if form.calib_standard.errors else ""), readonly=true) }}
+                                {% if form.calib_standard.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.calib_standard.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <small class="text-muted">Calibration standard is automatically set based on the selected menu</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Import Section -->
+                        <div class="section-header">
+                            <h3 class="section-title">
+                                <i class="fas fa-file-import me-2"></i>
+                                Import Calibration Data
+                            </h3>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="import-section">
+                                    <!-- File Upload Area -->
+                                    <div class="file-upload-area" id="fileUploadArea">
+                                        <div class="upload-content">
+                                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                            <h5 class="text-muted">Import Prinect Manager Calibration Data</h5>
+                                            <p class="text-muted small mb-3">
+                                                Drag and drop your .txt file here, or click to browse
+                                            </p>
+                                            <button type="button" class="btn btn-outline-primary btn-sm" id="browseFilesBtn">
+                                                <i class="fas fa-folder-open me-2"></i>Browse Files
+                                            </button>
+                                            <input type="file" id="calibrationFileInput" accept=".txt" style="display: none;">
+                                            
+                                            <!-- Success and Error messages moved here -->
+                                            <div class="upload-success d-none mt-3" id="uploadSuccess">
+                                                <div class="d-flex align-items-center text-success">
+                                                    <i class="fas fa-check-circle fa-2x me-3"></i>
+                                                    <div>
+                                                        <div class="success-text">Calibration data imported successfully!</div>
+                                                        <div class="success-text-small text-muted small" id="successFileName"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="upload-error d-none mt-3" id="uploadError">
+                                                <div class="d-flex align-items-center text-danger">
+                                                    <i class="fas fa-exclamation-circle fa-2x me-3"></i>
+                                                    <div>
+                                                        <div class="error-text">Import failed</div>
+                                                        <div class="error-text-small text-muted small" id="errorMessage"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="upload-progress d-none" id="uploadProgress">
+                                            <div class="d-flex align-items-center">
+                                                <div class="spinner-border spinner-border-sm text-primary me-3" role="status">
+                                                    <span class="visually-hidden">Loading...</span>
+                                                </div>
+                                                <div>
+                                                    <div class="progress-text">Processing file...</div>
+                                                    <div class="progress-text-small text-muted small" id="fileName"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Import Info -->
+                                    <div class="import-info mt-3">
+                                        <div class="alert alert-info" role="alert">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            <strong>Supported Format:</strong> Prinect Manager export files (.txt)<br>
+                                            <small>The system will automatically extract calibration data from "Calibration_C", "Calibration_M", "Calibration_Y", and "Calibration_K" lines.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Color Values Section -->
+                        <div class="section-header">
+                            <h3 class="section-title">
+                                <i class="fas fa-palette me-2"></i>
+                                Calibration Values (CMYK)
+                            </h3>
+                        </div>
+                        
+                        <!-- CMYK Grid Container - 2 Rows -->
+                        <div class="cmyk-grid-container">
+                            <!-- First Row: CYAN | MAGENTA -->
+                            <div class="cmyk-row">
+                                <!-- Cyan Values -->
+                                <div class="cyan-section">
+                                    <div class="color-section-header">
+                                        <i class="fas fa-tint me-2"></i>Cyan Calibration Curve
+                                    </div>
+                                    <div class="calibration-curve-container">
+                                        <div class="color-inputs-vertical">
+                                            <div class="color-input-group">
+                                                <label class="color-label">C20</label>
+                                                {{ form.c20(class="form-control color-input", placeholder="0.00", id="c20") }}
+                                            </div>
+                                            <div class="color-input-group">
+                                                <label class="color-label">C25</label>
+                                                {{ form.c25(class="form-control color-input", placeholder="0.00", id="c25") }}
+                                            </div>
+                                            <div class="color-input-group">
+                                                <label class="color-label">C40</label>
+                                                {{ form.c40(class="form-control color-input", placeholder="0.00", id="c40") }}
+                                            </div>
+                                            <div class="color-input-group">
+                                                <label class="color-label">C50</label>
+                                                {{ form.c50(class="form-control color-input", placeholder="0.00", id="c50") }}
+                                            </div>
+                                            <div class="color-input-group">
+                                                <label class="color-label">C75</label>
+                                                {{ form.c75(class="form-control color-input", placeholder="0.00", id="c75") }}
+                                            </div>
+                                            <div class="color-input-group">
+                                                <label class="color-label">C80</label>
+                                                {{ form.c80(class="form-control color-input", placeholder="0.00", id="c80") }}
+                                            </div>
+                                        </div>
+                                        <div class="chart-container">
+                                            <div class="chart-title">Cyan Calibration Curve</div>
+                                            <canvas id="cyanChart" class="chart-canvas"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Magenta Values -->
+                                <div class="magenta-section">
+                                    <div class="color-section-header">
+                                        <i class="fas fa-tint me-2"></i>Magenta Calibration Curve
+                                    </div>
+                                    <div class="calibration-curve-container">
+                                        <div class="color-inputs-vertical">
+                                            <div class="color-input-group">
+                                                <label class="color-label">M20</label>
+                                                {{ form.m20(class="form-control color-input", placeholder="0.00", id="m20") }}
+                                            </div>
+                                            <div class="color-input-group">
+                                                <label class="color-label">M25</label>
+                                                {{ form.m25(class="form-control color-input", placeholder="0.00", id="m25") }}
+                                            </div>
+                                            <div class="color-input-group">
+                                                <label class="color-label">M40</label>
+                                                {{ form.m40(class="form-control color-input", placeholder="0.00", id="m40") }}
+                                            </div>
+                                            <div class="color-input-group">
+                                                <label class="color-label">M50</label>
+                                                {{ form.m50(class="form-control color-input", placeholder="0.00", id="m50") }}
+                                            </div>
+                                            <div class="color-input-group">
+                                                <label class="color-label">M75</label>
+                                                {{ form.m75(class="form-control color-input", placeholder="0.00", id="m75") }}
+                                            </div>
+                                            <div class="color-input-group">
+                                                <label class="color-label">M80</label>
+                                                {{ form.m80(class="form-control color-input", placeholder="0.00", id="m80") }}
+                                            </div>
+                                        </div>
+                                        <div class="chart-container">
+                                            <div class="chart-title">Magenta Calibration Curve</div>
+                                            <canvas id="magentaChart" class="chart-canvas"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Second Row: YELLOW | BLACK -->
+                            <div class="cmyk-row">
+                                <!-- Yellow Values -->
+                                <div class="yellow-section">
+                                    <div class="color-section-header">
+                                        <i class="fas fa-tint me-2"></i>Yellow Calibration Curve
+                                    </div>
+                                    <div class="calibration-curve-container">
+                                        <div class="color-inputs-vertical">
+                                            <div class="color-input-group">
+                                                <label class="color-label">Y20</label>
+                                                {{ form.y20(class="form-control color-input", placeholder="0.00", id="y20") }}
+                                            </div>
+                                            <div class="color-input-group">
+                                                <label class="color-label">Y25</label>
+                                                {{ form.y25(class="form-control color-input", placeholder="0.00", id="y25") }}
+                                            </div>
+                                            <div class="color-input-group">
+                                                <label class="color-label">Y40</label>
+                                                {{ form.y40(class="form-control color-input", placeholder="0.00", id="y40") }}
+                                            </div>
+                                            <div class="color-input-group">
+                                                <label class="color-label">Y50</label>
+                                                {{ form.y50(class="form-control color-input", placeholder="0.00", id="y50") }}
+                                            </div>
+                                            <div class="color-input-group">
+                                                <label class="color-label">Y75</label>
+                                                {{ form.y75(class="form-control color-input", placeholder="0.00", id="y75") }}
+                                            </div>
+                                            <div class="color-input-group">
+                                                <label class="color-label">Y80</label>
+                                                {{ form.y80(class="form-control color-input", placeholder="0.00", id="y80") }}
+                                            </div>
+                                        </div>
+                                        <div class="chart-container">
+                                            <div class="chart-title">Yellow Calibration Curve</div>
+                                            <canvas id="yellowChart" class="chart-canvas"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Black Values -->
+                                <div class="black-section">
+                                    <div class="color-section-header">
+                                        <i class="fas fa-tint me-2"></i>Black Calibration Curve
+                                    </div>
+                                    <div class="calibration-curve-container">
+                                        <div class="color-inputs-vertical">
+                                            <div class="color-input-group">
+                                                <label class="color-label">K20</label>
+                                                {{ form.k20(class="form-control color-input", placeholder="0.00", id="k20") }}
+                                            </div>
+                                            <div class="color-input-group">
+                                                <label class="color-label">K25</label>
+                                                {{ form.k25(class="form-control color-input", placeholder="0.00", id="k25") }}
+                                            </div>
+                                            <div class="color-input-group">
+                                                <label class="color-label">K40</label>
+                                                {{ form.k40(class="form-control color-input", placeholder="0.00", id="k40") }}
+                                            </div>
+                                            <div class="color-input-group">
+                                                <label class="color-label">K50</label>
+                                                {{ form.k50(class="form-control color-input", placeholder="0.00", id="k50") }}
+                                            </div>
+                                            <div class="color-input-group">
+                                                <label class="color-label">K75</label>
+                                                {{ form.k75(class="form-control color-input", placeholder="0.00", id="k75") }}
+                                            </div>
+                                            <div class="color-input-group">
+                                                <label class="color-label">K80</label>
+                                                {{ form.k80(class="form-control color-input", placeholder="0.00", id="k80") }}
+                                            </div>
+                                        </div>
+                                        <div class="chart-container">
+                                            <div class="chart-title">Black Calibration Curve</div>
+                                            <canvas id="blackChart" class="chart-canvas"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <a href="{{ url_for('calibration_references.index') }}" class="btn btn-secondary-clean">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            {{ form.submit(class="btn btn-primary-clean") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
+    
+    <script>
+        // Calibration Curve Visualization
+        class CalibrationCurveChart {
+            constructor(canvasId, colorName, colorCode) {
+                this.canvas = document.getElementById(canvasId);
+                this.colorName = colorName;
+                this.colorCode = colorCode;
+                this.chart = null;
+                this.initChart();
+            }
+            
+            initChart() {
+                const ctx = this.canvas.getContext('2d');
+                
+                // Only use the specific tint percentages we have data for
+                const tintLabels = ['20', '25', '40', '50', '75', '80'];
+                
+                // Store tint labels in instance for callback access
+                this.tintLabels = tintLabels;
+                
+                this.chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: tintLabels,
+                        datasets: [{
+                            label: this.colorName + ' Calibration Curve',
+                            data: [0, 0, 0, 0, 0, 0], // Only 6 points for our 6 input fields
+                            borderColor: this.colorCode,
+                            backgroundColor: this.colorCode + '20',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: this.colorCode,
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 1,
+                            pointHitRadius: 10,
+                            spanGaps: false // Don't connect gaps between points
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                enabled: false
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Percentage (%)',
+                                    color: '#6c757d',
+                                    font: {
+                                        size: 12,
+                                        weight: '600'
+                                    }
+                                },
+                                grid: {
+                                    color: '#e9ecef',
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    color: '#6c757d',
+                                    font: {
+                                        size: 11
+                                    },
+                                    callback: function(value, index) {
+                                        // Use the actual labels from our data array
+                                        const tintLabels = ['20', '25', '40', '50', '75', '80'];
+                                        return tintLabels[index] + '%';
+                                    },
+                                    autoSkip: false,
+                                    maxRotation: 0,
+                                    minRotation: 0
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Value',
+                                    color: '#6c757d',
+                                    font: {
+                                        size: 12,
+                                        weight: '600'
+                                    }
+                                },
+                                min: 0,
+                                max: 100,
+                                ticks: {
+                                    stepSize: 10,
+                                    color: '#6c757d',
+                                    font: {
+                                        size: 11
+                                    },
+                                    callback: function(value) {
+                                        return value + '';
+                                    }
+                                },
+                                grid: {
+                                    color: '#e9ecef',
+                                    drawBorder: false
+                                }
+                            }
+                        },
+                        animation: {
+                            duration: 750,
+                            easing: 'easeInOutQuart'
+                        }
+                    }
+                });
+            }
+            
+            updateChart(values) {
+                if (this.chart) {
+                    // Only update the 6 data points we actually have
+                    // Don't interpolate or calculate missing values
+                    const chartData = values.map(value => value || 0);
+                    
+                    this.chart.data.datasets[0].data = chartData;
+                    this.chart.update('active');
+                }
+            }
+        }
+        
+        // Initialize charts
+        let cyanChart, magentaChart, yellowChart, blackChart;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize calibration curve charts with proper CMYK colors
+            cyanChart = new CalibrationCurveChart('cyanChart', 'Cyan', '#00CED1');      // Dark Turquoise (more vibrant)
+            magentaChart = new CalibrationCurveChart('magentaChart', 'Magenta', '#FF1493'); // Deep Pink (more vibrant)
+            yellowChart = new CalibrationCurveChart('yellowChart', 'Yellow', '#FFD700');   // Gold (more vibrant yellow)
+            blackChart = new CalibrationCurveChart('blackChart', 'Black', '#2C3E50');       // Dark Slate (softer than pure black)
+            
+            // Set up input listeners for real-time updates
+            setupCalibrationInputListeners();
+            
+            // Load initial values if editing
+            loadInitialValues();
+        });
+        
+        function setupCalibrationInputListeners() {
+            // Cyan inputs
+            ['c20', 'c25', 'c40', 'c50', 'c75', 'c80'].forEach(id => {
+                const input = document.getElementById(id);
+                if (input) {
+                    input.addEventListener('input', updateCyanChart);
+                }
+            });
+            
+            // Magenta inputs
+            ['m20', 'm25', 'm40', 'm50', 'm75', 'm80'].forEach(id => {
+                const input = document.getElementById(id);
+                if (input) {
+                    input.addEventListener('input', updateMagentaChart);
+                }
+            });
+            
+            // Yellow inputs
+            ['y20', 'y25', 'y40', 'y50', 'y75', 'y80'].forEach(id => {
+                const input = document.getElementById(id);
+                if (input) {
+                    input.addEventListener('input', updateYellowChart);
+                }
+            });
+            
+            // Black inputs
+            ['k20', 'k25', 'k40', 'k50', 'k75', 'k80'].forEach(id => {
+                const input = document.getElementById(id);
+                if (input) {
+                    input.addEventListener('input', updateBlackChart);
+                }
+            });
+        }
+        
+        function updateCyanChart() {
+            const values = ['c20', 'c25', 'c40', 'c50', 'c75', 'c80'].map(id => {
+                const input = document.getElementById(id);
+                return input && input.value ? parseFloat(input.value) || 0 : 0;
+            });
+            cyanChart.updateChart(values);
+        }
+        
+        function updateMagentaChart() {
+            const values = ['m20', 'm25', 'm40', 'm50', 'm75', 'm80'].map(id => {
+                const input = document.getElementById(id);
+                return input && input.value ? parseFloat(input.value) || 0 : 0;
+            });
+            magentaChart.updateChart(values);
+        }
+        
+        function updateYellowChart() {
+            const values = ['y20', 'y25', 'y40', 'y50', 'y75', 'y80'].map(id => {
+                const input = document.getElementById(id);
+                return input && input.value ? parseFloat(input.value) || 0 : 0;
+            });
+            yellowChart.updateChart(values);
+        }
+        
+        function updateBlackChart() {
+            const values = ['k20', 'k25', 'k40', 'k50', 'k75', 'k80'].map(id => {
+                const input = document.getElementById(id);
+                return input && input.value ? parseFloat(input.value) || 0 : 0;
+            });
+            blackChart.updateChart(values);
+        }
+        
+        function loadInitialValues() {
+            // Load initial values if editing existing record
+            // Check if we're editing by looking for existing values in the form
+            var hasExistingValues = false;
+            
+            // Check if any CMYK field has a value
+            ['c20', 'c25', 'c40', 'c50', 'c75', 'c80',
+             'm20', 'm25', 'm40', 'm50', 'm75', 'm80',
+             'y20', 'y25', 'y40', 'y50', 'y75', 'y80',
+             'k20', 'k25', 'k40', 'k50', 'k75', 'k80'].forEach(id => {
+                var input = document.getElementById(id);
+                if (input && input.value && input.value.trim() !== '') {
+                    hasExistingValues = true;
+                }
+            });
+            
+            if (hasExistingValues) {
+                // Set initial values for editing
+                setTimeout(() => {
+                    updateCyanChart();
+                    updateMagentaChart();
+                    updateYellowChart();
+                    updateBlackChart();
+                }, 100);
+            }
+        }
+        
+        // Prinect Manager Import Functionality
+        class PrinectImportManager {
+            constructor() {
+                this.fileUploadArea = document.getElementById('fileUploadArea');
+                this.fileInput = document.getElementById('calibrationFileInput');
+                this.browseBtn = document.getElementById('browseFilesBtn');
+                this.uploadProgress = document.getElementById('uploadProgress');
+                this.uploadSuccess = document.getElementById('uploadSuccess');
+                this.uploadError = document.getElementById('uploadError');
+                this.fileName = document.getElementById('fileName');
+                this.successFileName = document.getElementById('successFileName');
+                this.errorMessage = document.getElementById('errorMessage');
+                
+                this.initEventListeners();
+            }
+            
+            initEventListeners() {
+                // Browse button click
+                this.browseBtn.addEventListener('click', () => {
+                    this.fileInput.click();
+                });
+                
+                // File input change
+                this.fileInput.addEventListener('change', (e) => {
+                    if (e.target.files.length > 0) {
+                        this.handleFile(e.target.files[0]);
+                    }
+                });
+                
+                // Drag and drop events
+                this.fileUploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    this.fileUploadArea.classList.add('dragover');
+                });
+                
+                this.fileUploadArea.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    this.fileUploadArea.classList.remove('dragover');
+                });
+                
+                this.fileUploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    this.fileUploadArea.classList.remove('dragover');
+                    
+                    if (e.dataTransfer.files.length > 0) {
+                        this.handleFile(e.dataTransfer.files[0]);
+                    }
+                });
+            }
+            
+            async handleFile(file) {
+                console.log('Handling file:', file.name, file.type, file.size);
+                
+                // Validate file type
+                if (!file.name.toLowerCase().endsWith('.txt')) {
+                    console.log('File validation failed - not a .txt file');
+                    this.showError('Please select a .txt file exported from Prinect Manager.');
+                    return;
+                }
+                
+                console.log('File validation passed - showing progress');
+                // Show progress
+                this.showProgress(file.name);
+                
+                try {
+                    console.log('Reading file content...');
+                    // Read file content
+                    const content = await this.readFileContent(file);
+                    console.log('File content read, length:', content.length);
+                    console.log('First 500 chars:', content.substring(0, 500));
+                    
+                    console.log('Parsing calibration data...');
+                    // Parse calibration data
+                    const calibrationData = this.parsePrinectFile(content);
+                    
+                    if (!calibrationData) {
+                        console.log('Parsing failed - no valid calibration data found');
+                        this.showError('Invalid file format. Please ensure this is a valid Prinect Manager export file.');
+                        return;
+                    }
+                    
+                    console.log('Parsing successful, populating form...');
+                    // Populate form fields
+                    this.populateForm(calibrationData, file.name);
+                    
+                    console.log('Form populated, showing success...');
+                    // Show success
+                    this.showSuccess(file.name);
+                    
+                    console.log('Updating charts...');
+                    // Update charts
+                    setTimeout(() => {
+                        updateCyanChart();
+                        updateMagentaChart();
+                        updateYellowChart();
+                        updateBlackChart();
+                    }, 100);
+                    
+                } catch (error) {
+                    console.error('Import error:', error);
+                    this.showError('Failed to process file: ' + error.message);
+                }
+            }
+            
+            readFileContent(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = (e) => reject(new Error('Failed to read file'));
+                    reader.readAsText(file);
+                });
+            }
+            
+            parsePrinectFile(content) {
+                console.log('Starting to parse Prinect file...');
+                console.log('File content length:', content.length);
+                
+                const lines = content.split('\n');
+                console.log('Total lines:', lines.length);
+                
+                // Debug: Show first 20 lines to understand format
+                console.log('First 20 lines:');
+                for (let i = 0; i < Math.min(20, lines.length); i++) {
+                    console.log(`${i + 1}: "${lines[i]}"`);
+                }
+                
+                const calibrationData = {
+                    cyan: {},
+                    magenta: {},
+                    yellow: {},
+                    black: {}
+                };
+                
+                let calibrationLinesFound = 0;
+                
+                // Parse each line looking for calibration data
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    const trimmedLine = line.trim();
+                    
+                    // Debug: Check for any line containing "Calibration"
+                    if (trimmedLine.includes('Calibration')) {
+                        console.log(`Line ${i + 1} contains Calibration: "${trimmedLine}"`);
+                    }
+                    
+                    // Look for Calibration_C lines (handle line numbers at the beginning)
+                    if (trimmedLine.includes('"Calibration_C"')) {
+                        calibrationLinesFound++;
+                        console.log('Found Calibration_C line:', trimmedLine);
+                        this.parseCalibrationLine(trimmedLine, calibrationData.cyan, 'c');
+                    }
+                    // Look for Calibration_M lines (handle line numbers at the beginning)
+                    else if (trimmedLine.includes('"Calibration_M"')) {
+                        calibrationLinesFound++;
+                        console.log('Found Calibration_M line:', trimmedLine);
+                        this.parseCalibrationLine(trimmedLine, calibrationData.magenta, 'm');
+                    }
+                    // Look for Calibration_Y lines (handle line numbers at the beginning)
+                    else if (trimmedLine.includes('"Calibration_Y"')) {
+                        calibrationLinesFound++;
+                        console.log('Found Calibration_Y line:', trimmedLine);
+                        this.parseCalibrationLine(trimmedLine, calibrationData.yellow, 'y');
+                    }
+                    // Look for Calibration_K lines (handle line numbers at the beginning)
+                    else if (trimmedLine.includes('"Calibration_K"')) {
+                        calibrationLinesFound++;
+                        console.log('Found Calibration_K line:', trimmedLine);
+                        this.parseCalibrationLine(trimmedLine, calibrationData.black, 'k');
+                    }
+                }
+                
+                console.log('Total calibration lines found:', calibrationLinesFound);
+                console.log('Parsed calibration data:', calibrationData);
+                
+                // Validate that we have required data
+                const requiredTints = ['20', '25', '40', '50', '75', '80'];
+                let hasValidData = false;
+                
+                for (const color of ['cyan', 'magenta', 'yellow', 'black']) {
+                    for (const tint of requiredTints) {
+                        if (calibrationData[color][tint]) {
+                            hasValidData = true;
+                            console.log(`Found valid data: ${color}.${tint} = ${calibrationData[color][tint]}`);
+                            break;
+                        }
+                    }
+                    if (hasValidData) break;
+                }
+                
+                console.log('Has valid data:', hasValidData);
+                return hasValidData ? calibrationData : null;
+            }
+            
+            parseCalibrationLine(line, colorData, prefix) {
+                console.log(`Parsing ${prefix} line:`, line);
+                // Actual format from file:
+                // 293	"Calibration_C" 0.0 0 0 0 0.00 0 0 0
+                // 333	"Calibration_C" 20.0 0 0 0 16.09 0 0 0
+                // 535	"Calibration_M" 0 20.0 0 0 0 12.89 0 0
+                // 737	"Calibration_Y" 0 0 20.0 0 0 0 16.55 0
+                // 939	"Calibration_K" 0 0 0 20.0 0 0 0 17.94
+                
+                // Remove line number at the beginning and clean the line
+                const cleanLine = line.replace(/^\d+\s+/, '').replace(/"/g, '').trim();
+                const parts = cleanLine.split(/\s+/);
+                console.log(`Clean line: "${cleanLine}"`);
+                console.log(`Split parts:`, parts);
+                console.log(`Parts length:`, parts.length);
+                
+                if (parts.length >= 9) { // Should have at least 9 parts: Calibration_C + 8 values
+                    // Find the patch percentage and corresponding DOT value
+                    let patchPercentage = null;
+                    let dotValue = null;
+                    let patchIndex = -1;
+                    
+                    // Check each position for the patch percentage (non-zero value)
+                    // Positions 2-5 (index 1-4) contain CMYK values, only one is non-zero
+                    for (let i = 1; i <= 4; i++) {
+                        const value = parseFloat(parts[i]);
+                        console.log(`Checking part ${i}: "${parts[i]}" ->`, value, typeof value, !isNaN(value), value > 0);
+                        if (!isNaN(value) && value > 0) {
+                            patchPercentage = value;
+                            patchIndex = i;
+                            // DOT value is at position i + 4 (positions 6-9, index 5-8)
+                            dotValue = parseFloat(parts[i + 4]);
+                            console.log(`Found patch ${patchPercentage}% with DOT value ${dotValue} at position ${i + 4}`);
+                            break;
+                        }
+                    }
+                    
+                    console.log(`Final result - patchPercentage: ${patchPercentage}, dotValue: ${dotValue}, patchIndex: ${patchIndex}`);
+                    
+                    if (patchPercentage !== null && dotValue !== null && !isNaN(patchPercentage) && !isNaN(dotValue)) {
+                        // Map to our field names
+                        const tintKey = patchPercentage.toString();
+                        colorData[tintKey] = dotValue;
+                        console.log(`Successfully mapped ${prefix}${tintKey} = ${dotValue}`);
+                    } else {
+                        console.log(`Failed to parse line - patchPercentage: ${patchPercentage}, dotValue: ${dotValue}, patchIndex: ${patchIndex}`);
+                        console.log(`Raw parts for debugging:`, parts);
+                    }
+                } else {
+                    console.log(`Line has insufficient parts (${parts.length}), expected at least 9:`, line);
+                    console.log(`Raw parts:`, parts);
+                }
+            }
+            
+            populateForm(calibrationData, fileName) {
+                // Populate cyan values
+                this.populateColorFields(calibrationData.cyan, 'c');
+                
+                // Populate magenta values
+                this.populateColorFields(calibrationData.magenta, 'm');
+                
+                // Populate yellow values
+                this.populateColorFields(calibrationData.yellow, 'y');
+                
+                // Populate black values
+                this.populateColorFields(calibrationData.black, 'k');
+                
+                // Set calib_name from filename (remove .txt extension)
+                const nameWithoutExt = fileName.replace(/\.txt$/i, '');
+                const calibNameField = document.getElementById('calib_name');
+                if (calibNameField) {
+                    calibNameField.value = nameWithoutExt;
+                }
+            }
+            
+            populateColorFields(colorData, prefix) {
+                const tints = ['20', '25', '40', '50', '75', '80'];
+                
+                for (const tint of tints) {
+                    const fieldName = prefix + tint;
+                    const field = document.getElementById(fieldName);
+                    
+                    if (field && colorData[tint] !== undefined) {
+                        field.value = colorData[tint].toFixed(2);
+                    }
+                }
+            }
+            
+            showProgress(fileName) {
+                this.hideAllStates();
+                this.uploadProgress.classList.remove('d-none');
+                this.fileName.textContent = fileName;
+            }
+            
+            showSuccess(fileName) {
+                this.hideAllStates();
+                this.uploadSuccess.classList.remove('d-none');
+                this.successFileName.textContent = fileName;
+            }
+            
+            showError(message) {
+                this.hideAllStates();
+                this.uploadError.classList.remove('d-none');
+                this.errorMessage.textContent = message;
+            }
+            
+            hideAllStates() {
+                this.uploadProgress.classList.add('d-none');
+                this.uploadSuccess.classList.add('d-none');
+                this.uploadError.classList.add('d-none');
+            }
+        }
+        
+        // Initialize import manager
+        let prinectImportManager;
+        
+        $(document).ready(function() {
+            // Initialize Prinect Import Manager
+            prinectImportManager = new PrinectImportManager();
+            
+            // Auto-format decimal fields to 2 decimal places
+            $('input[type="number"]').on('blur', function() {
+                var value = parseFloat($(this).val());
+                if (!isNaN(value)) {
+                    $(this).val(value.toFixed(2));
+                }
+            });
+            
+            // Validate range on input
+            $('input[type="number"]').on('input', function() {
+                var value = parseFloat($(this).val());
+                if (value < 0) {
+                    $(this).val(0);
+                } else if (value > 100) {
+                    $(this).val(100);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

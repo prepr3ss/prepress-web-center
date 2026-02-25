@@ -57,6 +57,8 @@ from blueprints.tools_5w1h import tools_5w1h_bp
 from blueprints.external_delay_routes import external_delay_bp
 from blueprints.tools_module import tools_module_bp
 from blueprints.rnd_proof_checklist import rnd_proof_checklist_bp
+from calibration_references import calibration_references_bp
+from calibration_references import routes  # Import routes directly
 from plate_details import PLATE_DETAILS
 
 # Timezone untuk Jakarta
@@ -145,6 +147,7 @@ app.register_blueprint(notification_bp)  # NEW: Universal Notification System
 app.register_blueprint(tools_5w1h_bp)
 app.register_blueprint(tools_module_bp)  # NEW: Module Management System
 app.register_blueprint(rnd_proof_checklist_bp)  # NEW: R&D Proof Checklist System
+app.register_blueprint(calibration_references_bp)  # NEW: Calibration Reference Management System
 
 # Initialize the db instance from models.py with the app
 db.init_app(app)
@@ -2099,13 +2102,19 @@ def cancel_adjustment_plate():
 def get_calibration_references():
     try:
         print_machine = request.args.get('print_machine')
+        is_g7 = request.args.get('is_g7', 'false').lower() == 'true'
+        
         if not print_machine:
             return jsonify({'success': False, 'error': 'print_machine parameter is required'}), 400
         
-        # Use SQLAlchemy model instead of direct database connection
-        calibration_data = CalibrationReference.query.filter_by(
-            print_machine=print_machine
-        ).order_by(CalibrationReference.calib_name).all()
+        # Build query based on parameters
+        query = CalibrationReference.query.filter_by(print_machine=print_machine)
+        
+        # Filter by calib_standard if is_g7 is true
+        if is_g7:
+            query = query.filter_by(calib_standard='G7')
+        
+        calibration_data = query.order_by(CalibrationReference.calib_name).all()
         
         # Convert to dictionary format
         calibration_list = []
@@ -2115,7 +2124,8 @@ def get_calibration_references():
                 'print_machine': calib.print_machine,
                 'calib_group': calib.calib_group,
                 'calib_code': calib.calib_code,
-                'calib_name': calib.calib_name
+                'calib_name': calib.calib_name,
+                'calib_standard': calib.calib_standard
             })
         
         return jsonify({

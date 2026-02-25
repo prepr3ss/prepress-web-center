@@ -1246,7 +1246,9 @@
                     document.getElementById('is_g7').value = data.is_g7 ? 'true' : 'false';
                     
                     // Set calibration field
-                    document.getElementById('calibration').value = data.calibration || '';
+                    const calibrationSelect = document.getElementById('calibration');
+                    calibrationSelect.setAttribute('data-current-value', data.calibration || '');
+                    calibrationSelect.value = data.calibration || '';
                     
                     document.getElementById('cyan_20_percent').value = data.cyan_20_percent || '';
                     document.getElementById('cyan_25_percent').value = data.cyan_25_percent || '';
@@ -1583,16 +1585,18 @@
                 }
             }
 
-            // Function to load calibration data based on print_machine
+            // Function to load calibration data based on print_machine and is_g7
             async function loadCalibrationData() {
                 const printMachine = printMachineSelect.value;
+                const isG7 = isG7Select.value;
+                
                 if (!printMachine) {
                     calibrationSelect.innerHTML = '<option value="">Pilih Print Machine terlebih dahulu</option>';
                     return;
                 }
 
                 try {
-                    const response = await fetch(`/impact/api/calibration-references?print_machine=${encodeURIComponent(printMachine)}`);
+                    const response = await fetch(`/impact/api/calibration-references?print_machine=${encodeURIComponent(printMachine)}&is_g7=${encodeURIComponent(isG7)}`);
                     const result = await response.json();
                     
                     if (result.success) {
@@ -1603,6 +1607,12 @@
                             option.textContent = item.calib_name;
                             calibrationSelect.appendChild(option);
                         });
+                        
+                        // Set the selected value if it exists in the form data
+                        const currentCalibration = calibrationSelect.getAttribute('data-current-value');
+                        if (currentCalibration) {
+                            calibrationSelect.value = currentCalibration;
+                        }
                     } else {
                         calibrationSelect.innerHTML = '<option value="">Tidak ada data calibration</option>';
                     }
@@ -1624,6 +1634,10 @@
             fetchAndPopulateForm().then(() => {
                 // Initialize calibration field after form is populated
                 toggleCalibrationField();
+                // Load calibration data if is_g7 is true
+                if (isG7Select.value === 'true') {
+                    loadCalibrationData();
+                }
             });
         });
     </script>

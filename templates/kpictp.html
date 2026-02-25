@@ -1195,16 +1195,18 @@
                 }
             }
 
-            // Function to load calibration data based on print_machine
+            // Function to load calibration data based on print_machine and is_g7
             async function loadCalibrationData() {
                 const printMachine = printMachineSelect.value;
+                const isG7 = isG7Select.value;
+                
                 if (!printMachine) {
                     calibrationSelect.innerHTML = '<option value="">Pilih Print Machine terlebih dahulu</option>';
                     return;
                 }
 
                 try {
-                    const response = await fetch(`/impact/api/calibration-references?print_machine=${encodeURIComponent(printMachine)}`);
+                    const response = await fetch(`/impact/api/calibration-references?print_machine=${encodeURIComponent(printMachine)}&is_g7=${encodeURIComponent(isG7)}`);
                     const result = await response.json();
                     
                     if (result.success) {

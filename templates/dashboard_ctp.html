@@ -648,17 +648,34 @@ document.addEventListener('DOMContentLoaded', async function() {
                 if (!usage.success) throw new Error(usage.error || 'Unknown error from Plate Usage server');
                 if (!printMachine.success) throw new Error(printMachine.error || 'Unknown error from Plate Print Machine server');
                 
-                // Normalize data structure - check if data is wrapped in .data property
-                let usageData = usage.data || { by_type: [], by_group: [], trend: {} };
-                let typeTrendData = typeTrend.data || typeTrend;
-                let printMachineData = printMachine.data || printMachine;
+                // Normalize data structure - check if data is wrapped in .data property or at top level
+                let usageData = usage.data || {
+                    by_type: usage.by_type || [],
+                    by_group: usage.by_group || [],
+                    trend: usage.trend || {}
+                };
+                let typeTrendData = typeTrend.data || {
+                    labels: typeTrend.labels || [],
+                    series: typeTrend.series || [],
+                    granularity: typeTrend.granularity || 'monthly',
+                    average_box_usage: typeTrend.average_box_usage || []
+                };
+                let printMachineData = printMachine.data || {
+                    labels: printMachine.labels || [],
+                    series: printMachine.series || [],
+                    granularity: printMachine.granularity || 'monthly'
+                };
                 let kpiData = Array.isArray(kpi.data) ? [...kpi.data] : [];
                 
                 // Log for debugging
-                console.log('Plate Type Filter:', plateType);
-                console.log('KPI Data Before Filter:', kpiData);
-                console.log('Usage Data Before Filter:', usageData);
-                console.log('Type Trend Data Before Filter:', typeTrendData);
+                console.log('Raw responses received:');
+                console.log('- Usage response:', usage);
+                console.log('- Type Trend response:', typeTrend);
+                console.log('- Print Machine response:', printMachine);
+                console.log('Normalized data for rendering:');
+                console.log('- Usage Data:', usageData);
+                console.log('- Type Trend Data:', typeTrendData);
+                console.log('- Print Machine Data:', printMachineData);
                 
                 // Data is already filtered by backend based on plate_type parameter
                 // No need for additional client-side filtering

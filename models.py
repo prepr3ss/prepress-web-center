@@ -510,6 +510,11 @@ class CalibrationReference(db.Model):
     calib_code = db.Column(db.String(100), nullable=False, unique=True)
     calib_name = db.Column(db.String(255), nullable=False)
     
+    # Additional Filter Fields
+    paper_type = db.Column(db.String(100), nullable=True)  # Filter untuk jenis kertas
+    ink_type = db.Column(db.String(100), nullable=True)   # Filter untuk jenis tinta
+    calib_standard = db.Column(db.Enum('G7', 'ISO', 'EXISTING', name='calib_standard_enum'), nullable=True)  # Filter untuk standar kalibrasi
+    
     # Nilai Patch C, M, Y, K (20, 25, 40, 50, 75, 80)
     c20 = db.Column(db.DECIMAL(5, 2))
     c25 = db.Column(db.DECIMAL(5, 2))
@@ -543,6 +548,7 @@ class CalibrationReference(db.Model):
     # Index for better performance
     __table_args__ = (
         db.Index('idx_print_machine', 'print_machine'),
+        db.Index('idx_calib_standard', 'calib_standard'),
         db.UniqueConstraint('calib_code', name='uq_calib_code'),
     )
     
@@ -553,6 +559,9 @@ class CalibrationReference(db.Model):
             'calib_group': self.calib_group,
             'calib_code': self.calib_code,
             'calib_name': self.calib_name,
+            'paper_type': self.paper_type,
+            'ink_type': self.ink_type,
+            'calib_standard': self.calib_standard,
             'c20': float(self.c20) if self.c20 else None,
             'c25': float(self.c25) if self.c25 else None,
             'c40': float(self.c40) if self.c40 else None,

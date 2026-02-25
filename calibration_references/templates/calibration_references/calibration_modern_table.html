@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calibration References - Modern Table - Impact 360</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-mobile-framework.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <style>
+        /* Modern Table Styles */
+        .page-header {
+            background: #2c3e50;
+            color: white;
+            padding: 2rem 0;
+            margin: -1rem -15px 2rem -15px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 20px rgba(44, 62, 80, 0.3);
+        }
+        
+        /* Filter Section */
+        .filter-section {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+            border: 1px solid #e9ecef;
+        }
+        
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+        
+        .form-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+        
+        /* Modern Table Styling */
+        .table-modern {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        
+        .table-modern thead {
+            background: #f8f9fa;
+        }
+        
+        .table-modern thead th {
+            border: none;
+            font-weight: 600;
+            color: #2c3e50;
+            padding: 1rem 0.75rem;
+            text-align: left;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .table-modern tbody tr {
+            border-bottom: 1px solid #f1f3f4;
+            transition: all 0.2s ease;
+        }
+        
+        .table-modern tbody tr:hover {
+            background-color: #f8f9fa;
+            transform: scale(1.01);
+        }
+        
+        .table-modern tbody td {
+            padding: 1rem 0.75rem;
+            vertical-align: middle;
+            font-size: 0.9rem;
+            border: none;
+        }
+        
+        /* Machine Badge */
+        .machine-badge {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .machine-badge.sm2 { background-color: #3498db; }
+        .machine-badge.sm3 { background-color: #e74c3c; }
+        .machine-badge.sm4 { background-color: #2ecc71; }
+        .machine-badge.sm5 { background-color: #f39c12; }
+        .machine-badge.sm6 { background-color: #9b59b6; }
+        .machine-badge.vlf { background-color: #1abc9c; }
+        
+        /* Code Badge */
+        .code-badge {
+            background: #ecf0f1;
+            color: #2c3e50;
+            padding: 0.25rem 0.5rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+        }
+        
+        /* Group Tag */
+        .group-tag {
+            background: #e8f5e8;
+            color: #27ae60;
+            padding: 0.25rem 0.5rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        /* Standard Badge */
+        .standard-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .standard-g7 {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .standard-iso {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .standard-existing {
+            background-color: #95a5a6;
+            color: white;
+        }
+        
+        .standard-default {
+            background-color: #ecf0f1;
+            color: #7f8c8d;
+        }
+        
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+        
+        .btn-action {
+            border: none;
+            border-radius: 8px;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .btn-action-edit {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .btn-action-edit:hover {
+            background-color: #2980b9;
+            transform: translateY(-1px);
+        }
+        
+        .btn-action-delete {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .btn-action-delete:hover {
+            background-color: #c0392b;
+            transform: translateY(-1px);
+        }
+        
+        /* Status Indicator */
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+        
+        .status-indicator.active {
+            background-color: #2ecc71;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-indicator.inactive {
+            background-color: #95a5a6;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        /* Pagination */
+        .pagination .page-link {
+            border: 2px solid #e9ecef;
+            color: #2c3e50;
+            border-radius: 8px;
+            margin: 0 2px;
+            padding: 0.5rem 0.75rem;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .pagination .page-link:hover {
+            border-color: #3498db;
+            color: #3498db;
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+        
+        .pagination .page-item.active .page-link {
+            background-color: #3498db;
+            border-color: #3498db;
+            color: white;
+        }
+        
+        /* Search Box - removed, using input-group instead */
+        
+        /* Input group styling */
+        .input-group .form-control {
+            border-right: none;
+        }
+        
+        .input-group .input-group-text {
+            border-right: none;
+            background: #f8f9fa;
+            border-color: #e9ecef;
+        }
+        
+        .input-group .btn-outline-secondary {
+            border-left: none;
+            border-color: #e9ecef;
+            background: #f8f9fa;
+            color: #6c757d;
+        }
+        
+        .input-group .btn-outline-secondary:hover {
+            background: #e9ecef;
+            border-color: #dee2e6;
+            color: #495057;
+        }
+        
+        /* Loading State */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            color: #dee2e6;
+            margin-bottom: 1rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .table-modern {
+                font-size: 0.8rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+            
+            .btn-action {
+                padding: 0.3rem 0.6rem;
+                font-size: 0.75rem;
+            }
+        }
+
+        /* Logo Styling */
+        .header-logo {
+            max-height: 80px; /* Atur ukuran logo */
+            width: auto;
+            filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2));
+            margin-right: 1.5rem;
+        }
+
+        @media (max-width: 576px) {
+            .header-logo {
+                max-height: 50px;
+                margin-bottom: 1rem;
+            }
+        }        
+    </style>
+</head>
+<body>
+    <div id="wrapper">
+        {% include '_top_header.html' %}
+        <div class="d-flex" id="content-wrapper">
+            {% include '_sidebar.html' %}
+            <div id="page-content-wrapper">
+                <div class="container-fluid pt-3">
+
+                    <div id="main-calibration-container" data-standard="{{ standard or 'G7' }}">
+                        
+                        <div class="page-header">
+                            <div class="container-fluid">
+                                <div class="row align-items-center">
+                                    <div class="col d-flex align-items-center">
+                                        {% if standard|upper == 'G7' %}
+                                            <img src="{{ url_for('static', filename='img/logo_g7expert.png') }}" alt="G7 Expert Logo" class="header-logo">
+                                        {% elif standard|upper == 'ISO' %}
+                                            <img src="{{ url_for('static', filename='img/logo_iso.png') }}" alt="ISO Certified Logo" class="header-logo">
+                                        {% endif %}
+
+                                        <div>
+                                            <h2 class="mb-1 text-white">Calibration References - {{ standard or 'G7' }}</h2>
+                                            <p class="mb-0 opacity-75">Modern table view for <strong>{{ standard or 'G7' }}</strong> standards</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <a href="{{ url_for('calibration_references.standard_create', standard=(standard or 'G7').lower()) }}" class="btn btn-light">
+                                            <i class="fas fa-plus me-2"></i>Add New {{ standard or 'G7' }}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="dataMessage" class="alert d-none" role="alert"></div>
+                        
+                        <div class="filter-section">
+                            <div class="row g-3">
+                                <div class="col-md-2">
+                                    <label for="machineFilter" class="form-label">Machine</label>
+                                    <select class="form-select" id="machineFilter">
+                                        <option value="">All Machines</option>
+                                        <option value="SM2">SM2</option>
+                                        <option value="SM3">SM3</option>
+                                        <option value="SM4">SM4</option>
+                                        <option value="SM5">SM5</option>
+                                        <option value="SM6">SM6</option>
+                                        <option value="VLF">VLF</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="paperFilter" class="form-label">Paper Type</label>
+                                    <select class="form-select" id="paperFilter">
+                                        <option value="">All Paper Types</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="inkFilter" class="form-label">Ink Type</label>
+                                    <select class="form-select" id="inkFilter">
+                                        <option value="">All Ink Types</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="searchInput" class="form-label">Search</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white border-end-0">
+                                            <i class="fas fa-search text-muted"></i>
+                                        </span>
+                                        <input type="text" class="form-control border-start-0" id="searchInput" placeholder="Search by code, name, or group...">
+                                        <button class="btn btn-outline-secondary" type="button" id="clearSearch">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="table-modern">
+                            <div class="loading-overlay d-none" id="loadingOverlay">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                            
+                            <table class="table table-hover mb-0" id="calibrationTable">
+                                <thead>
+                                    <tr>
+                                        <th>Machine</th>
+                                        <th>Code</th>
+                                        <th>Name</th>
+                                        <th>Group</th>
+                                        <th>Standard</th>
+                                        <th>Updated</th>
+                                        <th class="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableBody">
+                                    </tbody>
+                            </table>
+                        </div>
+                        
+                        <nav class="mt-4">
+                            <ul class="pagination justify-content-center" id="paginationContainer"></ul>
+                        </nav>
+                    </div> <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Confirm Delete</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>Are you sure you want to delete <strong id="deleteItemName"></strong>?</p>
+                                    <p class="text-danger small"><i class="fas fa-exclamation-triangle me-1"></i> This action cannot be undone.</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <form id="deleteForm" method="POST" style="display: inline;">
+                                        <button type="submit" class="btn btn-danger">Delete Permanently</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+                    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+                    <script src="{{ url_for('static', filename='js/calibration_modern_table.js') }}"></script>
+                    <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
+                    
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            // Ambil elemen container yang memiliki data-standard
+                            const container = document.getElementById('main-calibration-container');
+                            const currentStandard = container ? container.dataset.standard : 'G7';
+
+                            console.log('Template Standard:', currentStandard);
+
+                            // Inisialisasi Instance Class dengan parameter dinamis
+                            if (!window.calibrationModernTableInstance) {
+                                window.calibrationModernTableInstance = new CalibrationModernTable(currentStandard);
+                            }
+                        });
+                        
+                        // Fungsi Delete Global
+                        function confirmDelete(id, name) {
+                            $('#deleteItemName').text(name);
+                            // Sesuaikan endpoint delete jika perlu
+                            $('#deleteForm').attr('action', `/impact/calibration-references/delete/${id}`);
+                            $('#deleteModal').modal('show');
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

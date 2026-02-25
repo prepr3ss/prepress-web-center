@@ -277,7 +277,6 @@
             </a>
         </div>
         {% endif %}
-
         
         <div class="sidebar-section-label mt-2">Tools</div>
         <a href="#toolsSubmenu" data-bs-toggle="collapse" aria-expanded="false"
@@ -308,6 +307,53 @@
                 <span>Module</span>
             </a>
         </div>
+
+        {% if current_user.is_admin() %}
+        <div class="sidebar-section-label mt-2">Calibration Center</div>
+        <a href="#calibrationRefSubmenu" data-bs-toggle="collapse" aria-expanded="false"
+           class="list-group-item list-group-item-action calibration-ref-submenu-parent collapsed">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 3v15a2 2 0 0 0 2 2h16" />
+                <path d="M7 16l10-10" />
+                <circle cx="7" cy="16" r="0.5" fill="currentColor" />
+                <circle cx="12" cy="11" r="0.5" fill="currentColor" />
+                <circle cx="17" cy="6" r="0.5" fill="currentColor" />
+            </svg>
+            <span>Calibration</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="sidebar-chevron" aria-hidden="true">
+                <polyline points="9 6 15 12 9 18"/>
+            </svg>
+        </a>
+        <div class="collapse" id="calibrationRefSubmenu">
+            <a href="/impact/calibration-references/g7/" class="list-group-item list-group-item-action ps-5" id="calibrationG7Link">
+                <img src="{{ url_for('static', filename='img/logo_g7expert.png') }}"
+                width="24"
+                height="24"
+                alt="G7 Expert"
+                class="me-2">
+                <span>G7</span>
+            </a>
+            <a href="/impact/calibration-references/iso/" class="list-group-item list-group-item-action ps-5" id="calibrationISOLink">
+                <img src="{{ url_for('static', filename='img/logo_iso.png') }}"
+                width="24"
+                height="24"
+                alt="ISO"
+                class="me-2">
+                <span>ISO</span>
+            </a>
+            <a href="/impact/calibration-references/existing/" class="list-group-item list-group-item-action ps-5" id="calibrationExistingLink">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 3v15a2 2 0 0 0 2 2h16" />
+                    <path d="M7 16l10-10" stroke-width="0.8" opacity="0.5" />
+                    <path d="M7 16 Q 10 6, 17 6" />
+                    <circle cx="7" cy="16" r="0.5" fill="currentColor" />
+                    <circle cx="10.5" cy="8.5" r="0.5" fill="currentColor" />
+                    <circle cx="17" cy="6" r="0.5" fill="currentColor" />
+                </svg>
+                <span>EXISTING</span>
+            </a>
+        </div>
+        {% endif %}
 
         <div class="sidebar-section-label mt-2">Production</div>
 

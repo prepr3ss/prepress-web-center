@@ -46,7 +46,19 @@ document.addEventListener('DOMContentLoaded', function () {
         '/impact/mounting-work-order-incoming': {linkId: 'mountingWorkOrderIncomingLink', parentSelector: '.mounting-submenu-parent', grandParentSelector: '.prepress-submenu-parent'},
         '/impact/rnd-webcenter/': {linkId: 'rndWebcenterLink', parentSelector: '.mgmt-center-submenu-parent'},
         '/impact/tools/module/': {linkId: 'toolsModuleLink', parentSelector: '.tools-submenu-parent'},
-        '/impact/tools/module/create': {linkId: 'toolsModuleLink', parentSelector: '.tools-submenu-parent'}
+        '/impact/tools/module/create': {linkId: 'toolsModuleLink', parentSelector: '.tools-submenu-parent'},
+        '/impact/calibration-references/': {linkId: 'calibrationReferencesLink', parentSelector: '.calibration-ref-submenu-parent'},
+        '/impact/calibration-references/create': {linkId: 'calibrationReferencesLink', parentSelector: '.calibration-ref-submenu-parent'},
+        '/impact/calibration-references/edit/': {linkId: 'calibrationReferencesLink', parentSelector: '.calibration-ref-submenu-parent'},
+        '/impact/calibration-references/g7/': {linkId: 'calibrationG7Link', parentSelector: '.calibration-ref-submenu-parent'},
+        '/impact/calibration-references/g7/create': {linkId: 'calibrationG7Link', parentSelector: '.calibration-ref-submenu-parent'},
+        '/impact/calibration-references/g7/edit/': {linkId: 'calibrationG7Link', parentSelector: '.calibration-ref-submenu-parent'},
+        '/impact/calibration-references/iso/': {linkId: 'calibrationISOLink', parentSelector: '.calibration-ref-submenu-parent'},
+        '/impact/calibration-references/iso/create': {linkId: 'calibrationISOLink', parentSelector: '.calibration-ref-submenu-parent'},
+        '/impact/calibration-references/iso/edit/': {linkId: 'calibrationISOLink', parentSelector: '.calibration-ref-submenu-parent'},
+        '/impact/calibration-references/existing/': {linkId: 'calibrationExistingLink', parentSelector: '.calibration-ref-submenu-parent'},
+        '/impact/calibration-references/existing/create': {linkId: 'calibrationExistingLink', parentSelector: '.calibration-ref-submenu-parent'},
+        '/impact/calibration-references/existing/edit/': {linkId: 'calibrationExistingLink', parentSelector: '.calibration-ref-submenu-parent'}
     };
     
     // Fungsi untuk mengaktifkan tautan dan parent submenu berdasarkan URL
