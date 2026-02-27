@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', function () {
         '/impact/rnd-cloudsphere/flow-configuration': {linkId: 'rndFlowConfigurationLink', parentSelector: '.rnd-submenu-parent', grandParentSelector: '.prepress-submenu-parent'},
         '/impact/rnd-proof-checklist': {linkId: 'rndProofChecklistLink', parentSelector: '.proof-submenu-parent', grandParentSelector: '.rnd-submenu-parent', greatGrandParentSelector: '.prepress-submenu-parent'},
         '/impact/mounting-work-order-incoming': {linkId: 'mountingWorkOrderIncomingLink', parentSelector: '.mounting-submenu-parent', grandParentSelector: '.prepress-submenu-parent'},
+        '/impact/plan-scraper': {linkId: 'planScraperLink', parentSelector: '.mounting-submenu-parent', grandParentSelector: '.prepress-submenu-parent'},
         '/impact/rnd-webcenter/': {linkId: 'rndWebcenterLink', parentSelector: '.mgmt-center-submenu-parent'},
         '/impact/tools/module/': {linkId: 'toolsModuleLink', parentSelector: '.tools-submenu-parent'},
         '/impact/tools/module/create': {linkId: 'toolsModuleLink', parentSelector: '.tools-submenu-parent'},

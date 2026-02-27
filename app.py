@@ -59,6 +59,7 @@ from blueprints.tools_module import tools_module_bp
 from blueprints.rnd_proof_checklist import rnd_proof_checklist_bp
 from calibration_references import calibration_references_bp
 from calibration_references import routes  # Import routes directly
+from plan_scraper import plan_scraper_bp
 from plate_details import PLATE_DETAILS
 
 # Timezone untuk Jakarta
@@ -148,6 +149,7 @@ app.register_blueprint(tools_5w1h_bp)
 app.register_blueprint(tools_module_bp)  # NEW: Module Management System
 app.register_blueprint(rnd_proof_checklist_bp)  # NEW: R&D Proof Checklist System
 app.register_blueprint(calibration_references_bp)  # NEW: Calibration Reference Management System
+app.register_blueprint(plan_scraper_bp)  # NEW: Plan Scraper System
 
 # Initialize the db instance from models.py with the app
 db.init_app(app)

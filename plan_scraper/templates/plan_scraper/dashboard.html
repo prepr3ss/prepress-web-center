@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan Scraper - Impact 360</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-mobile-framework.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <style>
+        /* Modern Table Styles */
+        .page-header {
+            background: #2c3e50;
+            color: white;
+            padding: 2rem 0;
+            margin: -1rem -15px 2rem -15px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 20px rgba(44, 62, 80, 0.3);
+        }
+        
+        /* Top Section - Statistics and Upload */
+        .top-section {
+            margin-bottom: 2rem;
+        }
+        
+        /* Statistics Section */
+        .stats-section {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+            height: 100%;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .stats-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1.25rem;
+            text-align: center;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #3498db;
+            margin-bottom: 0.5rem;
+        }
+
+        .stats-label {
+            color: #6c757d;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Upload Section */
+        .upload-section {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+            height: 100%;
+        }
+        
+        .upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 12px;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #3498db;
+            background: rgba(52, 152, 219, 0.05);
+        }
+
+        .upload-area.dragover {
+            border-color: #3498db;
+            background: rgba(52, 152, 219, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 2.5rem;
+            color: #6c757d;
+            margin-bottom: 1rem;
+        }
+        
+        /* Filter Section */
+        .filter-section {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+            border: 1px solid #e9ecef;
+        }
+        
+        /* Toast Container */
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1050;
+        }
+        
+        .toast {
+            border: none;
+            min-width: 300px;
+        }
+        
+        .toast-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 12px 12px 0 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .toast-header .btn-close {
+            filter: invert(1);
+            background: none;
+            border: none;
+            color: white;
+            opacity: 0.8;
+        }
+        
+        .toast-body {
+            border-radius: 12px;
+            padding: 1rem;
+        }
+        
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+        
+        .form-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+        
+        /* Modern Table Styling */
+        .table-modern {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        
+        .table-modern thead {
+            background: #f8f9fa;
+        }
+        
+        .table-modern thead th {
+            border: none;
+            font-weight: 600;
+            color: #2c3e50;
+            padding: 1rem 0.75rem;
+            text-align: left;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .table-modern tbody tr {
+            border-bottom: 1px solid #f1f3f4;
+            transition: all 0.2s ease;
+        }
+        
+        .table-modern tbody tr:hover {
+            background-color: #f8f9fa;
+            transform: scale(1.01);
+        }
+        
+        .table-modern tbody td {
+            padding: 1rem 0.75rem;
+            vertical-align: middle;
+            font-size: 0.9rem;
+            border: none;
+        }
+        
+        /* Item Name Wrapping - Override Bootstrap with !important */
+        .table-modern tbody td:nth-child(4) {
+            max-width: 300px !important;
+            min-width: 200px !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            white-space: normal !important;
+            line-height: 1.4 !important;
+            overflow: visible !important;
+            hyphens: auto !important;
+            word-break: break-word !important;
+            overflow-wrap: anywhere !important;
+            white-space: pre-wrap !important;
+            white-space: -moz-pre-wrap !important;
+            white-space: -o-pre-wrap !important;
+            white-space: -webkit-pre-wrap !important;
+            white-space: pre-wrap !important;
+        }
+        
+        /* Force table cell to wrap text */
+        .table-modern {
+            table-layout: fixed !important;
+            width: 100%;
+        }
+        
+        /* Machine Badge */
+        .machine-badge {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        /* Machine specific colors - using both approaches for compatibility */
+        .machine-badge.sm2,
+        .machine-badge.machine-sm2 { 
+            background-color: #3498db; 
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+        .machine-badge.sm3,
+        .machine-badge.machine-sm3 { 
+            background-color: #e74c3c; 
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+        .machine-badge.sm4,
+        .machine-badge.machine-sm4 { 
+            background-color: #2ecc71; 
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+        }
+        .machine-badge.sm5,
+        .machine-badge.machine-sm5 { 
+            background-color: #f39c12; 
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+        }
+        .machine-badge.sm6,
+        .machine-badge.machine-sm6 { 
+            background-color: #9b59b6; 
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+        }
+        .machine-badge.vlf,
+        .machine-badge.machine-vlf { 
+            background-color: #1abc9c; 
+            background: linear-gradient(135deg, #1abc9c, #16a085);
+        }
+        
+        /* Default color for unknown machines */
+        .machine-badge:not(.sm2):not(.sm3):not(.sm4):not(.sm5):not(.sm6):not(.vlf):not(.machine-sm2):not(.machine-sm3):not(.machine-sm4):not(.machine-sm5):not(.machine-sm6):not(.machine-vlf) {
+            background-color: #95a5a6;
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+        }
+        
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+        
+        .btn-action {
+            border: none;
+            border-radius: 8px;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .btn-action-edit {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .btn-action-edit:hover {
+            background-color: #2980b9;
+            transform: translateY(-1px);
+        }
+        
+        .btn-action-delete {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .btn-action-delete:hover {
+            background-color: #c0392b;
+            transform: translateY(-1px);
+        }
+        
+        /* Pagination */
+        .pagination .page-link {
+            border: 2px solid #e9ecef;
+            color: #2c3e50;
+            border-radius: 8px;
+            margin: 0 2px;
+            padding: 0.5rem 0.75rem;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .pagination .page-link:hover {
+            border-color: #3498db;
+            color: #3498db;
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+        
+        .pagination .page-item.active .page-link {
+            background-color: #3498db;
+            border-color: #3498db;
+            color: white;
+        }
+        
+        /* Loading State */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            color: #dee2e6;
+            margin-bottom: 1rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 992px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filter-section .row {
+                gap: 0.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .top-section .row {
+                flex-direction: column;
+            }
+           
+            .table-modern {
+                font-size: 0.8rem;
+            }
+           
+            .action-buttons {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+           
+            .btn-action {
+                padding: 0.3rem 0.6rem;
+                font-size: 0.75rem;
+            }
+
+            .upload-area {
+                padding: 1.5rem 1rem;
+            }
+            
+            .filter-section .col-md-3 {
+                margin-bottom: 0.5rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filter-section .row {
+                gap: 0.25rem;
+            }
+
+            .upload-area {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="wrapper">
+        {% include '_top_header.html' %}
+        <div class="d-flex" id="content-wrapper">
+            {% include '_sidebar.html' %}
+            <div id="page-content-wrapper">
+                <div class="container-fluid pt-3">
+
+                    <!-- Page Header -->
+                    <div class="page-header">
+                        <div class="container-fluid">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <div>
+                                        <h2 class="mb-1 text-white">Plan Scraper</h2>
+                                        <p class="mb-0 opacity-75">Excel file processing for work orders</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Toast Container -->
+                    <div class="toast-container position-fixed top-0 end-0 p-3">
+                        <div id="liveToast" class="toast border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+                            <div class="toast-header bg-gradient text-white border-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;">
+                                <i class="fas fa-bell me-2"></i>
+                                <strong class="me-auto" id="toastHeader">Notifikasi</strong>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                            </div>
+                            <div class="toast-body" id="toastBody">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Delete Confirmation Modal -->
+                    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header bg-danger text-white">
+                                    <h5 class="modal-title" id="deleteModalLabel">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        Konfirmasi Hapus
+                                    </h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>Apakah Anda yakin ingin menghapus data ini?</p>
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>WO Number:</strong> <span id="deleteWO"></span><br>
+                                        <strong>Machine:</strong> <span id="deleteMachine"></span><br>
+                                        <strong>Item:</strong> <span id="deleteItem"></span>
+                                    </div>
+                                    <p class="text-muted mb-0">Tindakan ini tidak dapat dibatalkan.</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                        <i class="fas fa-times me-2"></i>Batal
+                                    </button>
+                                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                                        <i class="fas fa-trash me-2"></i>Hapus
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Top Section: Statistics and Upload Side by Side -->
+                    <div class="top-section">
+                        <div class="row g-3">
+                            <!-- Statistics Section -->
+                            <div class="col-lg-7">
+                                <div class="stats-section">
+                                    <h4 class="mb-3">
+                                        <i class="fas fa-chart-bar me-2"></i>
+                                        Statistics
+                                    </h4>
+                                    <div class="stats-grid">
+                                        <div class="stats-card">
+                                            <div class="stats-number" id="totalRecords">0</div>
+                                            <div class="stats-label">Total Records</div>
+                                        </div>
+                                        <div class="stats-card">
+                                            <div class="stats-number" id="totalMachines">0</div>
+                                            <div class="stats-label">Print Machines</div>
+                                        </div>
+                                        <div class="stats-card">
+                                            <div class="stats-number" id="totalSheets">0</div>
+                                            <div class="stats-label">Total Sheets</div>
+                                        </div>
+                                        <div class="stats-card">
+                                            <div class="stats-number" id="lastUpdate">-</div>
+                                            <div class="stats-label">Last Update</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Upload Section -->
+                            <div class="col-lg-5">
+                                <div class="upload-section">
+                                    <h4 class="mb-3">
+                                        <i class="fas fa-cloud-upload-alt me-2"></i>
+                                        Upload Excel File
+                                    </h4>
+                                    
+                                    <div class="upload-area" id="uploadArea">
+                                        <i class="fas fa-file-excel upload-icon"></i>
+                                        <h6>Upload Excel File</h6>
+                                        <p class="text-muted mb-3 small">Drag & drop or click to browse</p>
+                                        <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;">
+                                        <button class="btn btn-primary btn-sm" onclick="document.getElementById('fileInput').click()">
+                                            <i class="fas fa-folder-open me-2"></i>
+                                            Choose File
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="text-center mt-3">
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            .xlsx, .xls | SM2, SM3, SM4, SM5, SM6, VLF
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Filter Section -->
+                    <div class="filter-section">
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label for="searchInput" class="form-label">Search</label>
+                                <input type="text" class="form-control" id="searchInput" placeholder="Search WO, MC, Item...">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="machineFilter" class="form-label">Print Machine</label>
+                                <select class="form-select" id="machineFilter">
+                                    <option value="">All Machines</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Full Width Data Table Section -->
+                    <div class="table-modern">
+                        <div class="loading-overlay d-none" id="loadingOverlay">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                        
+                        <table class="table table-hover mb-0" id="planScraperTable">
+                            <thead>
+                                <tr>
+                                    <th>Print Machine</th>
+                                    <th>WO Number</th>
+                                    <th>MC Number</th>
+                                    <th>Item Name</th>
+                                    <th>Up</th>
+                                    <th>Sheet</th>
+                                    <th>Paper Description</th>
+                                    <th>Paper Type</th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dataTableBody">
+                                <tr>
+                                    <td colspan="9" class="text-center py-4">
+                                        <i class="fas fa-spinner fa-spin me-2"></i>
+                                        Loading data...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Page Info -->
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div id="pageInfo" class="text-muted">
+                            <!-- Page info will be generated by JavaScript -->
+                        </div>
+                        <div class="text-muted">
+                            <small>25 records per page</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <nav class="mt-4">
+                        <ul class="pagination justify-content-center" id="pagination">
+                            <!-- Pagination will be generated by JavaScript -->
+                        </ul>
+                    </nav>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this record?</p>
+                    <p class="text-danger small"><i class="fas fa-exclamation-triangle me-1"></i> This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/plan_scraper.js') }}"></script>
+    
+    <script>
+        // Toast notification function
+        function showToast(message, type = 'info', duration = 5000) {
+            const toastEl = document.getElementById('liveToast');
+            const toastBody = toastEl.querySelector('.toast-body');
+            const toastHeader = toastEl.querySelector('.toast-header strong');
+            
+            // Reset classes
+            toastEl.classList.remove('text-bg-success', 'text-bg-danger', 'text-bg-info');
+            toastBody.className = 'toast-body';
+            
+            // Set appropriate classes based on type
+            if (type === 'success') {
+                toastEl.classList.add('text-bg-success');
+                if (toastHeader) toastHeader.textContent = 'Berhasil!';
+            } else if (type === 'danger') {
+                toastEl.classList.add('text-bg-danger');
+                if (toastHeader) toastHeader.textContent = 'Error!';
+            } else if (type === 'warning') {
+                toastEl.classList.add('text-bg-warning');
+                if (toastHeader) toastHeader.textContent = 'Peringatan!';
+            } else {
+                toastEl.classList.add('text-bg-info');
+                if (toastHeader) toastHeader.textContent = 'Informasi';
+            }
+            
+            // Set message
+            if (toastBody) toastBody.textContent = message;
+            
+            const bsToast = new bootstrap.Toast(toastEl);
+            bsToast.show();
+            
+            // Auto remove after hiding
+            toastEl.addEventListener('hidden.bs.toast', function() {
+                toastEl.remove();
+            });
+        }
+        
+        // Delete record function
+        let deleteId = null;
+        
+        function deleteRecord(id) {
+            console.log('🗑️ deleteRecord called with ID:', id);
+            
+            // Find the record data from the current page
+            fetch(`/impact/api/plan-scraper/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const record = data.data;
+                    deleteId = id;
+                    
+                    // Populate modal with record details
+                    document.getElementById('deleteWO').textContent = record.wo_number || 'N/A';
+                    document.getElementById('deleteMachine').textContent = record.print_machine || 'N/A';
+                    document.getElementById('deleteItem').textContent = record.item_name || 'N/A';
+                    
+                    // Show modal
+                    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+                    deleteModal.show();
+                } else {
+                    showAlert('Gagal memuat data record', 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading record data:', error);
+                showAlert('Terjadi kesalahan saat memuat data', 'danger');
+            });
+        }
+        
+        // Confirm delete button click handler
+        document.addEventListener('DOMContentLoaded', function() {
+            const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+            if (confirmDeleteBtn) {
+                confirmDeleteBtn.addEventListener('click', function() {
+                    if (deleteId) {
+                        console.log('🗑️ Confirming delete for ID:', deleteId);
+                        
+                        // Show loading state
+                        confirmDeleteBtn.disabled = true;
+                        confirmDeleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Menghapus...';
+                        
+                        // Perform delete request
+                        fetch(`/impact/api/plan-scraper/${deleteId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Close modal
+                                const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+                                deleteModal.hide();
+                                
+                                // Show success message
+                                showAlert('Data berhasil dihapus', 'success');
+                                
+                                // Reload data and statistics
+                                loadData(currentPage, currentSearch, currentMachine);
+                                updateStatistics();
+                                loadPrintMachines();
+                            } else {
+                                showAlert(data.error || 'Gagal menghapus data', 'danger');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error deleting record:', error);
+                            showAlert('Terjadi kesalahan saat menghapus data', 'danger');
+                        })
+                        .finally(() => {
+                            // Reset button state
+                            confirmDeleteBtn.disabled = false;
+                            confirmDeleteBtn.innerHTML = '<i class="fas fa-trash me-2"></i>Hapus';
+                            deleteId = null;
+                        });
+                    }
+                });
+            }
+        });
+        
+    </script>
+</body>
+</html>

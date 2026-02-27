@@ -39,6 +39,91 @@
     --info-color: #0dcaf0; /* Cyan/Biru Info (agak berbeda dari primer) */
 }
 
+/* Toast Notification Styles */
+#toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    max-width: 350px;
+}
+
+.toast {
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    animation: slideInRight 0.3s ease-out;
+}
+
+.toast.bg-success {
+    background-color: rgba(25, 135, 84, 0.95) !important;
+}
+
+.toast.bg-danger {
+    background-color: rgba(220, 53, 69, 0.95) !important;
+}
+
+.toast-body {
+    color: white;
+    font-weight: 500;
+    padding: 12px 16px;
+}
+
+.btn-close-white {
+    filter: brightness(0) invert(1);
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Upload Loading State Styles */
+.upload-processing {
+    background: rgba(52, 152, 219, 0.05) !important;
+    border-color: #3498db !important;
+}
+
+.upload-loading-state {
+    text-align: center;
+    padding: 2rem 1rem;
+}
+
+.upload-loading-state .spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+.upload-loading-state h6 {
+    font-weight: 600;
+    margin: 0;
+}
+
+.upload-loading-state p {
+    font-size: 0.875rem;
+    margin: 0;
+    word-break: break-all;
+}
+
+.upload-loading-state .progress {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.upload-loading-state .progress-bar {
+    transition: width 0.3s ease;
+}
+
 /* Unified Badge Status System - Global CSS */
 .status-badge {
     padding: 0.4rem 1rem;
@@ -482,6 +567,19 @@ h2 {
     overflow: hidden;
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.05); /* Bayangan lebih ringan */
     border: 1px solid var(--table-border-color); /* Tambah border pada wrapper */
+}
+
+#planScraperTable {
+    table-layout: auto !important;
+    width: auto !important;
+}
+#planScraperTable th,
+#planScraperTable td {
+    white-space: nowrap;
+    vertical-align: middle;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #calibrationTable {
@@ -941,6 +1039,14 @@ h2 {
     overflow-y: hidden; /* Hanya scroll horizontal */
     /* Opsional: Jika ingin scroll bar muncul walaupun tabel belum melebihi lebar */
     /* padding-bottom: 1px; agar scroll bar muncul tanpa mengganggu tata letak */
+}
+
+/* Memastikan tabel memiliki lebar yang cukup untuk memicu scroll */
+#planScraperTable {
+    min-width: 100%; /* Pertahankan ini untuk pengujian, sesuaikan jika sudah berhasil */
+    width: max-content; /* Ini akan membuat tabel selebar kontennya */
+    /* Atau bisa juga: width: 100%; jika ingin tabel mengisi lebar container-nya,
+       tetapi min-width akan memaksa scroll jika melebihi */
 }
 
 /* Memastikan tabel memiliki lebar yang cukup untuk memicu scroll */
