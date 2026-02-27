@@ -22,7 +22,7 @@ def admin_required(f):
 
 def validate_standard(standard):
     """Validate calibration standard parameter"""
-    valid_standards = ['g7', 'iso', 'existing']
+    valid_standards = ['g7', 'iso', 'existing', 'nestle', 'gmi']
     if standard.lower() not in valid_standards:
         abort(404, description="Invalid calibration standard")
     return standard.upper()

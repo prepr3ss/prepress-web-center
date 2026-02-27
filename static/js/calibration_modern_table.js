@@ -26,6 +26,7 @@ class CalibrationModernTable {
         this.loadData();
         this.loadFilterOptions();
         this.setupEventListeners();
+        this.convertFlashMessagesToToasts();
     }
 
     setupEventListeners() {
@@ -248,7 +249,7 @@ class CalibrationModernTable {
     getStandardBadge(standard) {
         if (!standard) return '<span class="standard-badge standard-default">-</span>';
         const std = standard.toLowerCase();
-        const labels = { 'g7': 'standard-g7', 'iso': 'standard-iso', 'existing': 'standard-existing' };
+        const labels = { 'g7': 'standard-g7', 'iso': 'standard-iso', 'existing': 'standard-existing', 'nestle': 'standard-nestle', 'gmi': 'standard-gmi' };
         const cssClass = labels[std] || 'standard-default';
         return `<span class="standard-badge ${cssClass}">${standard.toUpperCase()}</span>`;
     }
@@ -316,13 +317,65 @@ class CalibrationModernTable {
         if (paginationContainer) paginationContainer.innerHTML = '';
     }
 
+    convertFlashMessagesToToasts() {
+        // Find all flash message elements that are hidden
+        const flashMessages = document.querySelectorAll('.flash-message-toast');
+        
+        flashMessages.forEach(flashElement => {
+            const message = flashElement.getAttribute('data-message');
+            const category = flashElement.getAttribute('data-category');
+            
+            if (message && category) {
+                // Convert category to toast type
+                let toastType = category;
+                if (category === 'error') {
+                    toastType = 'danger';
+                }
+                
+                // Show as toast
+                this.showMessage(toastType, message);
+            }
+        });
+    }
+
     showMessage(type, message) {
-        const messageContainer = document.getElementById('dataMessage');
-        if (!messageContainer) return;
-        messageContainer.className = `alert alert-${type}`;
-        messageContainer.textContent = message;
-        messageContainer.classList.remove('d-none');
-        setTimeout(() => messageContainer.classList.add('d-none'), 5000);
+        // Try to find toast element with different possible IDs
+        let toastEl = document.getElementById('liveToast');
+        if (!toastEl) {
+            toastEl = document.querySelector('.toast');
+        }
+        if (!toastEl) {
+            console.error('Toast element not found, using alert fallback');
+            alert(`${type.toUpperCase()}: ${message}`);
+            return;
+        }
+        
+        // Try to find message text element
+        let toastBody = toastEl.querySelector('.message-text');
+        if (!toastBody) {
+            toastBody = toastEl.querySelector('.toast-body');
+        }
+        if (!toastBody) {
+            console.error('Toast body element not found, using alert fallback');
+            alert(`${type.toUpperCase()}: ${message}`);
+            return;
+        }
+        
+        toastBody.textContent = message;
+        
+        // Update toast styling based on type
+        const toastBodyElement = toastEl.querySelector('.toast-body');
+        if (toastBodyElement) {
+            toastBodyElement.className = `toast-body rounded text-white bg-${type === 'error' ? 'danger' : type === 'info' ? 'info' : 'success'}`;
+        }
+        
+        try {
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+        } catch (e) {
+            console.error('Error showing toast:', e);
+            alert(`${type.toUpperCase()}: ${message}`);
+        }
     }
 }
 

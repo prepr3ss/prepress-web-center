@@ -513,7 +513,7 @@ class CalibrationReference(db.Model):
     # Additional Filter Fields
     paper_type = db.Column(db.String(100), nullable=True)  # Filter untuk jenis kertas
     ink_type = db.Column(db.String(100), nullable=True)   # Filter untuk jenis tinta
-    calib_standard = db.Column(db.Enum('G7', 'ISO', 'EXISTING', name='calib_standard_enum'), nullable=True)  # Filter untuk standar kalibrasi
+    calib_standard = db.Column(db.Enum('G7', 'ISO', 'EXISTING', 'NESTLE', 'GMI', name='calib_standard_enum'), nullable=True)  # Filter untuk standar kalibrasi
     
     # Nilai Patch C, M, Y, K (20, 25, 40, 50, 75, 80)
     c20 = db.Column(db.DECIMAL(5, 2))
@@ -549,7 +549,7 @@ class CalibrationReference(db.Model):
     __table_args__ = (
         db.Index('idx_print_machine', 'print_machine'),
         db.Index('idx_calib_standard', 'calib_standard'),
-        db.UniqueConstraint('calib_code', name='uq_calib_code'),
+        db.UniqueConstraint('calib_name', name='uq_calib_name'),
     )
     
     def to_dict(self):

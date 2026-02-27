@@ -74,6 +74,8 @@ class CalibrationReferenceForm(FlaskForm):
         choices=[
             ('G7', 'G7 - GRACoL 7'),
             ('ISO', 'ISO - ISO Standard'),
+            ('NESTLE', 'NESTLE - Nestle Standard'),
+            ('GMI', 'GMI - GMI Standard'),
             ('EXISTING', 'EXISTING - Existing Standard')
         ],
         validators=[Optional()]  # Made optional for standard-specific forms
@@ -120,9 +122,9 @@ class CalibrationReferenceForm(FlaskForm):
     
     submit = SubmitField('Save Calibration Reference')
     
-    def validate_calib_code(self, field):
-        """Validate that calibration code is unique"""
+    def validate_calib_name(self, field):
+        """Validate that calibration name is unique"""
         if field.data:
-            existing = CalibrationReference.query.filter_by(calib_code=field.data).first()
+            existing = CalibrationReference.query.filter_by(calib_name=field.data).first()
             if existing and (not self.id.data or existing.id != int(self.id.data)):
-                raise ValidationError('Calibration code must be unique')
+                raise ValidationError('Calibration name must be unique')

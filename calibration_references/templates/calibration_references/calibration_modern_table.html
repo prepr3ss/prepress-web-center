@@ -158,6 +158,16 @@
             color: white;
         }
         
+        .standard-nestle {
+            background-color: #00a1e4;
+            color: white;
+        }
+        
+        .standard-gmi {
+            background-color: #ff6b35;
+            color: white;
+        }
+        
         .standard-default {
             background-color: #ecf0f1;
             color: #7f8c8d;
@@ -352,6 +362,10 @@
                                             <img src="{{ url_for('static', filename='img/logo_g7expert.png') }}" alt="G7 Expert Logo" class="header-logo">
                                         {% elif standard|upper == 'ISO' %}
                                             <img src="{{ url_for('static', filename='img/logo_iso.png') }}" alt="ISO Certified Logo" class="header-logo">
+                                        {% elif standard|upper == 'NESTLE' %}
+                                            <img src="{{ url_for('static', filename='img/logo_nestle.png') }}" alt="Nestle Logo" class="header-logo">
+                                        {% elif standard|upper == 'GMI' %}
+                                            <img src="{{ url_for('static', filename='img/logo_gmi.png') }}" alt="GMI Logo" class="header-logo">                                                                                          
                                         {% endif %}
 
                                         <div>
@@ -368,8 +382,20 @@
                             </div>
                         </div>
 
+                        <!-- Flash Messages - Hidden by default, will be shown as toasts -->
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade flash-message-toast d-none" role="alert" data-message="{{ message }}" data-category="{{ category }}">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+
                         <div id="dataMessage" class="alert d-none" role="alert"></div>
-                        
+                         
                         <div class="filter-section">
                             <div class="row g-3">
                                 <div class="col-md-2">
@@ -464,8 +490,43 @@
                     <script src="{{ url_for('static', filename='js/calibration_modern_table.js') }}"></script>
                     <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
                     
+                    <!-- Toast Notification -->
+                    <div class="toast-container position-fixed top-0 end-0 p-3">
+                        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                            <div class="toast-body message-text">
+                                <!-- Message will be inserted here -->
+                            </div>
+                        </div>
+                    </div>
+                    
                     <script>
                         document.addEventListener('DOMContentLoaded', function() {
+                            // Convert flash messages to toast notifications
+                            const alerts = document.querySelectorAll('.alert.alert-dismissible');
+                            alerts.forEach(function(alert) {
+                                const message = alert.textContent.trim();
+                                let type = 'info';
+                                
+                                // Determine toast type based on alert class
+                                if (alert.classList.contains('alert-success')) {
+                                    type = 'success';
+                                } else if (alert.classList.contains('alert-danger')) {
+                                    type = 'error';
+                                } else if (alert.classList.contains('alert-warning')) {
+                                    type = 'warning';
+                                } else if (alert.classList.contains('alert-info')) {
+                                    type = 'info';
+                                }
+                                
+                                // Show toast notification
+                                if (window.calibrationModernTableInstance) {
+                                    window.calibrationModernTableInstance.showMessage(type, message);
+                                }
+                                
+                                // Hide the original alert
+                                alert.style.display = 'none';
+                            });
+                            
                             // Ambil elemen container yang memiliki data-standard
                             const container = document.getElementById('main-calibration-container');
                             const currentStandard = container ? container.dataset.standard : 'G7';
