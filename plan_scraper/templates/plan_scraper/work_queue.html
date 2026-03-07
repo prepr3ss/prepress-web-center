@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Queue - Impact 360</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-mobile-framework.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <style>
+        /* Modern Table Styles */
+        .page-header {
+            background: #2c3e50;
+            color: white;
+            padding: 2rem 0;
+            margin: -1rem -15px 2rem -15px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 20px rgba(44, 62, 80, 0.3);
+        }
+        
+        /* Filter Section */
+        .filter-section {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+            margin-bottom: 2rem;
+        }
+        
+        /* Toast Container */
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1050;
+        }
+        
+        .toast {
+            border: none;
+            min-width: 300px;
+        }
+        
+        .toast-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 12px 12px 0 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .toast-header .btn-close {
+            filter: invert(1);
+            background: none;
+            border: none;
+            color: white;
+            opacity: 0.8;
+        }
+        
+        .toast-body {
+            border-radius: 12px;
+            padding: 1rem;
+        }
+        
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+        
+        .form-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+
+        /* --- Styling Tabel --- */
+        .table-responsive-duplicate {
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.05); /* Bayangan lebih ringan */
+            border: 1px solid var(--table-border-color); /* Tambah border pada wrapper */
+        }
+        
+        .table-responsive-duplicate thead th {
+            background-color: #198754; /* Biru primer untuk header */
+            color: var(--table-header-text);
+            border-bottom: 0;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        
+        .table-responsive-duplicate {
+            overflow-x: auto !important; /* Paksa agar overflow-x menjadi auto */
+            overflow-y: hidden; /* Hanya scroll horizontal */
+            /* Opsional: Jika ingin scroll bar muncul walaupun tabel belum melebihi lebar */
+            /* padding-bottom: 1px; agar scroll bar muncul tanpa mengganggu tata letak */
+        }
+        
+        .table-responsive-duplicate thead th {
+            position: sticky;
+            top: 0;
+            /* Tambahkan left jika ingin kolom pertama juga sticky (agak kompleks) */
+            /* left: 0; */
+            z-index: 2; /* Pastikan lebih tinggi dari tbody */
+        }
+        
+        .table-responsive-duplicate table {
+            font-size: 0.85em;
+        }
+
+        .table-responsive-duplicate th, .table-responsive-duplicate td {
+            white-space: nowrap;
+            padding: 0.75rem;
+            text-align: left;
+            vertical-align: middle;
+            border: 1px solid var(--table-border-color); /* Border antar sel */
+        }
+
+        /* Memberikan rounded corner pada header tabel teratas */
+        .table-responsive-duplicate thead th:first-child {
+            border-top-left-radius: 0.5rem;
+        }
+        .table-responsive-duplicate thead th:last-child {
+            border-top-right-radius: 0.5rem;
+        }
+
+        .table-responsive-duplicate tbody tr:nth-of-type(odd) {
+            background-color: var(--table-striped-odd-bg); /* Abu-abu sangat terang */
+        }
+
+        .table-responsive-duplicate tbody tr:nth-of-type(even) {
+            background-color: var(--table-striped-even-bg); /* Putih */
+        }
+
+        .table-responsive-duplicate tbody tr:hover {
+            background-color: var(--table-hover-bg); /* Biru muda transparan */
+        }
+
+        /* Modern Table Styling */
+        .table-modern {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        
+        .table-modern thead {
+            background: #f8f9fa;
+        }
+        
+        .table-modern thead th {
+            border: none;
+            font-weight: 600;
+            color: #2c3e50;
+            padding: 1rem 0.75rem;
+            text-align: left;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .table-modern tbody tr {
+            border-bottom: 1px solid #f1f3f4;
+            transition: all 0.2s ease;
+        }
+        
+        .table-modern tbody tr:hover {
+            background-color: #f8f9fa;
+            transform: scale(1.01);
+        }
+        
+        .table-modern tbody td {
+            padding: 1rem 0.75rem;
+            vertical-align: middle;
+            font-size: 0.9rem;
+            border: none;
+        }
+        
+        /* WO Number & Item Name Wrapping - Override Bootstrap with !important */
+        .table-modern tbody td:nth-child(2) {
+            max-width: 250px !important;
+            min-width: 150px !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            white-space: normal !important;
+            line-height: 1.4 !important;
+            overflow: visible !important;
+            word-break: break-word !important;
+        }
+        
+        .table-modern tbody td:nth-child(4) {
+            max-width: 300px !important;
+            min-width: 200px !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            white-space: normal !important;
+            line-height: 1.4 !important;
+            overflow: visible !important;
+            word-break: break-word !important;
+        }
+        
+        /* Force table cell to wrap text */
+        .table-modern {
+            table-layout: fixed !important;
+            width: 100%;
+        }
+        
+        /* Machine Badge */
+        .machine-badge {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        /* Machine specific colors - using both approaches for compatibility */
+        .machine-badge.sm2,
+        .machine-badge.machine-sm2 { 
+            background-color: #3498db; 
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+        .machine-badge.sm3,
+        .machine-badge.machine-sm3 { 
+            background-color: #e74c3c; 
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+        .machine-badge.sm4,
+        .machine-badge.machine-sm4 { 
+            background-color: #2ecc71; 
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+        }
+        .machine-badge.sm5,
+        .machine-badge.machine-sm5 { 
+            background-color: #f39c12; 
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+        }
+        .machine-badge.sm6,
+        .machine-badge.machine-sm6 { 
+            background-color: #9b59b6; 
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+        }
+        .machine-badge.vlf,
+        .machine-badge.machine-vlf { 
+            background-color: #1abc9c; 
+            background: linear-gradient(135deg, #1abc9c, #16a085);
+        }
+        
+        /* Default color for unknown machines */
+        .machine-badge:not(.sm2):not(.sm3):not(.sm4):not(.sm5):not(.sm6):not(.vlf):not(.machine-sm2):not(.machine-sm3):not(.machine-sm4):not(.machine-sm5):not(.machine-sm6):not(.machine-vlf) {
+            background-color: #95a5a6;
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+        }
+        
+        /* Status Badge Styles */
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .status-badge.active {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .status-badge.pending {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        
+        .status-badge.completed {
+            background-color: #17a2b8;
+            color: white;
+        }
+        
+        .status-badge.cancelled {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .status-badge.in-progress,
+        .status-badge.in_progress {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        /* Priority Badge Styles */
+        .priority-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .priority-badge.high {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .priority-badge.normal {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .priority-badge.low {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 0.25rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .action-buttons .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            border-radius: 6px;
+        }
+        
+        /* Priority Badge */
+        .priority-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            min-width: 50px;
+            text-align: center;
+        }
+        
+        .priority-badge.high {
+            background-color: #e74c3c;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+        
+        .priority-badge.normal {
+            background-color: #f39c12;
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+        }
+        
+        .priority-badge.low {
+            background-color: #95a5a6;
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+            color: white;
+        }
+        
+        /* Status Badge */
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .status-badge.active {
+            background-color: #2ecc71;
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+        }
+        
+        .status-badge.completed {
+            background-color: #3498db;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+        
+        .status-badge.cancelled {
+            background-color: #e74c3c;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+        
+        .status-badge.in-progress,
+        .status-badge.in_progress {
+            background-color: #007bff;
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+        }
+        
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+        
+        .btn-action {
+            border: none;
+            border-radius: 8px;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .btn-action:hover {
+            transform: translateY(-1px);
+        }
+        
+        /* Pagination */
+        .pagination .page-link {
+            border: 2px solid #e9ecef;
+            color: #2c3e50;
+            border-radius: 8px;
+            margin: 0 2px;
+            padding: 0.5rem 0.75rem;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .pagination .page-link:hover {
+            border-color: #3498db;
+            color: #3498db;
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+        
+        .pagination .page-item.active .page-link {
+            background-color: #3498db;
+            border-color: #3498db;
+            color: white;
+        }
+        
+
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            color: #dee2e6;
+            margin-bottom: 1rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .table-modern {
+                font-size: 0.8rem;
+            }
+           
+            .action-buttons {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+           
+            .btn-action {
+                padding: 0.3rem 0.6rem;
+                font-size: 0.75rem;
+            }
+
+            .filter-section .row {
+                flex-direction: column;
+            }
+           
+            .filter-section .col-md-2,
+            .filter-section .col-md-4 {
+                margin-bottom: 0.5rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Context Menu Styles */
+        .context-menu {
+            position: fixed;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            padding: 0.5rem 0;
+            min-width: 200px;
+            z-index: 1000;
+            opacity: 0;
+            transform: scale(0.95) translateY(-10px);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+        
+        .context-menu.show {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+        }
+        
+        .context-menu-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.25rem;
+            color: #2c3e50;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+        
+        .context-menu-item:hover {
+            background-color: #f8f9fa;
+            color: #007bff;
+        }
+        
+        .context-menu-item i {
+            width: 20px;
+            margin-right: 12px;
+            font-size: 0.875rem;
+        }
+        
+        .context-menu-divider {
+            height: 1px;
+            background-color: #e9ecef;
+            margin: 0.5rem 0;
+        }
+        
+        .context-menu-item.danger {
+            color: #dc3545;
+        }
+        
+        .context-menu-item.danger:hover {
+            background-color: #f8d7da;
+            color: #dc3545;
+        }
+        
+        .context-menu-item.success {
+            color: #28a745;
+        }
+        
+        .context-menu-item.success:hover {
+            background-color: #d4edda;
+            color: #28a745;
+        }
+        
+        .context-menu-item.warning {
+            color: #ffc107;
+        }
+        
+        .context-menu-item.warning:hover {
+            background-color: #fff3cd;
+            color: #ffc107;
+        }
+        
+        .context-menu-indicator {
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        
+        .context-menu-indicator:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .work-order-row {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .work-order-row:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .work-order-row:hover .context-menu-indicator {
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div id="wrapper">
+        {% include '_top_header.html' %}
+        <div class="d-flex" id="content-wrapper">
+            {% include '_sidebar.html' %}
+            <div id="page-content-wrapper">
+                <div class="container-fluid pt-3">
+
+                    <!-- Page Header -->
+                    <div class="page-header">
+                        <div class="container-fluid">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <div>
+                                        <h2 class="mb-1 text-white">Work Queue</h2>
+                                        <p class="mb-0 opacity-75">Active work orders management</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status Tabs Section -->
+                    <div style="margin-bottom: 2rem;">
+                        <ul class="nav nav-tabs" id="statusTabs" role="tablist" style="border-bottom: 2px solid #e9ecef;">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link status-tab-btn active" id="tab-active" data-status="active" type="button" role="tab" 
+                                        aria-controls="active-pane" aria-selected="true" 
+                                        style="padding: 1rem 1.5rem; font-weight: 600; color: #2c3e50; border: none; border-bottom: 3px solid transparent;">
+                                    <i class="fas fa-circle me-2" style="color: #2ecc71;"></i>Active <span class="tab-count" id="count-active" style="background-color: #2ecc71; color: white; border-radius: 50%; padding: 0.2rem 0.5rem; font-size: 0.8rem; font-weight: 700; margin-left: 0.5rem;">0</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link status-tab-btn" id="tab-in_progress" data-status="in_progress" type="button" role="tab" 
+                                        aria-controls="in_progress-pane" aria-selected="false"
+                                        style="padding: 1rem 1.5rem; font-weight: 600; color: #2c3e50; border: none; border-bottom: 3px solid transparent;">
+                                    <i class="fas fa-spinner me-2" style="color: #007bff;"></i>In Progress <span class="tab-count" id="count-in_progress" style="background-color: #007bff; color: white; border-radius: 50%; padding: 0.2rem 0.5rem; font-size: 0.8rem; font-weight: 700; margin-left: 0.5rem;">0</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link status-tab-btn" id="tab-pending" data-status="pending" type="button" role="tab" 
+                                        aria-controls="pending-pane" aria-selected="false"
+                                        style="padding: 1rem 1.5rem; font-weight: 600; color: #2c3e50; border: none; border-bottom: 3px solid transparent;">
+                                    <i class="fas fa-hourglass-half me-2" style="color: #f39c12;"></i>Pending <span class="tab-count" id="count-pending" style="background-color: #f39c12; color: white; border-radius: 50%; padding: 0.2rem 0.5rem; font-size: 0.8rem; font-weight: 700; margin-left: 0.5rem;">0</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link status-tab-btn" id="tab-completed" data-status="completed" type="button" role="tab" 
+                                        aria-controls="completed-pane" aria-selected="false"
+                                        style="padding: 1rem 1.5rem; font-weight: 600; color: #2c3e50; border: none; border-bottom: 3px solid transparent;">
+                                    <i class="fas fa-check-circle me-2" style="color: #3498db;"></i>Completed <span class="tab-count" id="count-completed" style="background-color: #3498db; color: white; border-radius: 50%; padding: 0.2rem 0.5rem; font-size: 0.8rem; font-weight: 700; margin-left: 0.5rem;">0</span>
+                                </button>
+                            </li>
+                        </ul>
+                        <style>
+                            .status-tab-btn:hover {
+                                color: #007bff !important;
+                                border-bottom-color: #007bff !important;
+                            }
+                            .status-tab-btn.active {
+                                color: #007bff !important;
+                                border-bottom-color: #007bff !important;
+                                background-color: transparent !important;
+                            }
+                        </style>
+                    </div>
+
+                    <!-- Toast Container -->
+                    <div class="toast-container position-fixed top-0 end-0 p-3">
+                        <div id="liveToast" class="toast border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+                            <div class="toast-header bg-gradient text-white border-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;">
+                                <i class="fas fa-bell me-2"></i>
+                                <strong class="me-auto" id="toastHeader">Notifikasi</strong>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                            </div>
+                            <div class="toast-body" id="toastBody">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filters Section -->
+                    <div class="filter-section">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">Search</label>
+                                <input type="text" class="form-control" id="searchInput" 
+                                       placeholder="Search WO, MC, or Item...">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Priority</label>
+                                <select class="form-select" id="priorityFilter">
+                                    <option value="">All Priority</option>
+                                    <option value="high">High</option>
+                                    <option value="normal">Normal</option>
+                                    <option value="low">Low</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Machine</label>
+                                <select class="form-select" id="machineFilter">
+                                    <option value="">All Machines</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Work Queue Table -->
+                    <div class="table-modern">
+                        <table class="table table-hover mb-0" id="workQueueTable">
+                            <thead>
+                                <tr>
+                                    <th>Print Machine</th>
+                                    <th>WO Number</th>
+                                    <th>MC Number</th>
+                                    <th>Item Name</th>
+                                    <th>Priority</th>
+                                    <th>Received By</th>
+                                    <th>Received At</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="workQueueTableBody">
+                                <tr>
+                                    <td colspan="8" class="text-center py-4">
+                                        <i class="fas fa-spinner fa-spin me-2"></i>
+                                        Loading data...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <nav class="mt-4">
+                        <ul class="pagination justify-content-center" id="pagination">
+                            <!-- Pagination will be generated by JavaScript -->
+                        </ul>
+                    </nav>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Status Modal -->
+    <div class="modal fade" id="pendingModal" tabindex="-1" aria-labelledby="pendingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-gradient border-0 py-4 px-4" style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);">
+                    <h5 class="modal-title text-dark fw-bold" id="pendingModalLabel" style="font-size: 1.2rem;">
+                        <i class="fas fa-hourglass-half me-2"></i>Start Downtime
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="pendingForm">
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold" style="color: #495057; font-size: 0.95rem;">Downtime Reason</label>
+                            <select class="form-select" id="pendingReason" required style="border-radius: 0.5rem;">
+                                <option value="">Select a reason...</option>
+                                <option value="SERVER_ERROR">Server Error</option>
+                                <option value="PRINECT_ERROR">Prinect Error</option>
+                                <option value="TUNGGU_DATA_PDND">Tunggu Data dari PDND</option>
+                                <option value="TUNGGU_MILLAR_PDND">Tunggu Millar dari PDND</option>
+                                <option value="TUNGGU_DIGITAL_PRINT_PDND">Tunggu Digital Print dari PDND</option>
+                            </select>
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label fw-semibold" style="color: #495057; font-size: 0.95rem;">Additional Notes</label>
+                            <textarea class="form-control" id="downtimeNotes" rows="3" style="border-radius: 0.5rem;"
+                                      placeholder="Provide additional details about the downtime reason..."></textarea>
+                        </div>
+                        <input type="hidden" id="pendingWorkOrderId">
+                    </form>
+                </div>
+                <div class="modal-footer border-top bg-light py-3">
+                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-warning btn-sm px-3" onclick="startDowntime()">
+                        <i class="fas fa-hourglass-half me-1"></i>Start Downtime
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content border-0 shadow-lg">
+                <!-- Modal Header -->
+                <div class="modal-header border-0 pb-0">
+                    <div style="flex: 1;">
+                        <h4 class="mb-1" id="detailItem" style="color: #0d6efd; font-weight: 600;"></h4>
+                        <medium class="text-muted d-block" id="detailWO"></medium>
+                        <medium class="text-muted d-block" id="detailMC"></medium>
+                    </div>
+                    <div class="d-flex gap-2 align-items-center">
+                        <div id="detailStatus"></div>
+                        <div class="machine-badge" id="detailMachineBadge"></div>
+                        <span class="priority-badge" id="detailPriorityBadge"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                </div>
+
+                <!-- Modal Body with Tabs -->
+                <div class="modal-body p-4">
+                    <!-- Tab Navigation -->
+                    <ul class="nav nav-tabs detail-tabs" id="detailTabs" role="tablist" style="border-bottom: 2px solid #e9ecef; margin-bottom: 2rem;">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link detail-tab-btn active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general-pane" type="button" role="tab" aria-controls="general-pane" aria-selected="true" style="color: #2c3e50; font-weight: 600; border: none; padding: 1rem 1.5rem;">
+                                <i class="fas fa-info-circle me-2" style="color: #0d6efd;"></i>General
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link detail-tab-btn" id="timeline-tab" data-bs-toggle="tab" data-bs-target="#timeline-pane" type="button" role="tab" aria-controls="timeline-pane" aria-selected="false" style="color: #2c3e50; font-weight: 600; border: none; padding: 1rem 1.5rem;">
+                                <i class="fas fa-history me-2" style="color: #f39c12;"></i>Timeline
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link detail-tab-btn" id="downtime-tab" data-bs-toggle="tab" data-bs-target="#downtime-pane" type="button" role="tab" aria-controls="downtime-pane" aria-selected="false" style="color: #2c3e50; font-weight: 600; border: none; padding: 1rem 1.5rem;">
+                                <i class="fas fa-hourglass-end me-2" style="color: #e74c3c;"></i>Downtime
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Tab Content -->
+                    <div class="tab-content" id="detailTabContent">
+                        <!-- General Tab -->
+                        <div class="tab-pane fade show active" id="general-pane" role="tabpanel" aria-labelledby="general-tab">
+                            <div style="max-height: 500px; overflow-y: auto;">
+                                <div id="generalContent">
+                                    <div class="text-center text-muted">
+                                        <i class="fas fa-spinner fa-spin me-2"></i> Loading...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Timeline Tab -->
+                        <div class="tab-pane fade" id="timeline-pane" role="tabpanel" aria-labelledby="timeline-tab">
+                            <div style="max-height: 500px; overflow-y: auto;">
+                                <div class="ps-3">
+                                    <!-- Timeline Item: Received -->
+                                    <div class="d-flex gap-3 mb-4 pb-3 border-bottom">
+                                        <div class="position-relative" style="width: 40px; flex-shrink: 0;">
+                                            <div style="width: 30px; height: 30px; background: #28a745; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+                                                <i class="fas fa-inbox" style="font-size: 0.75rem;"></i>
+                                            </div>
+                                        </div>
+                                        <div style="flex: 1; min-width: 0;">
+                                            <div class="fw-semibold" style="color: #495057; font-size: 0.95rem;">Received</div>
+                                            <small class="text-muted d-block mt-1" id="detailReceivedInfo"></small>
+                                        </div>
+                                    </div>
+
+                                    <!-- Timeline Item: Start Job -->
+                                    <div class="d-flex gap-3 mb-4 pb-3 border-bottom">
+                                        <div class="position-relative" style="width: 40px; flex-shrink: 0;">
+                                            <div id="startJobDot" style="width: 30px; height: 30px; background: #6c757d; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+                                                <i class="fas fa-play" style="font-size: 0.75rem;"></i>
+                                            </div>
+                                        </div>
+                                        <div style="flex: 1; min-width: 0;">
+                                            <div class="fw-semibold" style="color: #495057; font-size: 0.95rem;">Start Job</div>
+                                            <small class="text-muted d-block mt-1" id="detailStartedInfo">-</small>
+                                        </div>
+                                    </div>
+
+                                    <!-- Timeline Item: Complete Job -->
+                                    <div class="d-flex gap-3">
+                                        <div class="position-relative" style="width: 40px; flex-shrink: 0;">
+                                            <div id="completedDot" style="width: 30px; height: 30px; background: #6c757d; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+                                                <i class="fas fa-check" style="font-size: 0.75rem;"></i>
+                                            </div>
+                                        </div>
+                                        <div style="flex: 1; min-width: 0;">
+                                            <div class="fw-semibold" style="color: #495057; font-size: 0.95rem;">Complete Job</div>
+                                            <small class="text-muted d-block mt-1" id="detailCompletedInfo">-</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Downtime Tab -->
+                        <div class="tab-pane fade" id="downtime-pane" role="tabpanel" aria-labelledby="downtime-tab">
+                            <div style="max-height: 500px; overflow-y: auto;">
+                                <div id="downtimeInfo" class="ps-3">
+                                    <p class="text-muted text-center py-3 mb-0">No downtime records</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top bg-light py-3">
+                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .detail-tab-btn {
+            border-bottom: 3px solid transparent !important;
+            transition: all 0.3s ease;
+        }
+        .detail-tab-btn:hover {
+            color: #007bff !important;
+            border-bottom-color: #007bff !important;
+        }
+        .detail-tab-btn.active {
+            color: #007bff !important;
+            border-bottom-color: #007bff !important;
+            background-color: transparent !important;
+        }
+        
+        /* General content grid */
+        .detail-info-group {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .detail-info-group:last-child {
+            border-bottom: none;
+        }
+        .detail-info-title {
+            color: #495057;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .detail-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        .detail-info-row {
+            display: flex;
+            flex-direction: column;
+        }
+        .detail-info-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+        .detail-info-value {
+            font-weight: 500;
+            color: #2c3e50;
+            word-wrap: break-word;
+        }
+    </style>
+
+    <!-- Cancel Modal -->
+    <div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-gradient border-0 py-4 px-4" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
+                    <h5 class="modal-title fw-bold" id="cancelModalLabel" style="font-size: 1.2rem; color: #dc3545;">
+                        <i class="fas fa-times-circle me-2"></i>Cancel Work Order
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="cancelForm">
+                        <p class="text-muted mb-3">Please provide a reason for cancelling this work order:</p>
+                        <div class="mb-0">
+                            <textarea class="form-control" id="cancelReason" rows="4" required style="border-radius: 0.5rem;"
+                                      placeholder="Explain why this work order needs to be cancelled..."></textarea>
+                        </div>
+                        <input type="hidden" id="cancelWorkOrderId">
+                    </form>
+                </div>
+                <div class="modal-footer border-top bg-light py-3">
+                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Close
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm px-3" onclick="cancelWorkOrder()">
+                        <i class="fas fa-times me-1"></i>Cancel Work Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="editModalLabel">
+                        <i class="fas fa-edit me-2"></i>
+                        Edit Work Order
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Priority</label>
+                                    <select class="form-select" id="editPriority" required>
+                                        <option value="low">Low</option>
+                                        <option value="normal">Normal</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Status</label>
+                                    <select class="form-select" id="editStatus" required>
+                                        <option value="active">Active</option>
+                                        <option value="pending">Pending</option>
+                                        <option value="in_progress">In Progress</option>
+                                        <option value="on_hold">On Hold</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" id="editNotes" rows="4"
+                                      placeholder="Add any additional notes or comments..."></textarea>
+                        </div>
+                        
+                        <input type="hidden" id="editWorkOrderId">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="saveWorkOrder()">
+                        <i class="fas fa-save me-2"></i>Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- End Downtime Modal -->
+    <div class="modal fade" id="endDowntimeModal" tabindex="-1" aria-labelledby="endDowntimeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-gradient border-0 py-4 px-4" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                    <h5 class="modal-title fw-bold" id="endDowntimeModalLabel" style="font-size: 1.2rem; color:#198754;">
+                        <i class="fas fa-play-circle me-2"></i>End Downtime
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="fas fa-exclamation-triangle text-warning" style="margin-top: 0.125rem;"></i>
+                            <div>
+                                <strong>Confirm ending downtime?</strong>
+                                <p class="mb-0 mt-2 text-muted" style="font-size: 0.9rem;">This will return the work order to its previous status.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Current Downtime Information -->
+                    <div style="background: #f8f9fa; border-left: 4px solid #17a2b8; padding: 1rem; border-radius: 0.5rem;">
+                        <h6 style="color: #495057; font-weight: 600; font-size: 0.95rem; margin-bottom: 1rem;">
+                            <i class="fas fa-clock me-2" style="color: #17a2b8;"></i>Downtime Details
+                        </h6>
+                        <div class="ps-3">
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <small class="text-muted d-block mb-1">Reason</small>
+                                    <div class="fw-semibold" id="currentDowntimeReason">-</div>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block mb-1">Duration</small>
+                                    <div class="fw-semibold" id="currentDowntimeDuration">-</div>
+                                </div>
+                            </div>
+                            <div class="row g-3 mt-1">
+                                <div class="col-12">
+                                    <small class="text-muted d-block mb-1">Started At</small>
+                                    <div class="fw-semibold" id="currentDowntimeStartedAt">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" id="endDowntimeWorkOrderId">
+                </div>
+                <div class="modal-footer border-top bg-light py-3">
+                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-success btn-sm px-3" onclick="endDowntime()">
+                        <i class="fas fa-play-circle me-1"></i>End Downtime
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Duplicate MC Modal -->
+    <div class="modal fade" id="duplicateMcModal" tabindex="-1" aria-labelledby="duplicateMcModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title" id="duplicateMcModalLabel">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Create Job Confirmation
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning d-flex align-items-center">
+                        <i class="fas fa-exclamation-triangle me-3 fs-4"></i>
+                        <div>
+                            <strong>Multiple work orders found with MC number: <span id="duplicateMcNumber"></span></strong>
+                            <p class="mb-0 mt-2">Please select which work orders to include in the job:</p>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="duplicateWorkOrdersTable">
+                            <tbody id="duplicateWorkOrdersList">
+                                <!-- Will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="createSelectedWorkOrders()">
+                        <i class="fas fa-check me-2"></i>Create Selected Work Order
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="createAllWorkOrders()">
+                        <i class="fas fa-plus me-2"></i>Create All Work Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/work_queue.js') }}"></script>
+    <!-- Context Menu -->
+    <div id="contextMenu" class="context-menu">
+        <!-- Menu items will be dynamically added here -->
+    </div>
+    
+    <!-- Start Job Confirmation Modal -->
+    <div class="modal fade" id="startJobModal" tabindex="-1" aria-labelledby="startJobModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-gradient border-0 py-4 px-4" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                    <h5 class="modal-title fw-bold" id="startJobModalLabel" style="font-size: 1.2rem; color:#198754;">
+                        <i class="fas fa-play me-2"></i>Start Job
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="mb-4" style="color: #495057;">Confirm starting this work order. Status will change to <strong>IN PROGRESS</strong>.</p>
+                    
+                    <div style="background: #f8f9fa; border-left: 4px solid #28a745; padding: 1rem; border-radius: 0.5rem; margin-bottom: 0;">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <small class="text-muted d-block mb-1">WO Number</small>
+                                <div class="fw-semibold" id="startJobWO"></div>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block mb-1">Machine</small>
+                                <div class="fw-semibold" id="startJobMachine"></div>
+                            </div>
+                        </div>
+                        <div class="row g-3 mt-1">
+                            <div class="col-6">
+                                <small class="text-muted d-block mb-1">Item</small>
+                                <div class="fw-semibold" id="startJobItem" style="font-size: 0.9rem;"></div>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block mb-1">Priority</small>
+                                <div class="fw-semibold" id="startJobPriority"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top bg-light py-3">
+                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-success btn-sm px-3" onclick="confirmStartJob()">
+                        <i class="fas fa-play me-1"></i>Start Job
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
+</body>
+</html>

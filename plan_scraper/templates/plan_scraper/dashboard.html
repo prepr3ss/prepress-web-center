@@ -207,6 +207,30 @@
             transform: scale(1.01);
         }
         
+        /* Received Work Order Highlight - Override Bootstrap with !important */
+        .table-modern tbody tr.received {
+            background-color: #d4edda !important;
+            border-left: 4px solid #28a745 !important;
+        }
+        
+        .table-modern tbody tr.received:hover {
+            background-color: #c3e6cb !important;
+        }
+        
+        /* Override all Bootstrap table cells for received rows */
+        .table-modern tbody tr.received td {
+            background-color: inherit !important;
+        }
+        
+        /* Additional override for Bootstrap table-hover */
+        table.table tbody tr.received:hover {
+            background-color: #c3e6cb !important;
+        }
+        
+        .table-hover tbody tr.received:hover {
+            background-color: #c3e6cb !important;
+        }
+        
         .table-modern tbody td {
             padding: 1rem 0.75rem;
             vertical-align: middle;
@@ -413,8 +437,14 @@
                 padding: 1.5rem 1rem;
             }
             
-            .filter-section .col-md-3 {
+            /* Make filter section responsive */
+            .filter-section .col-md-8,
+            .filter-section .col-md-4 {
                 margin-bottom: 0.5rem;
+            }
+            
+            .filter-section .row {
+                flex-direction: column;
             }
         }
 
@@ -430,6 +460,107 @@
             .upload-area {
                 padding: 1rem;
             }
+        }
+        
+        /* Context Menu Styles */
+        .context-menu {
+            position: fixed;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            padding: 0.5rem 0;
+            min-width: 200px;
+            z-index: 1000;
+            opacity: 0;
+            transform: scale(0.95) translateY(-10px);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+        
+        .context-menu.show {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+        }
+        
+        .context-menu-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            color: #495057;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+        
+        .context-menu-item:hover {
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+        
+        .context-menu-item i {
+            width: 20px;
+            margin-right: 12px;
+            font-size: 0.85rem;
+        }
+        
+        .context-menu-item.success {
+            color: #28a745;
+        }
+        
+        .context-menu-item.success:hover {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: #1e7e34;
+        }
+        
+        .context-menu-item.warning {
+            color: #ffc107;
+        }
+        
+        .context-menu-item.warning:hover {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: #d39e00;
+        }
+        
+        .context-menu-item.danger {
+            color: #dc3545;
+        }
+        
+        .context-menu-item.danger:hover {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: #bd2130;
+        }
+        
+        .context-menu-item.disabled {
+            color: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .context-menu-item.disabled:hover {
+            background-color: transparent;
+        }
+        
+        .context-menu-divider {
+            height: 1px;
+            background-color: #dee2e6;
+            margin: 0.5rem 0;
+        }
+        
+        .context-menu-indicator {
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        
+        .context-menu-indicator:hover {
+            background-color: #f8f9fa;
         }
     </style>
 </head>
@@ -597,12 +728,11 @@
                                     <th>Sheet</th>
                                     <th>Paper Description</th>
                                     <th>Paper Type</th>
-                                    <th class="text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="dataTableBody">
                                 <tr>
-                                    <td colspan="9" class="text-center py-4">
+                                    <td colspan="8" class="text-center py-4">
                                         <i class="fas fa-spinner fa-spin me-2"></i>
                                         Loading data...
                                     </td>
@@ -637,17 +767,31 @@
     <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Confirm Delete</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-trash me-2"></i>
+                        Confirm Delete
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <h6>Work Order Details:</h6>
+                        <p><strong>WO Number:</strong> <span id="deleteWO"></span></p>
+                        <p><strong>Machine:</strong> <span id="deleteMachine"></span></p>
+                        <p><strong>Item:</strong> <span id="deleteItem"></span></p>
+                    </div>
+                    
                     <p>Are you sure you want to delete this record?</p>
                     <p class="text-danger small"><i class="fas fa-exclamation-triangle me-1"></i> This action cannot be undone.</p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger" id="confirmDelete">Delete</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                        <i class="fas fa-trash me-2"></i>Delete
+                    </button>
                 </div>
             </div>
         </div>
@@ -738,7 +882,7 @@
                         
                         // Show loading state
                         confirmDeleteBtn.disabled = true;
-                        confirmDeleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Menghapus...';
+                        confirmDeleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Deleting...';
                         
                         // Perform delete request
                         fetch(`/impact/api/plan-scraper/${deleteId}`, {
@@ -772,7 +916,7 @@
                         .finally(() => {
                             // Reset button state
                             confirmDeleteBtn.disabled = false;
-                            confirmDeleteBtn.innerHTML = '<i class="fas fa-trash me-2"></i>Hapus';
+                            confirmDeleteBtn.innerHTML = '<i class="fas fa-trash me-2"></i>Delete';
                             deleteId = null;
                         });
                     }
@@ -781,5 +925,102 @@
         });
         
     </script>
+
+    <!-- Receive Confirmation Modal -->
+    <div class="modal fade" id="receiveModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Receive Work Order
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <h6>Work Order Details:</h6>
+                        <p><strong>WO Number:</strong> <span id="receiveWO"></span></p>
+                        <p><strong>Machine:</strong> <span id="receiveMachine"></span></p>
+                        <p><strong>Item:</strong> <span id="receiveItem"></span></p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Priority</label>
+                        <select class="form-select" id="receivePriority">
+                            <option value="low">Low</option>
+                            <option value="normal" selected>Normal</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Notes (Optional)</label>
+                        <textarea class="form-control" id="receiveNotes" rows="3" 
+                                  placeholder="Add any notes about this work order..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="confirmReceive()">
+                        <i class="fas fa-check me-2"></i>Receive Work Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Receive Merge Confirmation Modal -->
+    <div class="modal fade" id="receiveMergeConfirmModal" tabindex="-1" aria-labelledby="receiveMergeConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-gradient border-0 py-4 px-4" style="background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);">
+                    <h5 class="modal-title fw-bold" id="receiveMergeConfirmModalLabel" style="font-size: 1.2rem; color: #0d6efd;">
+                        <i class="fas fa-code-branch me-2"></i>Merge Work Orders?
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div style="background: #e7f3ff; border-left: 4px solid #0d6efd; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="fas fa-info-circle text-primary" style="margin-top: 0.125rem;"></i>
+                            <div>
+                                <strong>Multiple Work Orders with Same MC & Item</strong>
+                                <p class="mb-0 mt-2 text-muted" style="font-size: 0.9rem;">
+                                    Work orders with the same MC number and item name exist. Would you like to merge them together or keep them separate?
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- WO List will be populated here by populateMergeModal() -->
+                    <div id="mergeWOList"></div>
+                    
+                    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 1rem; border-radius: 0.5rem; font-size: 0.9rem;">
+                        <i class="fas fa-lightbulb me-2 text-warning"></i>
+                        <strong>Tip:</strong> Merging work orders allows them to be processed together as a single production job.
+                    </div>
+                </div>
+                <div class="modal-footer border-top bg-light py-3">
+                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm px-3" onclick="confirmReceiveMergeDecision(false)">
+                        <i class="fas fa-minus-circle me-1"></i>Keep Separate
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm px-3" onclick="confirmReceiveMergeDecision(true)">
+                        <i class="fas fa-check-circle me-1"></i>Yes, Merge Them
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Context Menu -->
+    <div id="contextMenu" class="context-menu">
+        <!-- Menu items will be dynamically added here -->
+    </div>
 </body>
 </html>

@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Work Order - Impact 360</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-mobile-framework.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <style>
+        /* Modern Form Styles */
+        .page-header {
+            background: #2c3e50;
+            color: white;
+            padding: 2rem 0;
+            margin: -1rem -15px 2rem -15px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 20px rgba(44, 62, 80, 0.3);
+        }
+        
+        .form-container {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+            margin-bottom: 2rem;
+        }
+        
+        .form-section {
+            margin-bottom: 2rem;
+        }
+        
+        .form-section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+        
+        /* Choices.js Custom Styles */
+        .choices {
+            margin-bottom: 0;
+            width: 100%;
+        }
+        
+        .choices__inner {
+            background-color: #fff;
+            border: 2px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 0.55rem 1rem;
+            min-height: 46px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+        
+        .choices.is-focused .choices__inner {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+        
+        .choices__list--single .choices__item {
+            color: #495057;
+            font-weight: 400;
+            margin: 0;
+        }
+        
+        .choices__list--dropdown {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            margin-top: 0.25rem;
+            background-color: #fff;
+            z-index: 1000;
+        }
+        
+        .choices__list--dropdown .choices__item {
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .choices__list--dropdown .choices__item:last-child {
+            border-bottom: none;
+        }
+        
+        .choices__list--dropdown .choices__item--selectable.is-highlighted {
+            background-color: #f8f9fa;
+        }
+        
+        .choices__placeholder {
+            color: #6c757d;
+            opacity: 1;
+        }
+        
+        .choices__input {
+            background-color: transparent;
+            margin-bottom: 0;
+            padding: 0;
+            border: none;
+            font-size: 0.95rem;
+        }
+        
+        .choices__input:focus {
+            outline: none;
+        }
+        
+        .form-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .required-field::after {
+            content: " *";
+            color: #e74c3c;
+        }
+        
+        .work-queue-info {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid #dee2e6;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+        
+        .info-value {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1f2937;
+        }
+        
+        /* Machine Badge - matching work_queue.html styles */
+        .machine-badge {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        /* Machine specific colors - using both approaches for compatibility */
+        .machine-badge.sm2,
+        .machine-badge.machine-sm2 {
+            background-color: #3498db;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+        .machine-badge.sm3,
+        .machine-badge.machine-sm3 {
+            background-color: #e74c3c;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+        .machine-badge.sm4,
+        .machine-badge.machine-sm4 {
+            background-color: #2ecc71;
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+        }
+        .machine-badge.sm5,
+        .machine-badge.machine-sm5 {
+            background-color: #f39c12;
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+        }
+        .machine-badge.sm6,
+        .machine-badge.machine-sm6 {
+            background-color: #9b59b6;
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+        }
+        .machine-badge.vlf,
+        .machine-badge.machine-vlf {
+            background-color: #1abc9c;
+            background: linear-gradient(135deg, #1abc9c, #16a085);
+        }
+        
+        /* Default color for unknown machines */
+        .machine-badge:not(.sm2):not(.sm3):not(.sm4):not(.sm5):not(.sm6):not(.vlf):not(.machine-sm2):not(.machine-sm3):not(.machine-sm4):not(.machine-sm5):not(.machine-sm6):not(.machine-vlf) {
+            background-color: #95a5a6;
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+        }
+        
+        /* Priority Badge Styles - matching work_queue.html */
+        .priority-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            min-width: 50px;
+            text-align: center;
+        }
+        
+        .priority-badge.high {
+            background-color: #e74c3c;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+        
+        .priority-badge.normal {
+            background-color: #f39c12;
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+        }
+        
+        .priority-badge.low {
+            background-color: #95a5a6;
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+            color: white;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+        
+        /* Toast Container */
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1050;
+        }
+        
+        .toast {
+            border: none;
+            min-width: 300px;
+        }
+        
+        .toast-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 12px 12px 0 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .toast-header .btn-close {
+            filter: invert(1);
+            background: none;
+            border: none;
+            color: white;
+            opacity: 0.8;
+        }
+        
+        .toast-body {
+            border-radius: 12px;
+            padding: 1rem;
+        }
+        
+        /* Loading State */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .form-container {
+                padding: 1rem;
+            }
+            
+            .page-header {
+                padding: 1.5rem 0;
+            }
+            
+            .btn-primary, .btn-secondary {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="wrapper">
+        {% include '_top_header.html' %}
+        <div class="d-flex" id="content-wrapper">
+            {% include '_sidebar.html' %}
+            <div id="page-content-wrapper">
+                <div class="container-fluid pt-3">
+
+                    <div class="page-header">
+                        <div class="container-fluid">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h2 class="mb-1 text-white" id="formTitle">Create Work Order</h2>
+                                    <p class="mb-0 opacity-75" id="formSubtitle">Create production job from Work Queue</p>
+                                </div>
+                                <div class="text-end">
+                                    <button onclick="goBack()" class="btn btn-light">
+                                        <i class="fas fa-arrow-left me-1"></i> Back to Work Queue
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="toast-container position-fixed top-0 end-0 p-3">
+                        <div id="liveToast" class="toast border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+                            <div class="toast-header bg-gradient text-white border-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;">
+                                <i class="fas fa-bell me-2"></i>
+                                <strong class="me-auto" id="toastHeader">Notifikasi</strong>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                            </div>
+                            <div class="toast-body" id="toastBody">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="work-queue-info" id="workQueueInfo">
+                        <h5 class="mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Work Queue Information
+                            {% if work_queue_items|length > 1 %}
+                            <span class="badge bg-primary ms-2">{{ work_queue_items|length }} Work Orders</span>
+                            {% endif %}
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">WO Number</div>
+                                    <div class="info-value">
+                                        {% if work_queue_items|length > 1 %}
+                                            {% for item in work_queue_items %}
+                                                {% if item.plan_data %}
+                                                    {{ item.plan_data.wo_number }}{% if not loop.last %}, {% endif %}
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% else %}
+                                            {{ work_queue_item.plan_data.wo_number if work_queue_item.plan_data else '-' }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">MC Number</div>
+                                    <div class="info-value">{{ work_queue_item.plan_data.mc_number if work_queue_item.plan_data else '-' }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Item Name</div>
+                                    <div class="info-value">{{ work_queue_item.plan_data.item_name if work_queue_item.plan_data else '-' }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">Print Machine</div>
+                                    <div class="info-value">
+                                        {% if work_queue_item.plan_data %}
+                                        <span class="machine-badge {{ work_queue_item.plan_data.print_machine.lower() if work_queue_item.plan_data.print_machine else 'default' }}">
+                                            {{ work_queue_item.plan_data.print_machine }}
+                                        </span>
+                                        {% else %}
+                                        <span class="text-muted">No plan data available</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Priority</div>
+                                    <div class="info-value">
+                                        {% if work_queue_item.priority %}
+                                        <span class="priority-badge {{ work_queue_item.priority.lower() }}">
+                                            {{ work_queue_item.priority.upper() }}
+                                        </span>
+                                        {% else %}
+                                        <span class="priority-badge normal">NORMAL</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-container">
+                        <form id="createWorkOrderForm">
+                            <input type="hidden" id="workQueueId" name="work_queue_id" value="{{ work_queue_item.id }}">
+                            <input type="hidden" id="selectedWorkQueueId" name="selected_work_queue_id" value="{{ work_queue_item.id }}">
+                            <input type="hidden" id="completeJobMode" name="complete_job_mode" value="false">
+                            
+                            <div class="form-section">
+                                <h5 class="form-section-title">
+                                    <i class="fas fa-user me-2"></i>
+                                    Basic Information
+                                </h5>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label for="tanggal" class="form-label required-field">Tanggal</label>
+                                        <input type="date" class="form-control" id="tanggal" name="tanggal" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="picName" class="form-label required-field">PIC</label>
+                                        <select class="form-select" id="picName" name="pic" required disabled>
+                                            <option value="{{ current_user.name }}">{{ current_user.name }}</option>
+                                        </select>
+                                        <input type="hidden" name="pic" value="{{ current_user.name }}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="grup" class="form-label required-field">Grup</label>
+                                        <select class="form-select" id="grup" name="grup" required disabled>
+                                            <option value="{{ current_user.grup or '' }}">{{ current_user.grup or 'No Group' }}</option>
+                                        </select>
+                                        <input type="hidden" name="grup" value="{{ current_user.grup or '' }}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="shift" class="form-label required-field">Shift</label>
+                                        <select class="form-select" id="shift" name="shift" required>
+                                            <option value="">Select Shift</option>
+                                            <option value="Shift 1">Shift 1</option>
+                                            <option value="Shift 2">Shift 2</option>
+                                            <option value="Shift 3">Shift 3</option>
+                                        </select>
+                                    </div>                                    
+                                </div>
+                                <div class="row mt-3">
+
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h5 class="form-section-title">
+                                    <i class="fas fa-cogs me-2"></i>
+                                    Production Details
+                                </h5>
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        <label for="printMachine" class="form-label">Print Machine</label>
+                                        <select class="form-select" id="printMachine" name="print_machine">
+                                            <option value="">Select Print Machine</option>
+                                            <!-- First option: Current machine from work queue/plan scraper -->
+                                            {% if work_queue_item.plan_data and work_queue_item.plan_data.print_machine %}
+                                            <option value="{{ work_queue_item.plan_data.print_machine }}" selected>{{ work_queue_item.plan_data.print_machine }}</option>
+                                            {% endif %}
+                                            <!-- Other options from database -->
+                                            {% for machine in print_machines %}
+                                            {% if not (work_queue_item.plan_data and work_queue_item.plan_data.print_machine == machine.print_machine) %}
+                                            <option value="{{ machine.print_machine }}">{{ machine.print_machine }}</option>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="customerName" class="form-label required-field">Customer Name</label>
+                                        <select class="form-select" id="customerName" name="customer_name" required>
+                                            <option value="">Select Customer</option>
+                                            {% for customer in customers %}
+                                            <option value="{{ customer.id }}">{{ customer.customer_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>                                    
+                                    <div class="col-md-4">
+                                        <label for="woNumber" class="form-label">WO Number</label>
+                                        <input type="text" class="form-control" id="woNumber" name="wo_number" value="{% if work_queue_items|length > 1 %}{% for item in work_queue_items %}{% if item.plan_data %}{{ item.plan_data.wo_number }}{% if not loop.last %}, {% endif %}{% endif %}{% endfor %}{% else %}{{ work_queue_item.plan_data.wo_number if work_queue_item.plan_data else '' }}{% endif %}" readonly disabled>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="mcNumber" class="form-label">MC Number</label>
+                                        <input type="text" class="form-control" id="mcNumber" name="mc_number" value="{{ work_queue_item.plan_data.mc_number if work_queue_item.plan_data else '' }}" readonly disabled>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <label for="itemName" class="form-label">Item Name</label>
+                                        <input type="text" class="form-control" id="itemName" name="item_name" value="{{ work_queue_item.plan_data.item_name if work_queue_item.plan_data else '' }}" readonly disabled>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="paperType" class="form-label">Paper Type</label>
+                                        <input type="text" class="form-control" id="paperType" name="paper_type" value="{{ work_queue_item.plan_data.paper_type if work_queue_item.plan_data else '' }}" readonly disabled>
+                                    </div>                                    
+                                    <div class="col-md-2">
+                                        <label for="paperSize" class="form-label required-field">Paper Size</label>
+                                        <input type="text" class="form-control" id="paperSize" name="paper_size" required>
+                                    </div>                                    
+                                    <div class="col-md-2">
+                                        <label for="up" class="form-label">Up</label>
+                                        <input type="number" class="form-control" id="up" name="up" value="{{ work_queue_item.plan_data.num_up if work_queue_item.plan_data else '' }}" readonly disabled>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-4">
+                                        <label for="paperDesc" class="form-label required-field">Paper Description</label>
+                                        <input type="text" class="form-control" id="paperDesc" name="paper_desc" value="{{ work_queue_item.plan_data.paper_desc if work_queue_item.plan_data else '' }}" readonly required>
+                                    </div>                                    
+                                    <div class="col-md-4">
+                                        <label for="printBlock" class="form-label required-field">Print Block</label>
+                                        <input type="text" class="form-control" id="printBlock" name="print_block" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="remarks" class="form-label required-field">Remarks</label>
+                                        <select class="form-select" id="remarks" name="remarks_id" required>
+                                            <option value="">Select Remarks</option>
+                                            {% for remark in remarks %}
+                                            <option value="{{ remark.id }}">{{ remark.imposition_remarks }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>                                    
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h5 class="form-section-title">
+                                    <i class="fas fa-print me-2"></i>
+                                    Cockpit Settings
+                                </h5>
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        <label for="cockpit" class="form-label required-field">Cockpit</label>
+                                        <select class="form-select" id="cockpit" name="cockpit_id" required>
+                                            <option value="">Select Cockpit</option>
+                                            {% for cockpit in cockpits %}
+                                            <option value="{{ cockpit.id }}">{{ cockpit.imposition_cockpit }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-1">
+                                        <label for="tiffBUsage" class="form-label required-field">TIFF-B Usage</label>
+                                        <input type="number" class="form-control" id="tiffBUsage" name="tiff_b_usage" required min="0" step="1">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="calibrationName" class="form-label required-field">Calibration Name</label>
+                                        <select class="form-select" id="calibrationName" name="calibration_id" required>
+                                            <option value="">Select Calibration</option>
+                                            <!-- Calibrations will be populated by JavaScript based on print machine selection -->
+                                        </select>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label for="fileName" class="form-label required-field">File Name</label>
+                                        <input type="text" class="form-control" id="fileName" name="file_name" required>
+                                    </div> 
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-2"></i>
+                                            Create Work Order
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="loading-overlay" id="loadingOverlay">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <script src="{{ url_for('static', filename='js/create_work_order.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sidebar_handler.js') }}"></script>
+    
+    <!-- Debug Information -->
+    <!-- DEBUG: Work Queue Item -->
+    {% if work_queue_item %}
+        <!-- DEBUG: Work Queue Item ID: {{ work_queue_item.id }} -->
+        <!-- DEBUG: Work Queue Item Status: {{ work_queue_item.status }} -->
+        {% if work_queue_item.plan_data %}
+            <!-- DEBUG: Plan Data WO: {% if work_queue_items|length > 1 %}{% for item in work_queue_items %}{% if item.plan_data %}{{ item.plan_data.wo_number }}{% if not loop.last %}, {% endif %}{% endif %}{% endfor %}{% else %}{{ work_queue_item.plan_data.wo_number }}{% endif %} -->
+            <!-- DEBUG: Plan Data MC: {{ work_queue_item.plan_data.mc_number }} -->
+            <!-- DEBUG: Plan Data Item: {{ work_queue_item.plan_data.item_name }} -->
+            <!-- DEBUG: Plan Data Machine: {{ work_queue_item.plan_data.print_machine }} -->
+        {% else %}
+            <!-- DEBUG: Plan Data: NONE -->
+        {% endif %}
+    {% else %}
+        <!-- DEBUG: Work Queue Item: NONE -->
+    {% endif %}
+    
+    <!-- DEBUG: Dropdown Data -->
+    <!-- DEBUG: Users count: {{ users|length if users else 0 }} -->
+    {% for user in users %}
+        <!-- DEBUG: User ID: {{ user.id }}, Name: {{ user.name }} -->
+    {% endfor %}
+    
+    <!-- DEBUG: Customers count: {{ customers|length if customers else 0 }} -->
+    {% for customer in customers %}
+        <!-- DEBUG: Customer ID: {{ customer.id }}, Name: {{ customer.customer_name }} -->
+    {% endfor %}
+    
+    <!-- DEBUG: Cockpits count: {{ cockpits|length if cockpits else 0 }} -->
+    {% for cockpit in cockpits %}
+        <!-- DEBUG: Cockpit ID: {{ cockpit.id }}, Name: {{ cockpit.imposition_cockpit }} -->
+    {% endfor %}
+    
+    <!-- DEBUG: Calibrations count: {{ calibrations|length if calibrations else 0 }} -->
+    {% for calibration in calibrations %}
+        <!-- DEBUG: Calibration ID: {{ calibration.id }}, Name: {{ calibration.calib_name }} -->
+    {% endfor %}
+    
+    <!-- DEBUG: Remarks count: {{ remarks|length if remarks else 0 }} -->
+    {% for remark in remarks %}
+        <!-- DEBUG: Remark ID: {{ remark.id }}, Name: {{ remark.imposition_remarks }} -->
+    {% endfor %}
+    
+    <script>
+        // Check if this is complete Job mode
+        const urlParams = new URLSearchParams(window.location.search);
+        const completeJobMode = urlParams.get('complete_job') === 'true';
+        const workQueueIdsParam = urlParams.get('work_queue_ids');
+        const jobCount = workQueueIdsParam ? workQueueIdsParam.split(',').length : 1;
+        
+        if (completeJobMode) {
+            // Update form title and subtitle for Complete Job mode
+            const titleText = jobCount > 1 ? 
+                `<i class="fas fa-check me-2"></i>Complete ${jobCount} Work Orders` :
+                '<i class="fas fa-check me-2"></i>Complete Work Order';
+            document.getElementById('formTitle').innerHTML = titleText;
+            document.getElementById('formSubtitle').textContent = 'Complete production job from Work Queue';
+            
+            // Update complete job mode hidden field
+            document.getElementById('completeJobMode').value = 'true';
+            
+            // Change submit button text
+            const submitBtn = document.querySelector('#createWorkOrderForm button[type="submit"]');
+            if (submitBtn) {
+                const buttonText = jobCount > 1 ?
+                    `<i class="fas fa-check me-2"></i>Complete ${jobCount} Jobs` :
+                    '<i class="fas fa-check me-2"></i>Complete Job';
+                submitBtn.innerHTML = buttonText;
+            }
+        } else if (jobCount > 1) {
+            // Show count for create mode with multiple work orders
+            const titleText = `<i class="fas fa-play-circle me-2"></i>Create ${jobCount} Production Jobs`;
+            document.getElementById('formTitle').innerHTML = titleText;
+            
+            const submitBtn = document.querySelector('#createWorkOrderForm button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.innerHTML = `<i class="fas fa-save me-2"></i>Create ${jobCount} Jobs`;
+            }
+        }
+    </script>
+</body>
+</html>

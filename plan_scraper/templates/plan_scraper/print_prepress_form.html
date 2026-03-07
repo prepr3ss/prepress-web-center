@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="print-content" content="FORM PENGECEKAN PREPRESS OFFSET">
+    <title>FORM PENGECEKAN PREPRESS OFFSET</title>
+    <style>
+        @font-face {
+            font-family: Carlito-Bold;
+            src: local("Carlito Bold");
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+            font-family: Calibri, Arial, sans-serif;
+            color: #000;
+        }
+        
+        .page-container {
+            margin: 10px auto;
+            width: fit-content;
+        }
+        
+        .page {
+            position: relative;
+            background-color: white;
+            width: 909px;
+            height: 1286px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            aspect-ratio: 909/1286;
+        }
+        
+        .page-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        .page-bg svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .content-layer {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .header-logo {
+            position: absolute;
+            top: 40px;
+            left: 50px;
+            width: 157px;
+            height: 24px;
+            z-index: 20;
+        }
+        
+        .header-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .text-item {
+            position: absolute;
+            font-size: 12px;
+            font-family: Calibri, Arial, sans-serif;
+            color: #000;
+            white-space: nowrap;
+            overflow: visible;
+        }
+        
+        .form-title {
+            position: absolute;
+            top: 30px;
+            left: 265px;
+            font-size: 23px;
+            font-weight: bold;
+            color: #000;
+            white-space: normal;
+            width: 400px;
+        }
+        
+        .section-label {
+            font-weight: bold;
+        }
+        
+        .colon {
+            font-weight: bold;
+            margin: 0 2px;
+        }
+        
+        .field-value {
+            border-bottom: 1px solid #000;
+            padding: 1px 3px;
+            display: inline-block;
+            min-width: 150px;
+            max-width: 380px;
+            overflow: hidden;
+        }
+        
+        .field-narrow {
+            border-bottom: 1px solid #000;
+            padding: 1px 3px;
+            display: inline-block;
+            width: 80px;
+            overflow: hidden;
+        }
+        
+        .checkbox {
+            font-size: 18px;
+            font-weight: normal;
+        }
+        
+        .red-warning {
+            position: absolute;
+            bottom: 83px;
+            left: 109px;
+            color: #f00;
+            font-weight: bold;
+            font-size: 12px;
+            width: 700px;
+        }
+        
+        .footer-doc {
+            position: absolute;
+            bottom: 38px;
+            left: 39px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        .controlled-copy-stamp {
+            position: absolute;
+            width: 180px;
+            height: 100px;
+            object-fit: contain;
+        }
+        
+        @media print {
+            /* Menghilangkan header/footer otomatis dari browser (tanggal, url, dll) */
+            @page {
+                size: A4;
+                margin: 0;
+            }
+
+            body {
+                background: white !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                -webkit-print-color-adjust: exact; /* Memaksa warna & SVG muncul */
+                print-color-adjust: exact;
+            }
+
+            .page-container {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+            }
+
+            .page {
+                margin: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+                /* Trik Scaling: Jika 909px terlalu lebar, kita kecilkan sedikit agar pas di A4 */
+                transform: scale(1); 
+                transform-origin: top left;
+                page-break-after: always;
+                overflow: visible !important;
+            }
+
+            /* Memastikan SVG background tercetak */
+            .page-bg {
+                display: block !important;
+                position: absolute !important;
+            }
+            
+            .content-layer {
+                position: relative !important;
+                z-index: 2 !important;
+                width: 100% !important;
+                height: 100% !important;
+            }
+            
+            .text-item {
+                position: absolute !important;
+                font-size: 12px !important;
+                font-family: Calibri, Arial, sans-serif !important;
+                color: #000 !important;
+                white-space: nowrap !important;
+                overflow: visible !important;
+            }
+            
+            .header-logo {
+                position: absolute !important;
+                top: 40px !important;
+                left: 50px !important;
+                width: 157px !important;
+                height: 24px !important;
+                z-index: 20 !important;
+            }
+            
+            .header-logo img {
+                width: 100% !important;
+                height: 100% !important;
+                object-fit: contain !important;
+            }
+            
+            .red-warning {
+                position: absolute !important;
+                bottom: 83px !important;
+                left: 109px !important;
+                color: #f00 !important;
+                font-weight: bold !important;
+                font-size: 12px !important;
+                width: 700px !important;
+            }
+            
+            .footer-doc {
+                position: absolute !important;
+                bottom: 38px !important;
+                left: 39px !important;
+                font-size: 11px !important;
+                font-weight: bold !important;
+            }
+            
+            .field-value {
+                border-bottom: 1px solid #000 !important;
+                padding: 1px 3px !important;
+                display: inline-block !important;
+                min-width: 150px !important;
+                max-width: 380px !important;
+                overflow: visible !important;
+            }
+            
+            .field-narrow {
+                border-bottom: 1px solid #000 !important;
+                padding: 1px 3px !important;
+                display: inline-block !important;
+                width: 80px !important;
+                overflow: visible !important;
+            }
+            
+            img {
+                max-width: 100% !important;
+                height: auto !important;
+            }
+            
+            @page {
+                size: A4;
+                margin: 0;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="page">
+            <!-- SVG Grid Background -->
+            <svg class="page-bg" viewBox="0 0 909 1286" preserveAspectRatio="xMinYMin meet">
+                <style>
+                    .g0 {fill:none;stroke:#000;stroke-width:0.561;stroke-linejoin:round;}
+                    .g1 {fill:none;stroke:#000;stroke-width:0.802;stroke-linejoin:round;}
+                </style>
+                <path d="M38 66.6H871.3M38.2 66.4V1232.7M871 66.4V1232.7M871 66.4V1232.7M48.1 83h813m-813 91.4h813m-813 321h813M48.1 872.5h813" class="g0"/>
+                <path d="M47.7 951.9H788.8m-740.7-.4v176.9M206.6 951.5v176.9m72.7-176.9v176.9M352 951.5v176.9m72.8-176.9v176.9m72.7-176.9v176.9m72.7-176.9v176.9m72.7-176.9v176.9m72.7-176.9v176.9m72.8-176.9v176.9M47.7 978.8H788.8M173 978.4v90.3m-.4-75H788.8m-616.2 15H788.8m-616.2 14.9H788.8m-616.2 14.9H788.8m-616.2 14.9H788.8M47.7 1068.3H788.8M47.7 1083.2H788.8m-545.8-.4v45.6m72.7-45.6v45.6m72.7-45.6v45.6m72.7-45.6v45.6m72.7-45.6v45.6m72.8-45.6v45.6m72.7-45.6v45.6m72.7-45.6v45.6m-545.8-30.3H788.8m-741.1 15H788.8M47.7 1128H788.8M47.7 1142.9H497.8m-449.7-.3v75.1m449.4-75.1v75.1m-449.6-.2H497.8M38 1232.4H871.3" class="g1"/>
+            </svg>
+            
+            <!-- Content Layer -->
+            <div class="content-layer">
+                <!-- LOGO -->
+                <div class="header-logo">
+                    <img src="{{ url_for('static', filename='img/logo_pt_satyamitra.png') }}" alt="PT. Satyamitra">
+                </div>
+                
+                <!-- TITLE -->
+                <div class="form-title">FORM PENGECEKAN PREPRESS OFFSET</div>
+                
+                <!-- TEXT CONTENT -->
+                <!-- Spesifikasi Produk -->
+                <span class="text-item section-label" style="left: 48px; bottom: 1202px;">Spesifikasi Produk</span>
+                <span class="text-item" style="left: 600px; bottom: 1202px;">Tanggal :</span>
+                <span class="text-item" style="left: 660px; bottom: 1202px;">{{ completed_at }}</span>
+                
+                <!-- Row 1: Customer / No. WO -->
+                <span class="text-item section-label" style="left: 48px; bottom: 1185px;">Customer</span>
+                <span class="text-item colon" style="left: 173px; bottom: 1185px;">:</span>
+                <span class="text-item field-value" style="left: 185px; bottom: 1185px; width: 380px;">{{ customer_name }}</span>
+                <span class="text-item section-label" style="left: 643px; bottom: 1185px;">No. WO</span>
+                <span class="text-item colon" style="left: 749px; bottom: 1185px;">:</span>
+                <span class="text-item field-narrow" style="left: 765px; bottom: 1185px;">{{ wo_number }}</span>
+                
+                <!-- Row 2: Nama Item / Uk. Kertas -->
+                <span class="text-item section-label" style="left: 48px; bottom: 1171px;">Nama Item</span>
+                <span class="text-item colon" style="left: 173px; bottom: 1171px;">:</span>
+                <span class="text-item field-value" style="left: 185px; bottom: 1171px; width: 380px;">{{ item_name }}</span>
+                <span class="text-item section-label" style="left: 643px; bottom: 1171px;">Uk. Kertas</span>
+                <span class="text-item colon" style="left: 749px; bottom: 1171px;">:</span>
+                <span class="text-item field-narrow" style="left: 765px; bottom: 1171px;">{{ paper_size }}</span>
+                
+                <!-- Row 3: Nama File -->
+                <span class="text-item section-label" style="left: 48px; bottom: 1156px;">Nama File</span>
+                <span class="text-item colon" style="left: 173px; bottom: 1156px;">:</span>
+                <span class="text-item field-value" style="left: 185px; bottom: 1156px; width: 650px;">{{ file_name }}</span>
+                
+                <!-- Row 4: No. MC, Mesin & Kertas / Jumlah UP -->
+                <span class="text-item section-label" style="left: 48px; bottom: 1141px;">No. MC, Mesin & Kertas</span>
+                <span class="text-item colon" style="left: 173px; bottom: 1141px;">:</span>
+                <span class="text-item field-value" style="left: 185px; bottom: 1141px; width: 380px;">{{ print_block }}</span>
+                <span class="text-item section-label" style="left: 643px; bottom: 1141px;">Jumlah UP</span>
+                <span class="text-item colon" style="left: 749px; bottom: 1141px;">:</span>
+                <span class="text-item field-narrow" style="left: 765px; bottom: 1141px;">{{ up }}</span>
+                
+                <!-- Pengecekan Section -->
+                <span class="text-item section-label" style="left: 48px; bottom: 1111px; font-size: 13px;">Pengecekan Impose PDF (untuk PROOF)</span>
+                
+                <!-- Mesin Cetak -->
+                <span class="text-item section-label" style="left: 48px; bottom: 1091px;">Mesin Cetak</span>
+                <span class="text-item colon" style="left: 173px; bottom: 1091px;">:</span>
+                <span class="text-item field-narrow" style="left: 185px; bottom: 1091px;">{{ print_machine }}</span>
+                
+                <!-- Checkboxes Kesesuaian Warna -->
+                <span class="text-item section-label" style="left: 48px; bottom: 1071px;">Kesesuaian Warna</span>
+                <span class="text-item colon" style="left: 173px; bottom: 1071px;">:</span>                
+                <span class="text-item checkbox" style="left: 185px; bottom: 1069px;">☐</span>
+                <span class="text-item" style="left: 207px; bottom: 1071px;">Cyan OK</span>                
+                <span class="text-item checkbox" style="left: 362px; bottom: 1069px;">☐</span>
+                <span class="text-item" style="left: 389px; bottom: 1071px;">Yellow OK</span>                
+                <span class="text-item checkbox" style="left: 544px; bottom: 1069px;">☐</span>
+                <span class="text-item" style="left: 571px; bottom: 1067px;">…......</span>                
+                <span class="text-item checkbox" style="left: 726px; bottom: 1069px;">☐</span>
+                <span class="text-item" style="left: 752px; bottom: 1067px;">…......</span>               
+                <span class="text-item checkbox" style="left: 185px; bottom: 1049px;">☐</span>
+                <span class="text-item" style="left: 207px; bottom: 1050px;">Magenta OK</span>               
+                <span class="text-item checkbox" style="left: 362px; bottom: 1049px;">☐</span>
+                <span class="text-item" style="left: 389px; bottom: 1050px;">Black OK</span>               
+                <span class="text-item checkbox" style="left: 544px; bottom: 1049px;">☐</span>
+                <span class="text-item" style="left: 571px; bottom: 1046px;">…......</span>              
+                <span class="text-item checkbox" style="left: 726px; bottom: 1049px;">☐</span>
+                <span class="text-item" style="left: 752px; bottom: 1046px;">…......</span>
+
+                <!-- Artwork Checkboxes -->
+                <span class="text-item section-label" style="left: 48px; bottom: 1027px;">Artwork</span>
+                <span class="text-item colon" style="left: 173px; bottom: 1027px;">:</span>                
+                <span class="text-item checkbox" style="left: 185px; bottom: 1025px;">☐</span>
+                <span class="text-item" style="left: 207px; bottom: 1027px;">Teks</span>               
+                <span class="text-item checkbox" style="left: 362px; bottom: 1025px;">☐</span>
+                <span class="text-item" style="left: 389px; bottom: 1027px;">Kode Produksi</span>                
+                <span class="text-item checkbox" style="left: 544px; bottom: 1025px;">☐</span>
+                <span class="text-item" style="left: 571px; bottom: 1027px;">Kode Item/Part Number</span>                
+                <span class="text-item checkbox" style="left: 726px; bottom: 1025px;">☐</span>
+                <span class="text-item" style="left: 752px; bottom: 1027px;">Overlap Teks</span>                
+                <span class="text-item checkbox" style="left: 185px; bottom: 1004px;">☐</span>
+                <span class="text-item" style="left: 207px; bottom: 1006px;">Image</span>               
+                <span class="text-item checkbox" style="left: 362px; bottom: 1004px;">☐</span>
+                <span class="text-item" style="left: 389px; bottom: 1006px;">Nomor MC</span>                
+                <span class="text-item checkbox" style="left: 544px; bottom: 1004px;">☐</span>
+                <span class="text-item" style="left: 571px; bottom: 1006px;">Register Image</span>                
+                <span class="text-item checkbox" style="left: 726px; bottom: 1004px;">☐</span>
+                <span class="text-item" style="left: 752px; bottom: 1006px;">Overlap Layout</span>                
+                <span class="text-item checkbox" style="left: 185px; bottom: 983px;">☐</span>
+                <span class="text-item" style="left: 207px; bottom: 985px;">Transparansi</span>               
+                <span class="text-item checkbox" style="left: 362px; bottom: 983px;">☐</span>
+                <span class="text-item" style="left: 389px; bottom: 985px;">Nomor UP</span>               
+                <span class="text-item checkbox" style="left: 544px; bottom: 983px;">☐</span>
+                <span class="text-item" style="left: 571px; bottom: 985px;">Marking Die Shifting</span>               
+                <span class="text-item checkbox" style="left: 726px; bottom: 983px;">☐</span>
+                <span class="text-item" style="left: 752px; bottom: 985px;">PDF to Prinect</span>               
+                <span class="text-item checkbox" style="left: 185px; bottom: 961px;">☐</span>
+                <span class="text-item" style="left: 207px; bottom: 964px;">Separations Preview</span>               
+                <span class="text-item checkbox" style="left: 362px; bottom: 961px;">☐</span>
+                <span class="text-item" style="left: 389px; bottom: 964px;">Colour Marking</span>                
+                <span class="text-item checkbox" style="left: 544px; bottom: 961px;">☐</span>
+                <span class="text-item" style="left: 571px; bottom: 964px;">Crop Mark</span>                
+                <span class="text-item checkbox" style="left: 726px; bottom: 961px;">☐</span>
+                <span class="text-item" style="left: 752px; bottom: 964px;">Cek Hasil Plate</span>
+                
+                <!-- Layout Checkboxes -->
+                <span class="text-item section-label" style="left: 48px; bottom: 941px;">Layout</span>
+                <span class="text-item colon" style="left: 173px; bottom: 941px;">:</span>                
+                <span class="text-item checkbox" style="left: 185px; bottom: 939px;">☐</span>
+                <span class="text-item" style="left: 207px; bottom: 941px;">Marking Gripper Mesin</span>               
+                <span class="text-item checkbox" style="left: 362px; bottom: 939px;">☐</span>
+                <span class="text-item" style="left: 389px; bottom: 941px;">Marking Print Begin</span>               
+                <span class="text-item checkbox" style="left: 544px; bottom: 939px;">☐</span>
+                <span class="text-item" style="left: 571px; bottom: 941px;">Colour Bar</span>               
+                <span class="text-item checkbox" style="left: 726px; bottom: 939px;">☐</span>
+                <span class="text-item" style="left: 752px; bottom: 941px;">Grayscale</span>                
+                <span class="text-item checkbox" style="left: 185px; bottom: 918px;">☐</span>
+                <span class="text-item" style="left: 207px; bottom: 920px;">Marking Anleg</span>                
+                <span class="text-item checkbox" style="left: 362px; bottom: 918px;">☐</span>
+                <span class="text-item" style="left: 389px; bottom: 920px;">Marking Sheet</span>              
+                <span class="text-item checkbox" style="left: 544px; bottom: 918px;">☐</span>
+                <span class="text-item" style="left: 571px; bottom: 920px;">Posisi Nesting</span>               
+                <span class="text-item checkbox" style="left: 726px; bottom: 918px;">☐</span>
+                <span class="text-item" style="left: 752px; bottom: 915px;">…......</span>               
+                <span class="text-item checkbox" style="left: 185px; bottom: 897px;">☐</span>
+                <span class="text-item" style="left: 207px; bottom: 898px;">Marking Register</span>               
+                <span class="text-item checkbox" style="left: 362px; bottom: 897px;">☐</span>
+                <span class="text-item" style="left: 389px; bottom: 898px;">Marking tanda Potong Kertas</span>
+                
+                <!-- Opt. Prepress -->
+                <span class="text-item" style="left: 716px; bottom: 830px;">{{ completed_by_name }}</span>                 
+                <span class="text-item" style="left: 716px; bottom: 814px;">(Opt. Prepress)</span>
+                
+                <!-- Pengecekan Data TIFF-B Section -->
+                <span class="text-item section-label" style="left: 48px; bottom: 793px; font-size: 13px;">Pengecekan Data tiff-B</span>
+                <span class="text-item" style="left: 600px; bottom: 770px;">Tanggal :</span>
+                
+                <!-- Mesin CTP -->
+                <span class="text-item section-label" style="left: 48px; bottom: 751px;">Mesin CTP</span>
+                <span class="text-item colon" style="left: 173px; bottom: 751px;">:</span>
+                <span class="text-item checkbox" style="left: 185px; bottom: 749px;">☐</span>
+                <span class="text-item" style="left: 207px; bottom: 751px;">CTP1</span>
+                <span class="text-item checkbox" style="left: 362px; bottom: 749px;">☐</span>
+                <span class="text-item" style="left: 389px; bottom: 751px;">CTP2</span>
+                <span class="text-item checkbox" style="left: 544px; bottom: 749px;">☐</span>
+                <span class="text-item" style="left: 571px; bottom: 751px;">CTP3</span>
+                
+                <!-- Kesesuaian Warna (TIFF-B) -->
+                <span class="text-item section-label" style="left: 48px; bottom: 728px;">Kesesuaian Warna</span>
+                <span class="text-item colon" style="left: 173px; bottom: 728px;">:</span>
+                <span class="text-item checkbox" style="left: 185px; bottom: 726px;">☐</span>
+                <span class="text-item" style="left: 207px; bottom: 728px;">Cyan OK</span>
+                <span class="text-item checkbox" style="left: 362px; bottom: 726px;">☐</span>
+                <span class="text-item" style="left: 389px; bottom: 728px;">Yellow OK</span>
+                <span class="text-item checkbox" style="left: 185px; bottom: 705px;">☐</span>
+                <span class="text-item" style="left: 207px; bottom: 707px;">Magenta OK</span>
+                <span class="text-item checkbox" style="left: 362px; bottom: 705px;">☐</span>
+                <span class="text-item" style="left: 389px; bottom: 707px;">Black OK</span>
+                <span class="text-item checkbox" style="left: 544px; bottom: 726px;">☐</span>
+                <span class="text-item" style="left: 571px; bottom: 728px;">…......</span>             
+                <span class="text-item checkbox" style="left: 726px; bottom: 726px;">☐</span>
+                <span class="text-item" style="left: 752px; bottom: 728px;">…......</span>                
+                <span class="text-item checkbox" style="left: 544px; bottom: 705px;">☐</span>
+                <span class="text-item" style="left: 571px; bottom: 707px;">…......</span>               
+                <span class="text-item checkbox" style="left: 726px; bottom: 705px;">☐</span>
+                <span class="text-item" style="left: 752px; bottom: 707px;">…......</span>                
+
+                <!-- Artwork (TIFF-B) -->
+                <span class="text-item section-label" style="left: 48px; bottom: 684px;">Artwork</span>
+                <span class="text-item colon" style="left: 173px; bottom: 684px;">:</span>
+                <span class="text-item checkbox" style="left: 185px; bottom: 682px;">☐</span>
+                <span class="text-item" style="left: 207px; bottom: 684px;">Teks</span>
+                <span class="text-item checkbox" style="left: 362px; bottom: 682px;">☐</span>
+                <span class="text-item" style="left: 389px; bottom: 684px;">Kode Produksi</span>
+                <span class="text-item checkbox" style="left: 185px; bottom: 661px;">☐</span>
+                <span class="text-item" style="left: 207px; bottom: 663px;">Image</span>
+                <span class="text-item checkbox" style="left: 362px; bottom: 661px;">☐</span>
+                <span class="text-item" style="left: 389px; bottom: 663px;">Nomor UP</span>
+                <span class="text-item checkbox" style="left: 185px; bottom: 640px;">☐</span>
+                <span class="text-item" style="left: 207px; bottom: 642px;">Nomor MC</span>
+                <span class="text-item checkbox" style="left: 362px; bottom: 640px;">☐</span>
+                <span class="text-item" style="left: 389px; bottom: 642px;">Colour Marking</span>
+                
+                <!-- Layout (TIFF-B) -->
+                <span class="text-item section-label" style="left: 48px; bottom: 619px;">Layout</span>
+                <span class="text-item colon" style="left: 173px; bottom: 619px;">:</span>
+                <span class="text-item checkbox" style="left: 185px; bottom: 617px;">☐</span>
+                <span class="text-item" style="left: 207px; bottom: 619px;">Marking CMYK 50%</span>
+                <span class="text-item checkbox" style="left: 362px; bottom: 617px;">☐</span>
+                <span class="text-item" style="left: 389px; bottom: 619px;">Crop Mark</span>
+                <span class="text-item checkbox" style="left: 544px; bottom: 617px;">☐</span>
+                <span class="text-item" style="left: 571px; bottom: 619px;">Marking Register</span>
+                <span class="text-item checkbox" style="left: 185px; bottom: 596px;">☐</span>
+                <span class="text-item" style="left: 207px; bottom: 598px;">Marking Pcs</span>
+                <span class="text-item checkbox" style="left: 362px; bottom: 596px;">☐</span>
+                <span class="text-item" style="left: 389px; bottom: 598px;">Colour Bar</span>
+                <span class="text-item checkbox" style="left: 544px; bottom: 596px;">☐</span>
+                <span class="text-item" style="left: 571px; bottom: 598px;">Cek Layout Image</span>
+                <span class="text-item checkbox" style="left: 185px; bottom: 575px;">☐</span>
+                <span class="text-item" style="left: 207px; bottom: 577px;">Marking Sheet</span>
+                <span class="text-item checkbox" style="left: 362px; bottom: 575px;">☐</span>
+                <span class="text-item" style="left: 389px; bottom: 577px;">Marking Potong Kertas</span>
+                <span class="text-item checkbox" style="left: 544px; bottom: 575px;">☐</span>
+                <span class="text-item" style="left: 571px; bottom: 577px;">Grayscale</span>
+                <span class="text-item checkbox" style="left: 185px; bottom: 554px;">☐</span>
+                <span class="text-item" style="left: 207px; bottom: 556px;">Marking Die Shifting</span>
+                <span class="text-item checkbox" style="left: 362px; bottom: 554px;">☐</span>
+                <span class="text-item" style="left: 389px; bottom: 556px;">Posisi Tarikan/Anleg</span>
+                
+                <!-- Plate (TIFF-B) -->
+                <span class="text-item section-label" style="left: 48px; bottom: 533px;">Plate</span>
+                <span class="text-item colon" style="left: 173px; bottom: 533px;">:</span>
+                <span class="text-item checkbox" style="left: 185px; bottom: 531px;">☐</span>
+                <span class="text-item" style="left: 207px; bottom: 533px;">Jarak Gripper Mesin</span>
+                <span class="text-item" style="left: 362px; bottom: 533px;">: …...... mm</span>
+                <span class="text-item checkbox" style="left: 544px; bottom: 531px;">☐</span>
+                <span class="text-item" style="left: 571px; bottom: 533px;">Overlap</span>
+                <span class="text-item checkbox" style="left: 726px; bottom: 531px;">☐</span>
+                <span class="text-item" style="left: 752px; bottom: 533px;">Kebersihan Plate</span>
+                <span class="text-item checkbox" style="left: 185px; bottom: 510px;">☐</span>
+                <span class="text-item" style="left: 207px; bottom: 512px;">Jarak Print Begin</span>
+                <span class="text-item" style="left: 362px; bottom: 512px;">: …...... mm</span>
+                <span class="text-item checkbox" style="left: 544px; bottom: 510px;">☐</span>
+                <span class="text-item" style="left: 571px; bottom: 512px;">Punch Plate</span>
+                <span class="text-item checkbox" style="left: 185px; bottom: 489px;">☐</span>
+                <span class="text-item" style="left: 207px; bottom: 490px;">Cek Plate dengan Millar</span>
+                <span class="text-item" style="left: 362px; bottom: 490px;">: Warna …......</span>
+                <span class="text-item checkbox" style="left: 544px; bottom: 489px;">☐</span>
+                <span class="text-item" style="left: 571px; bottom: 490px;">Label Pada BOX MILLAR</span>                
+                <span class="text-item" style="left: 746px; bottom: 428px;">(Opt. CTP)</span>
+                
+                <!-- Pengecekan Curva Linear Plate -->
+                <span class="text-item section-label" style="left: 48px; bottom: 413px; font-size: 13px;">Pengecekan Curva Linear Plate</span>
+                
+                <!-- Row 1: Supplier Plate / Proses Mulai / Temp -->
+                <span class="text-item section-label" style="left: 48px; bottom: 393px;">Supplier Plate</span>
+                <span class="text-item colon" style="left: 173px; bottom: 392px;">:</span>
+                <span class="text-item" style="left: 179px; bottom: 392px;">….....</span>
+                <span class="text-item" style="left: 316px; bottom: 393px;">Proses Mulai</span>
+                <span class="text-item colon" style="left: 458px; bottom: 392px;">:</span>
+                <span class="text-item" style="left: 461px; bottom: 392px;">….....</span>
+                <span class="text-item" style="left: 607px; bottom: 393px;">Temp</span>
+                <span class="text-item colon" style="left: 748px; bottom: 392px;">:</span>
+                <span class="text-item" style="left: 747px; bottom: 392px;">….....</span>
+                
+                <!-- Row 2: Mesin CTP / Proses Selesai / Dwell Time -->
+                <span class="text-item section-label" style="left: 48px; bottom: 378px;">Mesin CTP</span>
+                <span class="text-item colon" style="left: 173px; bottom: 377px;">:</span>
+                <span class="text-item" style="left: 179px; bottom: 377px;">….....</span>
+                <span class="text-item" style="left: 316px; bottom: 378px;">Proses Selesai</span>
+                <span class="text-item colon" style="left: 458px; bottom: 377px;">:</span>
+                <span class="text-item" style="left: 461px; bottom: 377px;">….....</span>
+                <span class="text-item" style="left: 607px; bottom: 378px;">Dwell Time</span>
+                <span class="text-item colon" style="left: 748px; bottom: 377px;">:</span>
+                <span class="text-item" style="left: 747px; bottom: 377px;">….....</span>
+                
+                <!-- Row 3: Mesin Processor / Raster/Rulling / Pengurasan -->
+                <span class="text-item section-label" style="left: 48px; bottom: 363px;">Mesin Processor</span>
+                <span class="text-item colon" style="left: 173px; bottom: 362px;">:</span>
+                <span class="text-item" style="left: 179px; bottom: 362px;">….....</span>
+                <span class="text-item" style="left: 316px; bottom: 363px;">Raster/Rulling</span>
+                <span class="text-item colon" style="left: 458px; bottom: 362px;">:</span>
+                <span class="text-item" style="left: 461px; bottom: 362px;">….....</span>
+                <span class="text-item" style="left: 607px; bottom: 363px;">Pengurasan</span>
+                <span class="text-item colon" style="left: 748px; bottom: 362px;">:</span>
+                <span class="text-item" style="left: 747px; bottom: 362px;">….....</span>
+                
+                <!-- Row 4: Program / Jumlah WO/Qty / Plate Value -->
+                <span class="text-item section-label" style="left: 48px; bottom: 348px;">Program</span>
+                <span class="text-item colon" style="left: 173px; bottom: 347px;">:</span>
+                <span class="text-item" style="left: 179px; bottom: 347px;">….....</span>
+                <span class="text-item" style="left: 316px; bottom: 348px;">Jumlah WO/Qty</span>
+                <span class="text-item colon" style="left: 458px; bottom: 347px;">:</span>
+                <span class="text-item" style="left: 461px; bottom: 347px;">….....</span>
+                <span class="text-item section-label" style="left: 607px; bottom: 348px;">Plate Value (Tolerance : ± 1%)</span>
+                
+                <!-- Plate Value Table Header -->
+                <span class="text-item" style="left: 117px; bottom: 313px;">Nilai</span>
+                <span class="text-item" style="left: 240px; bottom: 313px;">C</span>
+                <span class="text-item" style="left: 311px; bottom: 313px;">M</span>
+                <span class="text-item" style="left: 386px; bottom: 313px;">Y</span>
+                <span class="text-item" style="left: 458px; bottom: 313px;">K</span>
+                <span class="text-item" style="left: 531px; bottom: 313px;">X</span>
+                <span class="text-item" style="left: 604px; bottom: 313px;">Z</span>
+                <span class="text-item" style="left: 676px; bottom: 313px;">U</span>
+                <span class="text-item" style="left: 749px; bottom: 313px;">V</span>
+                
+                <!-- Lin + Pro Row -->
+                <span class="text-item" style="left: 90px; bottom: 254px;">Lin + Pro</span>
+                <span class="text-item" style="left: 180px; bottom: 292px;">20%</span>
+                <span class="text-item" style="left: 180px; bottom: 277px;">25%</span>
+                <span class="text-item" style="left: 180px; bottom: 262px;">40%</span>
+                <span class="text-item" style="left: 180px; bottom: 247px;">50%</span>
+                <span class="text-item" style="left: 180px; bottom: 232px;">75%</span>
+                <span class="text-item" style="left: 180px; bottom: 217px;">80%</span>
+                
+                <!-- Lin Row -->
+                <span class="text-item" style="left: 121px; bottom: 202px;">Lin</span>
+                
+                <!-- Punch Row -->
+                <span class="text-item" style="left: 113px; bottom: 180px;">Punch</span>
+                <span class="text-item" style="left: 217px; bottom: 187px;">Kiri</span>
+                <span class="text-item" style="left: 246px; bottom: 187px;">Kanan</span>
+                <span class="text-item" style="left: 290px; bottom: 187px;">Kiri</span>
+                <span class="text-item" style="left: 319px; bottom: 187px;">Kanan</span>
+                <span class="text-item" style="left: 363px; bottom: 187px;">Kiri</span>
+                <span class="text-item" style="left: 392px; bottom: 187px;">Kanan</span>
+                <span class="text-item" style="left: 435px; bottom: 187px;">Kiri</span>
+                <span class="text-item" style="left: 465px; bottom: 187px;">Kanan</span>
+                <span class="text-item" style="left: 508px; bottom: 187px;">Kiri</span>
+                <span class="text-item" style="left: 537px; bottom: 187px;">Kanan</span>
+                <span class="text-item" style="left: 581px; bottom: 187px;">Kiri</span>
+                <span class="text-item" style="left: 610px; bottom: 187px;">Kanan</span>
+                <span class="text-item" style="left: 653px; bottom: 187px;">Kiri</span>
+                <span class="text-item" style="left: 683px; bottom: 187px;">Kanan</span>
+                <span class="text-item" style="left: 726px; bottom: 187px;">Kiri</span>
+                <span class="text-item" style="left: 756px; bottom: 187px;">Kanan</span>
+                
+                <!-- Center Layout -->
+                <span class="text-item" style="left: 94px; bottom: 157px;">Center Layout</span>
+                
+                <!-- Signature & Notes Section -->
+                <span class="text-item" style="left: 54px; bottom: 128px; font-weight: bold;">Catatan :</span>
+                <span class="text-item" style="left: 561px; bottom: 128px;">Checked by</span>
+                <span class="text-item" style="left: 749px; bottom: 128px;">Verified by</span>
+                
+                <!-- Calibration Name -->
+                <span class="text-item section-label" style="left: 54px; bottom: 113px;">Nama Kalibrasi</span>
+                <span class="text-item colon" style="left: 173px; bottom: 113px;">:</span>
+                <span class="text-item field-value" style="left: 185px; bottom: 113px;">{{ calibration_name }}</span>
+                
+                <!-- Coordinator & Supervisor -->
+                <span class="text-item" style="left: 562px; bottom: 68px;">(Coor. CTP)</span>
+                <img class="controlled-copy-stamp" src="{{ url_for('static', filename='img/logo_controlledcopy.png') }}" alt="Controlled Copy" style="left: 680px; bottom: 50px;">
+                <span class="text-item" style="left: 742px; bottom: 68px;">(Supervisor)</span>
+                
+                <!-- RED WARNING MESSAGE -->
+                <div class="red-warning">CEK KEMBALI TINTA, KERTAS, DENGAN KALIBRASI YANG DIPAKAI !!!</div>
+                
+                <!-- FOOTER -->
+                <div class="footer-doc">Dok. No. : FORM-PPOFF-006 Rev.08</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        window.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                window.print();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

@@ -56,7 +56,9 @@ document.addEventListener('DOMContentLoaded', function () {
         '/impact/calibration-references/nestle/edit/': {linkId: 'calibrationNestleLink', parentSelector: '.calibration-ref-submenu-parent'},
         '/impact/calibration-references/gmi/': {linkId: 'calibrationGmiLink', parentSelector: '.calibration-ref-submenu-parent'},
         '/impact/calibration-references/gmi/create': {linkId: 'calibrationGmiLink', parentSelector: '.calibration-ref-submenu-parent'},
-        '/impact/calibration-references/gmi/edit/': {linkId: 'calibrationGmiLink', parentSelector: '.calibration-ref-submenu-parent'}
+        '/impact/calibration-references/gmi/edit/': {linkId: 'calibrationGmiLink', parentSelector: '.calibration-ref-submenu-parent'},
+        '/impact/work-queue': {linkId: 'workQueueLink', parentSelector: '.mounting-submenu-parent', grandParentSelector: '.prepress-submenu-parent'},
+        '/impact/work-queue/create': {linkId: 'workQueueLink', parentSelector: '.mounting-submenu-parent', grandParentSelector: '.prepress-submenu-parent'}
     };
     
     // Fungsi untuk mengaktifkan tautan dan parent submenu berdasarkan URL
@@ -191,6 +193,20 @@ document.addEventListener('DOMContentLoaded', function () {
     
     if (!activeMapping && currentPath.match(/^\/impact\/rnd-proof-checklist\/\d+\/edit$/)) {
         activeMapping = {linkId: 'rndProofChecklistLink', parentSelector: '.proof-submenu-parent', grandParentSelector: '.rnd-submenu-parent', greatGrandParentSelector: '.prepress-submenu-parent'};
+    }
+    
+    // Check for work-queue create pattern (Single ID or Multiple IDs)
+    if (!activeMapping && currentPath.startsWith('/impact/work-queue/create')) {
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Cek apakah ada parameter work_queue_id (tunggal) ATAU work_queue_ids (jamak)
+        if (urlParams.has('work_queue_id') || urlParams.has('work_queue_ids')) {
+            activeMapping = {
+                linkId: 'workQueueLink', 
+                parentSelector: '.mounting-submenu-parent', 
+                grandParentSelector: '.prepress-submenu-parent'
+            };
+        }
     }
     
     // Call setActive function to set initial state

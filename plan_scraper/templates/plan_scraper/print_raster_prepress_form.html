@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Pengecekan Raster</title>
+    <style>
+        @supports (-webkit-touch-callout: none) {
+            .text-container { white-space: normal; }
+        }
+        
+        body {
+            background-color: #444;
+            padding: 10px;
+            margin: 0;
+            min-width: fit-content;
+            font-family: Calibri, Arial, sans-serif;
+        }
+        
+        .page-container {
+            margin: 10px auto;
+            width: fit-content;
+        }
+        
+        .page {
+            overflow: hidden;
+            position: relative;
+            background-color: white;
+            width: 909px;
+            height: 1286px;
+        }
+        
+        .text-container {
+            white-space: pre;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .t {
+            transform-origin: bottom left;
+            z-index: 2;
+            position: absolute;
+            white-space: pre;
+            overflow: visible;
+            line-height: 1.5;
+        }
+        
+        .s0 {
+            font-size: 17px;
+            font-weight: bold;
+            color: #000;
+        }
+        
+        .s1 {
+            font-size: 12px;
+            color: #000;
+        }
+        
+        .logo {
+            position: absolute;
+            left: 37px;
+            top: 296px;
+            width: 186px;
+            height: 31px;
+            z-index: 20;
+        }
+        
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        @media print {
+            @page {
+                size: A4;
+                margin: 0;
+            }
+            
+            body {
+                background: white !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            .page-container {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+            }
+            
+            .page {
+                margin: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+                page-break-after: always;
+                overflow: visible !important;
+                width: 100% !important;
+                height: auto !important;
+                aspect-ratio: 909 / 1286 !important;
+            }
+            
+            .t {
+                position: absolute !important;
+                white-space: pre !important;
+                overflow: visible !important;
+                font-size: 12px !important;
+                color: #000 !important;
+            }
+            
+            .logo {
+                position: absolute !important;
+                left: 37px !important;
+                top: 296px !important;
+                width: 186px !important;
+                height: 31px !important;
+            }
+            
+            .logo img {
+                width: 100% !important;
+                height: 100% !important;
+                object-fit: contain !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <section class="page" style="width: 909px; height: 1286px;">
+            <!-- SVG Grid Background -->
+            <svg style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; z-index: 1;" viewBox="0 0 909 1286" preserveAspectRatio="xMinYMin meet">
+                <defs>
+                    <style>
+                        .g0 { fill: none; stroke: #000; stroke-width: 2.673; stroke-linejoin: round; }
+                    </style>
+                </defs>
+                <path d="M22 341H860.4m-837-1.3V970.2M859.1 339.7V970.2M51.2 365.1h780M49.9 548.4H832.6M51.2 547V750.2M206.3 547V750.2M288.6 547V750.2M366.1 547V750.2M443.6 547V750.2M521.2 547V750.2M598.7 547V750.2M676.2 547V750.2M753.7 547V750.2M831.2 547V750.2M49.9 583.9H832.6m-703.8-1.4V750.2m-1.4-138.8H832.6M127.4 638.9H832.6M127.4 666.4H832.6M127.4 693.9H832.6M127.4 721.4H832.6M49.9 748.9H832.6m-782.7 55H677.5M51.2 802.5V947.3m625-144.8V947.3M49.9 945.9H677.5M22 968.8H860.4" class="g0"/>
+            </svg>
+            
+            <!-- Logo -->
+            <div class="logo">
+                <img src="{{ url_for('static', filename='img/logo_pt_satyamitra.png') }}" alt="PT. Satyamitra">
+            </div>
+            
+            <!-- Text Content -->
+            <div class="text-container">
+                <!-- Title -->
+                <span class="t s0" style="left:53px;bottom:919px;letter-spacing:-0.09px;">Form Pengecekan Raster </span>
+                <span class="t s1" style="left:614px;bottom:919px;letter-spacing:-0.08px;">Tanggal : </span>
+                <span class="t s1" style="left:700px;bottom:919px;letter-spacing:-0.08px;">{{ completed_at }}</span>
+                
+                <!-- Customer -->
+                <span class="t s1" style="left:53px;bottom:875px;letter-spacing:-0.1px;">Customer </span>
+                <span class="t s1" style="left:208px;bottom:875px;">: </span>
+                <span class="t s1" style="left:220px;bottom:875px;letter-spacing:-0.1px;">{{ customer_name }}</span>
+                
+                <!-- Nama Item -->
+                <span class="t s1" style="left:53px;bottom:852px;letter-spacing:-0.1px;">Nama Item </span>
+                <span class="t s1" style="left:208px;bottom:852px;">: </span>
+                <span class="t s1" style="left:220px;bottom:852px;letter-spacing:-0.1px;">{{ item_name }}</span>
+                
+                <!-- Nama Mesin CTP -->
+                <span class="t s1" style="left:53px;bottom:829px;letter-spacing:-0.1px;">Nama Mesin CTP </span>
+                <span class="t s1" style="left:208px;bottom:829px;">: </span>
+                <span class="t s1" style="left:220px;bottom:829px;letter-spacing:-0.1px;">{{ print_machine }}</span>
+                
+                <!-- Merk/Type Plate -->
+                <span class="t s1" style="left:53px;bottom:806px;letter-spacing:-0.09px;">Merk/Type Plate </span>
+                <span class="t s1" style="left:208px;bottom:806px;">: </span>
+                <span class="t s1" style="left:220px;bottom:806px;letter-spacing:-0.09px;">……..</span>
+                
+                <!-- No. MC -->
+                <span class="t s1" style="left:53px;bottom:783px;letter-spacing:-0.1px;">No. MC </span>
+                <span class="t s1" style="left:208px;bottom:783px;">: </span>
+                <span class="t s1" style="left:220px;bottom:783px;letter-spacing:-0.1px;">{{ print_block }}</span>
+                
+                <!-- Nama Kalibrasi -->
+                <span class="t s1" style="left:53px;bottom:760px;letter-spacing:-0.09px;">Nama Kalibrasi </span>
+                <span class="t s1" style="left:208px;bottom:760px;">: </span>
+                <span class="t s1" style="left:220px;bottom:760px;letter-spacing:-0.09px;">{{ calibration_name }}</span>
+                
+                <!-- Table Headers -->
+                <span class="t s1" style="left:114px;bottom:708px;letter-spacing:-0.07px;">Nilai </span>
+                <span class="t s1" style="left:243px;bottom:708px;">C </span>
+                <span class="t s1" style="left:320px;bottom:708px;">M </span>
+                <span class="t s1" style="left:401px;bottom:708px;">Y </span>
+                <span class="t s1" style="left:478px;bottom:708px;">K </span>
+                <span class="t s1" style="left:554px;bottom:708px;letter-spacing:-0.05px;">... </span>
+                <span class="t s1" style="left:632px;bottom:708px;">… </span>
+                <span class="t s1" style="left:709px;bottom:708px;">… </span>
+                <span class="t s1" style="left:787px;bottom:708px;">… </span>
+                
+                <!-- Lin + Pro Section -->
+                <span class="t s1" style="left:60px;bottom:608px;letter-spacing:-0.08px;">Lin + Pro </span>
+                
+                <!-- Percentage Rows -->
+                <span class="t s1" style="left:153px;bottom:677px;letter-spacing:-0.11px;">20% </span>
+                <span class="t s1" style="left:153px;bottom:649px;letter-spacing:-0.11px;">25% </span>
+                <span class="t s1" style="left:153px;bottom:622px;letter-spacing:-0.11px;">40% </span>
+                <span class="t s1" style="left:153px;bottom:594px;letter-spacing:-0.11px;">50% </span>
+                <span class="t s1" style="left:153px;bottom:567px;letter-spacing:-0.11px;">75% </span>
+                <span class="t s1" style="left:153px;bottom:539px;letter-spacing:-0.11px;">80% </span>
+                
+                <!-- Tolerance -->
+                <span class="t s0" style="left:53px;bottom:508px;letter-spacing:-0.09px;">Tolerance: ± 1% </span>
+                
+                <!-- Catatan & Checked By -->
+                <span class="t s1" style="left:53px;bottom:453px;letter-spacing:-0.08px;">Catatan : </span>
+                <span class="t s1" style="left:714px;bottom:453px;letter-spacing:-0.09px;">Checked By </span>
+                
+                <!-- Coordinator Label -->
+                <span class="t s1" style="left:715px;bottom:338px;letter-spacing:-0.08px;">(Coor. CTP) </span>
+                
+                <!-- Footer -->
+                <span class="t s0" style="left:25px;bottom:292px;letter-spacing:-0.09px;">Dok. No. : FORM-PPOF-002- Rev.03 </span>
+            </div>
+        </section>
+    </div>
+    
+    <script>
+        window.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                window.print();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
